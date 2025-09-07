@@ -1,0 +1,286 @@
+version: '3.8'
+
+# Development environment overrides for MediMate Malaysia
+# Optimized for local development with enhanced debugging and Malaysian cultural testing
+
+services:
+  # PostgreSQL Development Overrides
+  postgres:
+    environment:
+      # Development-friendly settings
+      POSTGRES_DB: medimate_dev
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres123
+      POSTGRES_TEST_DB: medimate_test
+    ports:
+      - "5432:5432"  # Expose for external tools like pgAdmin, DBeaver
+    volumes:
+      # Add development-specific SQL scripts
+      - ./docker/postgres/dev-seed.sql:/docker-entrypoint-initdb.d/04-dev-seed.sql:ro
+      - ./docker/postgres/dev-functions.sql:/docker-entrypoint-initdb.d/05-dev-functions.sql:ro
+    command: >
+      postgres
+      -c log_statement=all
+      -c log_duration=on
+      -c log_line_prefix='%t [%p]: [%l-1] user=%u,db=%d,app=%a,client=%h '
+      -c log_min_duration_statement=0
+      -c shared_preload_libraries='pg_stat_statements'
+      -c pg_stat_statements.track=all
+    restart: unless-stopped
+    profiles:
+      - dev
+    labels:
+      - "traefik.enable=false"
+      - "medimate.service=postgres"
+      - "medimate.environment=development"
+
+  # Redis Development Overrides
+  redis:
+    ports:
+      - "6379:6379"  # Expose for Redis GUI tools
+    command: >
+      redis-server /usr/local/etc/redis/redis.conf
+      --loglevel verbose
+      --save 60 1
+      --appendfsync everysec
+      --auto-aof-rewrite-percentage 100
+    volumes:
+      - redis_data:/data
+      - ./docker/redis/redis.conf:/usr/local/etc/redis/redis.conf:ro
+      - ./docker/redis/dev-init.redis:/usr/local/etc/redis/dev-init.redis:ro
+    restart: unless-stopped
+    profiles:
+      - dev
+    labels:
+      - "medimate.service=redis"
+      - "medimate.environment=development"
+
+  # MinIO Development Overrides
+  minio:
+    environment:
+      # Development access keys (not for production!)
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin123
+      MINIO_DEFAULT_BUCKETS: medimate-uploads,medimate-avatars,medimate-documents,medimate-dev-test
+      # Development-friendly settings
+      MINIO_PROMETHEUS_AUTH_TYPE: public
+      MINIO_BROWSER_REDIRECT_URL: http://localhost:9001
+    ports:
+      - "9000:9000"   # API port
+      - "9001:9001"   # Console port
+    restart: unless-stopped
+    profiles:
+      - dev
+    labels:
+      - "medimate.service=minio"
+      - "medimate.environment=development"
+
+  # pgAdmin for Database Management (Development Only)
+  pgadmin:
+    environment:
+      PGADMIN_DEFAULT_EMAIL: developer@medimate.local
+      PGADMIN_DEFAULT_PASSWORD: developer123
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+      PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: 'False'
+      PGADMIN_LISTEN_PORT: 80
+    ports:
+      - "5050:80"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+      - ./docker/pgadmin/servers.json:/pgadmin4/servers.json:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+    profiles:
+      - dev
+    labels:
+      - "medimate.service=pgadmin"
+      - "medimate.environment=development"
+
+  # Redis Commander for Redis Management (Development Only)
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    container_name: medimate_redis_commander
+    environment:
+      - REDIS_HOSTS=local:redis:6379
+      - HTTP_USER=admin
+      - HTTP_PASSWORD=admin123
+    ports:
+      - "8081:8081"
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - medimate-network
+    restart: unless-stopped
+    profiles:
+      - dev
+    labels:
+      - "medimate.service=redis-commander"
+      - "medimate.environment=development"
+
+  # Mailhog for Email Testing (Development Only)
+  mailhog:
+    image: mailhog/mailhog:latest
+    container_name: medimate_mailhog
+    ports:
+      - "1025:1025"  # SMTP port
+      - "8025:8025"  # Web UI port
+    networks:
+      - medimate-network
+    restart: unless-stopped
+    profiles:
+      - dev
+    labels:
+      - "medimate.service=mailhog"
+      - "medimate.environment=development"
+
+  # Mock Malaysian Healthcare APIs (Development Only)
+  mock-moh-api:
+    image: wiremock/wiremock:latest
+    container_name: medimate_mock_moh_api
+    command: >
+      --port 8080
+      --root-dir /home/wiremock
+      --verbose
+      --global-response-templating
+      --enable-browser-proxying
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./docker/mock-apis/moh:/home/wiremock:ro
+    networks:
+      - medimate-network
+    restart: unless-stopped
+    profiles:
+      - dev
+    labels:
+      - "medimate.service=mock-moh-api"
+      - "medimate.environment=development"
+      - "medimate.purpose=malaysian-healthcare-simulation"
+
+  # Mock Prayer Times API (Development Only)
+  mock-prayer-api:
+    image: wiremock/wiremock:latest
+    container_name: medimate_mock_prayer_api
+    command: >
+      --port 8080
+      --root-dir /home/wiremock
+      --verbose
+    ports:
+      - "8082:8080"
+    volumes:
+      - ./docker/mock-apis/prayer-times:/home/wiremock:ro
+    networks:
+      - medimate-network
+    restart: unless-stopped
+    profiles:
+      - dev
+    labels:
+      - "medimate.service=mock-prayer-api"
+      - "medimate.environment=development"
+      - "medimate.purpose=malaysian-cultural-simulation"
+
+  # Development Monitoring Dashboard
+  monitoring:
+    image: prom/prometheus:latest
+    container_name: medimate_prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=200h'
+      - '--web.enable-lifecycle'
+      - '--web.enable-admin-api'
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./docker/monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    networks:
+      - medimate-network
+    restart: unless-stopped
+    profiles:
+      - dev
+      - monitoring
+    labels:
+      - "medimate.service=prometheus"
+      - "medimate.environment=development"
+
+  # Grafana for Metrics Visualization
+  grafana:
+    image: grafana/grafana:latest
+    container_name: medimate_grafana
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin123
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_INSTALL_PLUGINS=grafana-clock-panel,grafana-simple-json-datasource
+    ports:
+      - "3001:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./docker/monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./docker/monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    depends_on:
+      - monitoring
+    networks:
+      - medimate-network
+    restart: unless-stopped
+    profiles:
+      - dev
+      - monitoring
+    labels:
+      - "medimate.service=grafana"
+      - "medimate.environment=development"
+
+networks:
+  medimate-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+
+volumes:
+  # Development-specific volumes
+  postgres_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${PWD}/data/postgres
+  redis_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${PWD}/data/redis
+  minio_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${PWD}/data/minio
+  pgadmin_data:
+    driver: local
+  prometheus_data:
+    driver: local
+  grafana_data:
+    driver: local
+
+# Development-specific configurations
+x-common-variables: &common-env
+  NODE_ENV: development
+  LOG_LEVEL: debug
+  MALAYSIA_TIMEZONE: Asia/Kuala_Lumpur
+  CULTURAL_FEATURES_ENABLED: "true"
+  MOCK_APIS_ENABLED: "true"
+  
+x-restart-policy: &restart-policy
+  restart_policy:
+    condition: unless-stopped
+    delay: 5s
+    max_attempts: 3
+    window: 120s

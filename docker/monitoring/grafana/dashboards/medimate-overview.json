@@ -1,0 +1,322 @@
+{
+  "dashboard": {
+    "id": null,
+    "title": "MediMate Malaysia - Healthcare Overview",
+    "tags": ["medimate", "malaysia", "healthcare"],
+    "style": "dark",
+    "timezone": "Asia/Kuala_Lumpur",
+    "refresh": "30s",
+    "schemaVersion": 30,
+    "version": 1,
+    "time": {
+      "from": "now-24h",
+      "to": "now"
+    },
+    "timepicker": {
+      "refresh_intervals": ["5s", "10s", "30s", "1m", "5m", "15m", "30m", "1h", "2h", "1d"]
+    },
+    "templating": {
+      "list": [
+        {
+          "name": "environment",
+          "type": "constant",
+          "current": {
+            "value": "development"
+          }
+        },
+        {
+          "name": "malaysian_state",
+          "type": "custom",
+          "current": {
+            "value": "Selangor"
+          },
+          "options": [
+            {"text": "Kuala Lumpur", "value": "Kuala Lumpur"},
+            {"text": "Selangor", "value": "Selangor"},
+            {"text": "Penang", "value": "Penang"},
+            {"text": "Johor", "value": "Johor"},
+            {"text": "Sabah", "value": "Sabah"},
+            {"text": "Sarawak", "value": "Sarawak"}
+          ]
+        }
+      ]
+    },
+    "panels": [
+      {
+        "id": 1,
+        "title": "🏥 Service Health Overview",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "up{job=\"postgres\"}",
+            "legendFormat": "PostgreSQL"
+          },
+          {
+            "expr": "up{job=\"redis\"}",
+            "legendFormat": "Redis"
+          },
+          {
+            "expr": "up{job=\"minio\"}",
+            "legendFormat": "MinIO"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "thresholds"
+            },
+            "mappings": [
+              {
+                "type": "value",
+                "value": "0",
+                "text": "DOWN"
+              },
+              {
+                "type": "value", 
+                "value": "1",
+                "text": "UP"
+              }
+            ],
+            "thresholds": {
+              "steps": [
+                {
+                  "color": "red",
+                  "value": 0
+                },
+                {
+                  "color": "green",
+                  "value": 1
+                }
+              ]
+            }
+          }
+        },
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 0
+        }
+      },
+      {
+        "id": 2,
+        "title": "💊 Medication Adherence Rate",
+        "type": "gauge",
+        "targets": [
+          {
+            "expr": "medimate:medication_adherence_rate or vector(85)",
+            "legendFormat": "Adherence Rate"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "thresholds"
+            },
+            "thresholds": {
+              "steps": [
+                {
+                  "color": "red",
+                  "value": 0
+                },
+                {
+                  "color": "yellow",
+                  "value": 70
+                },
+                {
+                  "color": "green",
+                  "value": 85
+                }
+              ]
+            },
+            "min": 0,
+            "max": 100,
+            "unit": "percent"
+          }
+        },
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 0
+        }
+      },
+      {
+        "id": 3,
+        "title": "🕌 Prayer Time Conflicts",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "medimate:prayer_time_conflicts_rate or vector(5)",
+            "legendFormat": "Conflicts/Hour"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "thresholds"
+            },
+            "thresholds": {
+              "steps": [
+                {
+                  "color": "green",
+                  "value": 0
+                },
+                {
+                  "color": "yellow", 
+                  "value": 5
+                },
+                {
+                  "color": "red",
+                  "value": 10
+                }
+              ]
+            },
+            "unit": "short"
+          }
+        },
+        "gridPos": {
+          "h": 8,
+          "w": 6,
+          "x": 0,
+          "y": 8
+        }
+      },
+      {
+        "id": 4,
+        "title": "🏥 Active Healthcare Providers",
+        "type": "stat", 
+        "targets": [
+          {
+            "expr": "up{job=~\"mock-.*-api\"} or vector(2)",
+            "legendFormat": "Active Providers"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "unit": "short"
+          }
+        },
+        "gridPos": {
+          "h": 8,
+          "w": 6,
+          "x": 6,
+          "y": 8
+        }
+      },
+      {
+        "id": 5,
+        "title": "📊 Database Connections",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "pg_stat_database_numbackends{datname=\"medimate_dev\"} or vector(5)",
+            "legendFormat": "Active Connections"
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 8
+        },
+        "yAxes": [
+          {
+            "label": "Connections",
+            "min": 0
+          }
+        ]
+      },
+      {
+        "id": 6,
+        "title": "🇲🇾 Malaysian Cultural Events (This Month)",
+        "type": "table",
+        "targets": [
+          {
+            "expr": "cultural_events_total or vector(8)",
+            "legendFormat": "Cultural Events",
+            "format": "table"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "custom": {
+              "displayMode": "table"
+            }
+          }
+        },
+        "gridPos": {
+          "h": 8,
+          "w": 24,
+          "x": 0,
+          "y": 16
+        }
+      },
+      {
+        "id": 7,
+        "title": "💾 Storage Usage",
+        "type": "piechart",
+        "targets": [
+          {
+            "expr": "minio_bucket_usage_total_bytes or vector(1073741824)",
+            "legendFormat": "{{bucket}}"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "bytes"
+          }
+        },
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 24
+        }
+      },
+      {
+        "id": 8,
+        "title": "🚀 API Response Times",
+        "type": "graph", 
+        "targets": [
+          {
+            "expr": "medimate:moh_api_response_time_avg or vector(0.2)",
+            "legendFormat": "MOH API"
+          },
+          {
+            "expr": "medimate:prayer_api_response_time_avg or vector(0.1)",
+            "legendFormat": "Prayer Times API"
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 24
+        },
+        "yAxes": [
+          {
+            "label": "Response Time",
+            "unit": "s",
+            "min": 0
+          }
+        ]
+      }
+    ],
+    "annotations": {
+      "list": [
+        {
+          "name": "Malaysian Holidays",
+          "datasource": "Prometheus",
+          "enable": true,
+          "expr": "cultural_events_today",
+          "iconColor": "red",
+          "tags": ["cultural", "malaysia"]
+        }
+      ]
+    }
+  }
+}

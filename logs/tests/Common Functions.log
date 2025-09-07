@@ -1,0 +1,44 @@
+Running MediMate Malaysia Common Functions Test Suite
+====================================================
+
+[DEBUG] Logging initialized - level: 0, file: /tmp/medimate-test.log
+Testing logging initialization... [DEBUG] Logging initialized - level: 0, file: /tmp/test-logging-init.log
+PASSED
+Testing logging functions... [DEBUG] Logging initialized - level: 0, file: /tmp/test-logging-functions.log
+[DEBUG] Debug message
+[INFO] Info message
+[WARN] Warning message
+[ERROR] Error message
+[SUCCESS] Success message
+PASSED
+Testing platform detection... [DEBUG] Platform detected: macOS
+PASSED
+Testing architecture detection... PASSED
+Testing command existence check... PASSED
+Testing version comparison... PASSED
+Testing directory creation... [DEBUG] Creating directory: /tmp/medimate-test-dir
+[DEBUG] Directory already exists: /tmp/medimate-test-dir
+PASSED
+Testing progress tracking... [DEBUG] Progress tracked: test_step_1
+[DEBUG] Progress tracked: test_step_2
+PASSED
+Testing system memory detection... PASSED
+Testing command execution... [DEBUG] Logging initialized - level: 0, file: /tmp/test-execute-command.log
+[DEBUG] Testing echo command: echo 'test command'
+test command
+[DEBUG] Command succeeded: echo 'test command'
+[DEBUG] Testing false command: false
+[ERROR] Command failed: false (exit code: 1)
+[DEBUG] Testing false command with allow failure: false
+[WARN] Command failed but continuing: false (exit code: 1)
+PASSED
+Testing CI environment detection... PASSED
+
+====================================================
+Test Results:
+  Tests Run: 11
+  Passed: 11
+  Failed: 0
+  Status: ALL TESTS PASSED ✅
+
+Test log available at: /tmp/medimate-test.log

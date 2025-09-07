@@ -1,0 +1,258 @@
+# Prometheus Configuration for MediMate Malaysia
+# Healthcare monitoring with Malaysian cultural event tracking
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    monitor: 'medimate-malaysia'
+    environment: 'development'
+    region: 'ap-southeast-1'
+
+# Alerting configuration
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+          # - alertmanager:9093
+
+# Rules and alerts
+rule_files:
+  # - "first_rules.yml"
+  # - "second_rules.yml"
+
+# Scrape configuration
+scrape_configs:
+  # Prometheus itself
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+    metrics_path: /metrics
+    scrape_interval: 30s
+
+  # PostgreSQL monitoring
+  - job_name: 'postgres'
+    static_configs:
+      - targets: ['postgres:5432']
+    metrics_path: /metrics
+    scrape_interval: 30s
+    scrape_timeout: 10s
+    params:
+      format: ['prometheus']
+    # PostgreSQL exporter would be added here in production
+    
+  # Redis monitoring
+  - job_name: 'redis'
+    static_configs:
+      - targets: ['redis:6379']
+    metrics_path: /metrics
+    scrape_interval: 15s
+    # Redis exporter would be added here in production
+
+  # MinIO monitoring
+  - job_name: 'minio'
+    bearer_token: 'minio-prometheus-token'
+    metrics_path: /minio/v2/metrics/cluster
+    static_configs:
+      - targets: ['minio:9000']
+    scrape_interval: 30s
+    scrape_timeout: 10s
+
+  # Docker containers monitoring
+  - job_name: 'docker'
+    static_configs:
+      - targets: ['host.docker.internal:9323']
+    metrics_path: /metrics
+    scrape_interval: 30s
+    # Requires Docker metrics to be enabled
+
+  # Malaysian Healthcare API monitoring (when available)
+  - job_name: 'medimate-api'
+    static_configs:
+      - targets: ['host.docker.internal:3000']
+    metrics_path: /metrics
+    scrape_interval: 15s
+    scrape_timeout: 10s
+    honor_labels: true
+    params:
+      format: ['prometheus']
+
+  # Mock Malaysian Healthcare APIs
+  - job_name: 'mock-moh-api'
+    static_configs:
+      - targets: ['mock-moh-api:8080']
+    metrics_path: /__admin/metrics
+    scrape_interval: 30s
+    scrape_timeout: 5s
+
+  # Mock Prayer Times API
+  - job_name: 'mock-prayer-api'
+    static_configs:
+      - targets: ['mock-prayer-api:8080']
+    metrics_path: /__admin/metrics
+    scrape_interval: 60s  # Less frequent for cultural data
+    scrape_timeout: 5s
+
+  # Node Exporter (if available)
+  - job_name: 'node-exporter'
+    static_configs:
+      - targets: ['node-exporter:9100']
+    metrics_path: /metrics
+    scrape_interval: 30s
+    
+  # Custom Malaysian healthcare metrics
+  - job_name: 'medimate-cultural-metrics'
+    static_configs:
+      - targets: ['host.docker.internal:3001']  # Custom metrics endpoint
+    metrics_path: /metrics/cultural
+    scrape_interval: 300s  # 5 minutes for cultural data
+    scrape_timeout: 10s
+    params:
+      format: ['prometheus']
+    honor_labels: true
+
+# Remote write configuration (for production)
+remote_write:
+  # - url: "https://prometheus-remote-write-url"
+  #   basic_auth:
+  #     username: username
+  #     password: password
+
+# Remote read configuration (for production)
+remote_read:
+  # - url: "https://prometheus-remote-read-url"
+  #   basic_auth:
+  #     username: username
+  #     password: password
+
+# Storage configuration
+storage:
+  tsdb:
+    path: /prometheus
+    retention.time: 30d
+    retention.size: 10GB
+    wal-compression: true
+    
+# Malaysian Healthcare Specific Configuration
+# Custom recording rules for healthcare metrics
+recording_rules:
+  # Medication adherence rates
+  - name: medimate.medication.adherence
+    interval: 60s
+    rules:
+      - record: medimate:medication_adherence_rate
+        expr: |
+          (
+            sum(rate(medicate_doses_taken_total[5m])) /
+            sum(rate(medicate_doses_scheduled_total[5m]))
+          ) * 100
+        labels:
+          metric_type: "adherence"
+          
+  # Prayer time conflict rates
+  - name: medimate.cultural.prayer_conflicts
+    interval: 300s  # 5 minutes
+    rules:
+      - record: medimate:prayer_time_conflicts_rate
+        expr: |
+          sum(rate(medimate_prayer_conflicts_total[5m])) * 100
+        labels:
+          metric_type: "cultural"
+          
+  # Healthcare provider API response times
+  - name: medimate.healthcare.api_performance
+    interval: 30s
+    rules:
+      - record: medimate:moh_api_response_time_avg
+        expr: |
+          avg(rate(http_request_duration_seconds_sum{job="mock-moh-api"}[5m]) /
+              rate(http_request_duration_seconds_count{job="mock-moh-api"}[5m]))
+        labels:
+          api_type: "moh"
+          
+      - record: medimate:prayer_api_response_time_avg
+        expr: |
+          avg(rate(http_request_duration_seconds_sum{job="mock-prayer-api"}[5m]) /
+              rate(http_request_duration_seconds_count{job="mock-prayer-api"}[5m]))
+        labels:
+          api_type: "prayer_times"
+
+# Alert rules for healthcare critical scenarios
+alerting_rules:
+  - name: medimate.healthcare.alerts
+    rules:
+      # Database connection failures
+      - alert: PostgreSQLDown
+        expr: up{job="postgres"} == 0
+        for: 5m
+        labels:
+          severity: critical
+          service: database
+          impact: healthcare_data
+        annotations:
+          summary: "PostgreSQL is down"
+          description: "PostgreSQL database has been down for more than 5 minutes"
+          
+      # Redis cache failures
+      - alert: RedisDown
+        expr: up{job="redis"} == 0
+        for: 3m
+        labels:
+          severity: warning
+          service: cache
+          impact: performance
+        annotations:
+          summary: "Redis cache is down"
+          description: "Redis cache has been down for more than 3 minutes"
+          
+      # MinIO storage failures
+      - alert: MinIODown
+        expr: up{job="minio"} == 0
+        for: 5m
+        labels:
+          severity: critical
+          service: storage
+          impact: file_uploads
+        annotations:
+          summary: "MinIO storage is down"
+          description: "MinIO object storage has been down for more than 5 minutes"
+          
+      # High medication adherence miss rate
+      - alert: HighMedicationMissRate
+        expr: medimate:medication_adherence_rate < 70
+        for: 15m
+        labels:
+          severity: warning
+          service: healthcare
+          impact: patient_safety
+        annotations:
+          summary: "High medication miss rate detected"
+          description: "Medication adherence rate has been below 70% for 15 minutes"
+          
+      # Prayer time service issues
+      - alert: PrayerTimeServiceDown
+        expr: up{job="mock-prayer-api"} == 0
+        for: 10m
+        labels:
+          severity: warning
+          service: cultural
+          impact: user_experience
+        annotations:
+          summary: "Prayer time service is down"
+          description: "Prayer time service has been unavailable for more than 10 minutes"
+          
+      # MOH API integration issues
+      - alert: MOHAPIDown
+        expr: up{job="mock-moh-api"} == 0
+        for: 10m
+        labels:
+          severity: critical
+          service: healthcare_integration
+          impact: prescription_sync
+        annotations:
+          summary: "MOH API integration is down"
+          description: "MOH API has been unavailable for more than 10 minutes"
+
+# Federation configuration (for multi-environment setups)
+federation:
+  # Global view combining metrics from dev, test, prod environments
