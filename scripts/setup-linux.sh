@@ -6,11 +6,14 @@
 
 set -euo pipefail
 
-# Ensure we have the common functions loaded
+# Ensure we have the enhanced libraries loaded
 if [[ -z "${SCRIPT_DIR:-}" ]]; then
     readonly SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
     source "${SCRIPT_DIR}/lib/common.sh"
     source "${SCRIPT_DIR}/lib/validation.sh"
+    source "${SCRIPT_DIR}/lib/platform.sh"
+    source "${SCRIPT_DIR}/lib/package-managers.sh"
+    source "${SCRIPT_DIR}/lib/performance.sh"
 fi
 
 # Linux distribution detection
@@ -19,62 +22,75 @@ PACKAGE_MANAGER=""
 INSTALL_CMD=""
 UPDATE_CMD=""
 
-# Detect Linux distribution and package manager
+# Detect Linux distribution and package manager (enhanced)
 detect_linux_distro() {
-    log_info "Detecting Linux distribution..."
+    log_info "Detecting Linux distribution and environment..."
     
-    if [[ -f /etc/os-release ]]; then
-        source /etc/os-release
-        DISTRO="$ID"
-        log_debug "Detected distribution: $DISTRO ($PRETTY_NAME)"
-    elif [[ -f /etc/redhat-release ]]; then
-        DISTRO="rhel"
-        log_debug "Detected Red Hat-based distribution"
-    elif [[ -f /etc/debian_version ]]; then
-        DISTRO="debian"
-        log_debug "Detected Debian-based distribution"
+    # Use enhanced detection if available
+    if [[ -n "${DETECTED_DISTRO:-}" ]]; then
+        DISTRO="$DETECTED_DISTRO"
+        log_debug "Using pre-detected distribution: $DISTRO"
     else
-        DISTRO="unknown"
-        log_warn "Could not detect Linux distribution"
+        # Fallback to local detection
+        detect_linux_enhanced >/dev/null 2>&1 || true
+        DISTRO="${DETECTED_DISTRO:-unknown}"
+    fi
+    
+    # Check for WSL-specific optimizations
+    if [[ "${IS_WSL:-false}" == "true" ]]; then
+        log_info "WSL ${WSL_VERSION:-1} environment detected - applying optimizations"
+        export WSL_DETECTED=true
     fi
     
     # Set package manager commands based on distribution
-    case "$DISTRO" in
-        ubuntu|debian)
-            PACKAGE_MANAGER="apt"
-            INSTALL_CMD="apt-get install -y"
-            UPDATE_CMD="apt-get update"
-            log_debug "Using APT package manager"
-            ;;
-        fedora|rhel|centos)
-            if command_exists dnf; then
-                PACKAGE_MANAGER="dnf"
-                INSTALL_CMD="dnf install -y"
-                UPDATE_CMD="dnf update"
-            else
-                PACKAGE_MANAGER="yum"
-                INSTALL_CMD="yum install -y"
-                UPDATE_CMD="yum update"
-            fi
-            log_debug "Using $PACKAGE_MANAGER package manager"
-            ;;
-        arch|manjaro)
-            PACKAGE_MANAGER="pacman"
-            INSTALL_CMD="pacman -S --noconfirm"
-            UPDATE_CMD="pacman -Sy"
-            log_debug "Using Pacman package manager"
-            ;;
-        opensuse*)
-            PACKAGE_MANAGER="zypper"
-            INSTALL_CMD="zypper install -y"
-            UPDATE_CMD="zypper refresh"
-            log_debug "Using Zypper package manager"
-            ;;
-        *)
-            log_error "Unsupported Linux distribution: $DISTRO"
-            return 1
-            ;;
-    esac
+    # Use enhanced package manager detection
+    local primary_mgr
+    if primary_mgr=$(get_primary_package_manager); then
+        PACKAGE_MANAGER="$primary_mgr"
+        INSTALL_CMD=$(get_install_command "$primary_mgr")
+        UPDATE_CMD=$(get_update_command "$primary_mgr")
+        log_debug "Using $PACKAGE_MANAGER package manager with enhanced fallback support"
+    else
+        # Legacy fallback for older systems
+        case "$DISTRO" in
+            ubuntu|debian)
+                PACKAGE_MANAGER="apt"
+                INSTALL_CMD="apt-get install -y"
+                UPDATE_CMD="apt-get update"
+                ;;
+            fedora|rhel|centos)
+                if command_exists dnf; then
+                    PACKAGE_MANAGER="dnf"
+                    INSTALL_CMD="dnf install -y"
+                    UPDATE_CMD="dnf update"
+                else
+                    PACKAGE_MANAGER="yum"
+                    INSTALL_CMD="yum install -y"
+                    UPDATE_CMD="yum update"
+                fi
+                ;;
+            arch|manjaro)
+                PACKAGE_MANAGER="pacman"
+                INSTALL_CMD="pacman -S --noconfirm"
+                UPDATE_CMD="pacman -Sy"
+                ;;
+            opensuse*)
+                PACKAGE_MANAGER="zypper"
+                INSTALL_CMD="zypper install -y"
+                UPDATE_CMD="zypper refresh"
+                ;;
+            alpine)
+                PACKAGE_MANAGER="apk"
+                INSTALL_CMD="apk add"
+                UPDATE_CMD="apk update"
+                ;;
+            *)
+                log_error "Unsupported Linux distribution: $DISTRO"
+                log_error "Supported: Ubuntu, Debian, Fedora, RHEL, CentOS, Arch, Manjaro, openSUSE, Alpine"
+                return 1
+                ;;
+        esac
+    fi
     
     log_success "Distribution: $DISTRO, Package Manager: $PACKAGE_MANAGER"
     return 0
@@ -103,6 +119,91 @@ check_privileges() {
     return 0
 }
 
+# Apply WSL-specific optimizations
+apply_wsl_optimizations() {
+    if [[ "${WSL_DETECTED:-false}" != "true" ]]; then
+        return 0
+    fi
+    
+    log_info "Applying WSL-specific optimizations for healthcare platform..."
+    start_step_timer "wsl_optimizations" "WSL Performance Optimizations"
+    
+    # Configure WSL-specific settings for better Docker performance
+    if [[ "$WSL_VERSION" == "2" ]]; then
+        log_debug "Configuring WSL 2 optimizations..."
+        
+        # Enable systemd if available (WSL 2.0.9+)
+        if command_exists systemctl && [[ ! -f /etc/wsl.conf ]]; then
+            log_debug "Enabling systemd in WSL"
+            sudo tee /etc/wsl.conf > /dev/null << 'EOF'
+[boot]
+systemd=true
+
+[automount]
+enabled=true
+root=/mnt/
+options="metadata,umask=22,fmask=11"
+
+[network]
+generateHosts=true
+generateResolvConf=true
+EOF
+            log_info "WSL configuration updated - restart WSL for systemd support"
+        fi
+        
+        # Configure memory limits for healthcare workloads
+        local wslconfig_path="/mnt/c/Users/$USER/.wslconfig"
+        if [[ -n "${USER:-}" ]] && [[ ! -f "$wslconfig_path" ]]; then
+            log_debug "Creating WSL memory configuration for healthcare workloads"
+            cat > /tmp/wslconfig << 'EOF'
+[wsl2]
+memory=4GB
+processors=2
+swap=2GB
+localhostForwarding=true
+EOF
+            # Try to copy to Windows user directory
+            if cp /tmp/wslconfig "$wslconfig_path" 2>/dev/null; then
+                log_debug "WSL memory configuration created"
+            else
+                log_debug "Could not create WSL config - manual setup may be needed"
+            fi
+            rm -f /tmp/wslconfig
+        fi
+    fi
+    
+    # WSL-specific package optimizations
+    if [[ "$PACKAGE_MANAGER" == "apt" ]]; then
+        log_debug "Configuring APT for WSL performance"
+        
+        # Disable unnecessary services that can slow down WSL
+        local services_to_mask=("snapd" "unattended-upgrades")
+        for service in "${services_to_mask[@]}"; do
+            if systemctl is-enabled "$service" >/dev/null 2>&1; then
+                log_debug "Disabling $service for WSL performance"
+                execute_command "sudo systemctl mask $service" "Masking $service" true
+            fi
+        done
+    fi
+    
+    # Configure timezone for Malaysian healthcare
+    if [[ -f /usr/share/zoneinfo/Asia/Kuala_Lumpur ]]; then
+        log_debug "Setting Malaysian timezone for healthcare compliance"
+        execute_command "sudo timedatectl set-timezone Asia/Kuala_Lumpur" "Setting Malaysian timezone" true
+    fi
+    
+    # WSL Docker optimization
+    if [[ "${WSL_OPTIMIZATIONS:-false}" == "true" ]]; then
+        log_debug "Preparing WSL for Docker Desktop integration"
+        # These optimizations help with Docker Desktop for Windows integration
+        export DOCKER_HOST="tcp://localhost:2375"
+        log_debug "Docker host configured for WSL integration"
+    fi
+    
+    end_step_timer "wsl_optimizations"
+    log_success "WSL optimizations applied for healthcare platform"
+}
+
 # Update package manager
 update_package_manager() {
     log_info "Updating package manager..."
@@ -117,35 +218,49 @@ update_package_manager() {
     return 0
 }
 
-# Install system dependencies
+# Install system dependencies using enhanced package management
 install_system_dependencies() {
-    log_info "Installing system dependencies..."
+    log_info "Installing healthcare platform system dependencies..."
+    start_step_timer "system_dependencies" "System Dependencies Installation"
     
-    local base_packages=""
+    # Use enhanced package installation with fallbacks
+    local base_packages=(
+        "curl"
+        "wget" 
+        "git"
+        "jq"
+    )
     
-    case "$PACKAGE_MANAGER" in
-        apt)
-            base_packages="build-essential curl wget git python3 python3-pip software-properties-common apt-transport-https ca-certificates gnupg lsb-release"
+    # Platform-specific build tools
+    case "$DISTRO" in
+        ubuntu|debian)
+            base_packages+=("build-essential" "python3" "python3-pip" "software-properties-common" 
+                          "apt-transport-https" "ca-certificates" "gnupg" "lsb-release")
             ;;
-        dnf|yum)
-            base_packages="curl wget git python3 python3-pip gcc gcc-c++ make"
+        fedora|rhel|centos)
+            base_packages+=("gcc" "gcc-c++" "make" "python3" "python3-pip" "redhat-lsb-core")
             ;;
-        pacman)
-            base_packages="base-devel curl wget git python python-pip"
+        arch|manjaro)
+            base_packages+=("base-devel" "python" "python-pip")
             ;;
-        zypper)
-            base_packages="curl wget git python3 python3-pip gcc gcc-c++ make"
+        opensuse)
+            base_packages+=("gcc" "gcc-c++" "make" "python3" "python3-pip")
+            ;;
+        alpine)
+            base_packages+=("build-base" "python3" "py3-pip")
             ;;
     esac
     
-    if execute_command "sudo $INSTALL_CMD $base_packages" "Installing base system packages"; then
-        log_success "System dependencies installed"
+    # Install packages with enhanced error handling and fallbacks
+    if install_packages "${base_packages[@]}"; then
+        log_success "System dependencies installed successfully"
         track_progress "system_dependencies_installed"
     else
-        log_error "System dependencies installation failed"
+        log_error "Critical system dependencies installation failed"
         return 1
     fi
     
+    end_step_timer "system_dependencies"
     return 0
 }
 
