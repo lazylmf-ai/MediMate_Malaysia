@@ -16,7 +16,7 @@ set -euo pipefail
 # Script configuration
 readonly SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 readonly PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
-readonly LOG_FILE="${PROJECT_ROOT}/setup.log"
+LOG_FILE="${PROJECT_ROOT}/setup.log"
 
 # Source common functions
 source "${SCRIPT_DIR}/lib/common.sh"

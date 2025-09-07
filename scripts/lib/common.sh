@@ -35,7 +35,7 @@ LOG_LEVEL_ERROR=3
 
 # Default log level (can be overridden)
 CURRENT_LOG_LEVEL=${LOG_LEVEL_INFO}
-LOG_FILE=""
+LOG_FILE="${LOG_FILE:-}"
 
 # Initialize logging system
 init_logging() {
@@ -56,7 +56,10 @@ init_logging() {
         CURRENT_LOG_LEVEL=${LOG_LEVEL_INFO}
     fi
     
-    LOG_FILE="$log_file"
+    # Set LOG_FILE only if not already set (avoid readonly conflicts)
+    if [[ -z "${LOG_FILE:-}" ]]; then
+        LOG_FILE="$log_file"
+    fi
     
     # Create log file and add header
     {
