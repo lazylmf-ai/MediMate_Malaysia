@@ -1,0 +1,233 @@
+{
+  "project": {
+    "name": "MediMate Malaysia",
+    "version": "1.0.0",
+    "description": "Healthcare medication management platform for Malaysia",
+    "cultural_features": {
+      "prayer_times": true,
+      "ramadan_adjustments": true,
+      "malaysian_holidays": true,
+      "multi_language": ["ms", "en", "zh", "ta"]
+    }
+  },
+  "requirements": {
+    "node": {
+      "min_version": "18.0.0",
+      "recommended_version": "18.17.0",
+      "package_manager": "npm"
+    },
+    "python": {
+      "min_version": "3.8.0",
+      "recommended_version": "3.11.0",
+      "required_packages": ["pip"]
+    },
+    "git": {
+      "min_version": "2.30.0",
+      "required": true
+    },
+    "docker": {
+      "required": true,
+      "skip_option": true,
+      "compose_required": true,
+      "min_memory_gb": 4
+    },
+    "system": {
+      "min_memory_gb": 4,
+      "min_disk_space_gb": 5,
+      "supported_platforms": ["macos", "linux", "windows"]
+    }
+  },
+  "package_managers": {
+    "macos": {
+      "primary": "homebrew",
+      "install_url": "https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh",
+      "required_packages": [
+        "node@18",
+        "python@3.11",
+        "git",
+        "curl",
+        "wget",
+        "jq",
+        "tree",
+        "gnu-sed"
+      ],
+      "cask_packages": [
+        "docker",
+        "visual-studio-code"
+      ]
+    },
+    "linux": {
+      "apt": {
+        "update_cmd": "apt-get update",
+        "install_cmd": "apt-get install -y",
+        "required_packages": [
+          "build-essential",
+          "curl",
+          "wget",
+          "git",
+          "python3",
+          "python3-pip",
+          "software-properties-common",
+          "apt-transport-https",
+          "ca-certificates",
+          "gnupg",
+          "lsb-release"
+        ]
+      },
+      "yum": {
+        "update_cmd": "yum update",
+        "install_cmd": "yum install -y",
+        "required_packages": [
+          "curl",
+          "wget",
+          "git",
+          "python3",
+          "python3-pip",
+          "gcc",
+          "gcc-c++",
+          "make"
+        ]
+      },
+      "pacman": {
+        "update_cmd": "pacman -Sy",
+        "install_cmd": "pacman -S --noconfirm",
+        "required_packages": [
+          "base-devel",
+          "curl",
+          "wget",
+          "git",
+          "python",
+          "python-pip"
+        ]
+      }
+    },
+    "windows": {
+      "primary": "chocolatey",
+      "install_url": "https://community.chocolatey.org/install.ps1",
+      "required_packages": [
+        "nodejs",
+        "python",
+        "git",
+        "curl",
+        "wget",
+        "jq",
+        "7zip",
+        "unzip"
+      ],
+      "optional_packages": [
+        "docker-desktop",
+        "vscode"
+      ]
+    }
+  },
+  "services": {
+    "postgresql": {
+      "version": "14",
+      "port": 5432,
+      "required": true,
+      "docker_image": "postgres:14-alpine"
+    },
+    "redis": {
+      "version": "7",
+      "port": 6379,
+      "required": true,
+      "docker_image": "redis:7-alpine"
+    },
+    "minio": {
+      "version": "latest",
+      "api_port": 9000,
+      "console_port": 9001,
+      "required": false,
+      "docker_image": "minio/minio:latest"
+    }
+  },
+  "development": {
+    "ports": {
+      "api": 3000,
+      "frontend": 3001,
+      "mobile_metro": 8081,
+      "storybook": 6006
+    },
+    "env_files": [
+      ".env.local",
+      ".env.development"
+    ],
+    "required_directories": [
+      "logs",
+      "uploads",
+      "temp",
+      "backups"
+    ]
+  },
+  "cultural_integration": {
+    "prayer_time_api": {
+      "provider": "islamic-finder",
+      "cities": ["Kuala Lumpur", "Johor Bahru", "Penang", "Kota Kinabalu", "Kuching"],
+      "cache_duration_hours": 24
+    },
+    "holiday_calendar": {
+      "sources": ["malaysian_government", "islamic_calendar", "chinese_calendar"],
+      "update_frequency": "monthly"
+    },
+    "languages": {
+      "default": "ms",
+      "supported": ["ms", "en", "zh", "ta"],
+      "rtl_support": false
+    }
+  },
+  "healthcare_compliance": {
+    "pdpa_requirements": {
+      "data_encryption": true,
+      "consent_management": true,
+      "audit_logging": true,
+      "data_retention_days": 365
+    },
+    "security": {
+      "jwt_expiry_minutes": 15,
+      "refresh_token_expiry_days": 7,
+      "password_min_length": 8,
+      "mfa_required": false
+    }
+  },
+  "testing": {
+    "frameworks": {
+      "backend": ["jest", "supertest"],
+      "frontend": ["jest", "@testing-library/react"],
+      "mobile": ["jest", "@testing-library/react-native"],
+      "e2e": ["playwright"]
+    },
+    "coverage_threshold": 80,
+    "cultural_test_data": true
+  },
+  "ci_cd": {
+    "platforms": ["github-actions", "gitlab-ci"],
+    "docker_registry": "ghcr.io",
+    "deployment_targets": ["staging", "production"],
+    "health_check_endpoints": ["/health", "/api/health"]
+  },
+  "monitoring": {
+    "logging": {
+      "level": "info",
+      "format": "json",
+      "rotation": "daily"
+    },
+    "metrics": {
+      "enabled": true,
+      "endpoint": "/metrics",
+      "cultural_metrics": true
+    },
+    "alerts": {
+      "email_enabled": false,
+      "slack_enabled": false,
+      "webhook_url": ""
+    }
+  },
+  "setup_options": {
+    "interactive_prompts": true,
+    "progress_indicators": true,
+    "rollback_on_failure": true,
+    "validate_after_install": true,
+    "generate_report": true,
+    "cleanup_temp_files": true
+  }
+}
