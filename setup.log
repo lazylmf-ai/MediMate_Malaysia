@@ -1,0 +1,15 @@
+=== MediMate Malaysia Setup Log ===
+Started: 2025-09-07 07:10:33 UTC
+Platform: Darwin 24.5.0
+User: lazylmf
+Working Directory: /Users/lazylmf/MediMate/MediMate_cc
+=======================================
+
+[DEBUG] 2025-09-07 15:10:33 - Logging initialized - level: 0, file: /Users/lazylmf/MediMate/MediMate_cc/setup.log
+[INFO] 2025-09-07 15:10:33 - Starting MediMate Malaysia development environment setup
+[INFO] 2025-09-07 15:10:33 - Project root: /Users/lazylmf/MediMate/MediMate_cc
+[INFO] 2025-09-07 15:10:33 - Configuration: verbose=true, skip-docker=true, production=false
+[DEBUG] 2025-09-07 15:10:33 - Loading configuration from: /Users/lazylmf/MediMate/MediMate_cc/scripts/config/setup.config.json
+[DEBUG] 2025-09-07 15:10:33 - Platform detected: macOS
+[ERROR] 2025-09-07 15:10:33 - Setup failed with exit code: 1
+[ERROR] 2025-09-07 15:10:33 - Check the log file for details: /Users/lazylmf/MediMate/MediMate_cc/setup.log
