@@ -1,0 +1,47 @@
+{
+  "watch": [
+    "src/**/*",
+    "../src/services/**/*",
+    "../scripts/data-seeding/**/*"
+  ],
+  "ext": "ts,js,json",
+  "ignore": [
+    "src/**/*.spec.ts",
+    "src/**/*.test.ts",
+    "dist/**/*",
+    "node_modules/**/*",
+    "coverage/**/*",
+    "logs/**/*",
+    ".nyc_output/**/*"
+  ],
+  "exec": "ts-node -r tsconfig-paths/register src/app.ts",
+  "env": {
+    "NODE_ENV": "development",
+    "LOG_LEVEL": "debug",
+    "ENABLE_DEBUG_LOGGING": "true",
+    "CULTURAL_DATA_RELOAD": "true",
+    "HEALTHCARE_SECURITY_MODE": "development",
+    "PDPA_COMPLIANCE_VALIDATION": "strict"
+  },
+  "colours": true,
+  "legacyWatch": false,
+  "pollingInterval": 1000,
+  "restartable": "rs",
+  "runOnChangeOnly": true,
+  "signal": "SIGTERM",
+  "delay": 500,
+  "verbose": true,
+  "events": {
+    "start": "echo \"🏥 MediMate Malaysia Backend Starting...\"",
+    "crash": "echo \"💥 Backend Crashed - Check healthcare security logs\"",
+    "exit": "echo \"👋 Backend Shutdown Complete\"",
+    "restart": [
+      "echo \"🔄 Restarting Malaysian Healthcare Backend...\"",
+      "echo \"📊 Cultural Data: $(date)\"",
+      "echo \"🔐 Security Mode: $HEALTHCARE_SECURITY_MODE\""
+    ]
+  },
+  "stdout": true,
+  "stderr": true,
+  "stdin": false
+}
