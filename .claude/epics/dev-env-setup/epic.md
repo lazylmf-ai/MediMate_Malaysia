@@ -4,7 +4,7 @@ status: backlog
 created: 2025-09-07T05:54:39Z
 progress: 0%
 prd: .claude/prds/dev-env-setup.md
-github: [Will be updated when synced to GitHub]
+github: https://github.com/lazylmf-ai/MediMate_Malaysia/issues/1
 ---
 
 # Epic: Development Environment Setup
