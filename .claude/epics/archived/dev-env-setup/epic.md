@@ -1,8 +1,9 @@
 ---
 name: dev-env-setup
-status: backlog
+status: completed
 created: 2025-09-07T05:54:39Z
-progress: 0%
+completed: 2025-09-08T11:31:22Z
+progress: 100%
 prd: .claude/prds/dev-env-setup.md
 github: https://github.com/lazylmf-ai/MediMate_Malaysia/issues/1
 ---
