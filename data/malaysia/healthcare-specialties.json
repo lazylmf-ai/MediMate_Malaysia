@@ -1,0 +1,313 @@
+[
+  {
+    "specialty_code": "CARD",
+    "name_en": "Cardiology",
+    "name_ms": "Kardiologi",
+    "name_zh": "心脏科",
+    "name_ta": "இதயவியல்",
+    "description_en": "Medical specialty dealing with disorders of the heart and blood vessels",
+    "description_ms": "Kepakaran perubatan yang menangani gangguan jantung dan saluran darah",
+    "category": "Internal Medicine",
+    "subspecialties": [
+      "Interventional Cardiology",
+      "Electrophysiology",
+      "Heart Failure",
+      "Pediatric Cardiology"
+    ],
+    "common_conditions_ms": [
+      "Serangan jantung",
+      "Tekanan darah tinggi",
+      "Aritmia",
+      "Penyakit jantung koronari"
+    ],
+    "availability_malaysia": {
+      "public_hospitals": 45,
+      "private_hospitals": 78,
+      "specialists_count": 320,
+      "wait_time_avg_days": 30
+    },
+    "emergency_keywords": ["chest pain", "heart attack", "cardiac arrest"]
+  },
+  {
+    "specialty_code": "DERM",
+    "name_en": "Dermatology",
+    "name_ms": "Dermatologi",
+    "name_zh": "皮肤科",
+    "name_ta": "தோல்நோயியல்",
+    "description_en": "Medical specialty dealing with skin, hair, nail, and mucous membrane disorders",
+    "description_ms": "Kepakaran perubatan yang menangani gangguan kulit, rambut, kuku, dan selaput lendir",
+    "category": "Surgical Specialty",
+    "subspecialties": [
+      "Dermatopathology",
+      "Pediatric Dermatology",
+      "Cosmetic Dermatology",
+      "Mohs Surgery"
+    ],
+    "common_conditions_ms": [
+      "Eksim",
+      "Jerawat",
+      "Psoriasis",
+      "Kanser kulit"
+    ],
+    "availability_malaysia": {
+      "public_hospitals": 35,
+      "private_hospitals": 65,
+      "specialists_count": 180,
+      "wait_time_avg_days": 21
+    },
+    "tropical_conditions": [
+      "Fungal infections",
+      "Heat rash",
+      "Melasma",
+      "Tropical acne"
+    ]
+  },
+  {
+    "specialty_code": "ENT",
+    "name_en": "Otolaryngology (ENT)",
+    "name_ms": "Otolaringologi (THT)",
+    "name_zh": "耳鼻喉科",
+    "name_ta": "காது மூக்கு தொண்டை",
+    "description_en": "Medical specialty dealing with ear, nose, throat, head, and neck disorders",
+    "description_ms": "Kepakaran perubatan yang menangani gangguan telinga, hidung, tekak, kepala, dan leher",
+    "category": "Surgical Specialty",
+    "subspecialties": [
+      "Head and Neck Surgery",
+      "Rhinology",
+      "Otology",
+      "Laryngology"
+    ],
+    "common_conditions_ms": [
+      "Infeksi telinga",
+      "Sinusitis",
+      "Sakit tekak",
+      "Masalah pendengaran"
+    ],
+    "availability_malaysia": {
+      "public_hospitals": 28,
+      "private_hospitals": 45,
+      "specialists_count": 150,
+      "wait_time_avg_days": 28
+    },
+    "pediatric_focus": true
+  },
+  {
+    "specialty_code": "ORTH",
+    "name_en": "Orthopedics",
+    "name_ms": "Ortopedik",
+    "name_zh": "骨科",
+    "name_ta": "எலும்பியல்",
+    "description_en": "Medical specialty focused on musculoskeletal system disorders",
+    "description_ms": "Kepakaran perubatan yang memfokuskan gangguan sistem muskuloskeletal",
+    "category": "Surgical Specialty",
+    "subspecialties": [
+      "Sports Medicine",
+      "Spine Surgery",
+      "Joint Replacement",
+      "Pediatric Orthopedics",
+      "Hand Surgery"
+    ],
+    "common_conditions_ms": [
+      "Patah tulang",
+      "Artritis",
+      "Cedera sukan",
+      "Sakit belakang"
+    ],
+    "availability_malaysia": {
+      "public_hospitals": 42,
+      "private_hospitals": 68,
+      "specialists_count": 280,
+      "wait_time_avg_days": 35
+    },
+    "emergency_keywords": ["fracture", "dislocation", "severe joint pain"]
+  },
+  {
+    "specialty_code": "GYNE",
+    "name_en": "Obstetrics & Gynecology",
+    "name_ms": "Obstetrik & Ginekologi",
+    "name_zh": "妇产科",
+    "name_ta": "மகப்பேறியல் & பெண்ணுறுப்பியல்",
+    "description_en": "Medical specialty dealing with pregnancy, childbirth, and female reproductive system",
+    "description_ms": "Kepakaran perubatan yang menangani kehamilan, kelahiran, dan sistem pembiakan wanita",
+    "category": "Surgical Specialty",
+    "subspecialties": [
+      "Maternal-Fetal Medicine",
+      "Reproductive Endocrinology",
+      "Gynecologic Oncology",
+      "Urogynecology"
+    ],
+    "common_conditions_ms": [
+      "Kehamilan",
+      "Haid tidak teratur",
+      "Endometriosis",
+      "Fibroid"
+    ],
+    "availability_malaysia": {
+      "public_hospitals": 65,
+      "private_hospitals": 85,
+      "specialists_count": 420,
+      "wait_time_avg_days": 14
+    },
+    "cultural_considerations": [
+      "Female doctor preference",
+      "Religious modesty requirements",
+      "Family planning counseling"
+    ]
+  },
+  {
+    "specialty_code": "PEDI",
+    "name_en": "Pediatrics",
+    "name_ms": "Pediatrik",
+    "name_zh": "儿科",
+    "name_ta": "குழந்தைகள் மருத்துவம்",
+    "description_en": "Medical specialty focused on medical care of infants, children, and adolescents",
+    "description_ms": "Kepakaran perubatan yang memfokuskan penjagaan perubatan bayi, kanak-kanak, dan remaja",
+    "category": "Primary Care",
+    "subspecialties": [
+      "Neonatology",
+      "Pediatric Cardiology",
+      "Pediatric Oncology",
+      "Developmental Pediatrics"
+    ],
+    "common_conditions_ms": [
+      "Demam kanak-kanak",
+      "Asma",
+      "Masalah pembesaran",
+      "Jangkitan virus"
+    ],
+    "availability_malaysia": {
+      "public_hospitals": 55,
+      "private_hospitals": 72,
+      "specialists_count": 380,
+      "wait_time_avg_days": 10
+    },
+    "vaccination_schedules": "Malaysian National Immunization Program",
+    "age_ranges": {
+      "neonatal": "0-28 days",
+      "infant": "1 month - 2 years",
+      "child": "2-12 years",
+      "adolescent": "13-18 years"
+    }
+  },
+  {
+    "specialty_code": "PSYC",
+    "name_en": "Psychiatry",
+    "name_ms": "Psikiatri",
+    "name_zh": "精神科",
+    "name_ta": "மனநல மருத்துவம்",
+    "description_en": "Medical specialty focused on diagnosis, treatment, and prevention of mental disorders",
+    "description_ms": "Kepakaran perubatan yang memfokuskan diagnosis, rawatan, dan pencegahan gangguan mental",
+    "category": "Mental Health",
+    "subspecialties": [
+      "Child and Adolescent Psychiatry",
+      "Addiction Medicine",
+      "Forensic Psychiatry",
+      "Geriatric Psychiatry"
+    ],
+    "common_conditions_ms": [
+      "Kemurungan",
+      "Kegelisahan",
+      "Skizofrenia",
+      "Gangguan bipolar"
+    ],
+    "availability_malaysia": {
+      "public_hospitals": 18,
+      "private_hospitals": 25,
+      "specialists_count": 85,
+      "wait_time_avg_days": 45
+    },
+    "cultural_stigma": "High - mental health awareness campaigns needed",
+    "telepsychiatry_available": true
+  },
+  {
+    "specialty_code": "ONCO",
+    "name_en": "Oncology",
+    "name_ms": "Onkologi",
+    "name_zh": "肿瘤科",
+    "name_ta": "புற்றுநோயியல்",
+    "description_en": "Medical specialty focused on diagnosis and treatment of cancer",
+    "description_ms": "Kepakaran perubatan yang memfokuskan diagnosis dan rawatan kanser",
+    "category": "Medical Specialty",
+    "subspecialties": [
+      "Medical Oncology",
+      "Radiation Oncology",
+      "Surgical Oncology",
+      "Pediatric Oncology"
+    ],
+    "common_conditions_ms": [
+      "Kanser payudara",
+      "Kanser paru-paru",
+      "Kanser kolon",
+      "Leukemia"
+    ],
+    "availability_malaysia": {
+      "public_hospitals": 15,
+      "private_hospitals": 28,
+      "specialists_count": 120,
+      "wait_time_avg_days": 21
+    },
+    "national_cancer_centers": [
+      "National Cancer Institute",
+      "Sarawak Cancer Centre",
+      "Penang Adventist Hospital Cancer Centre"
+    ]
+  },
+  {
+    "specialty_code": "NEUR",
+    "name_en": "Neurology",
+    "name_ms": "Neurologi",
+    "name_zh": "神经科",
+    "name_ta": "நரம்பியல்",
+    "description_en": "Medical specialty dealing with disorders of the nervous system",
+    "description_ms": "Kepakaran perubatan yang menangani gangguan sistem saraf",
+    "category": "Medical Specialty",
+    "subspecialties": [
+      "Stroke Medicine",
+      "Epilepsy",
+      "Movement Disorders",
+      "Neuromuscular Medicine"
+    ],
+    "common_conditions_ms": [
+      "Strok",
+      "Sawan",
+      "Migrain",
+      "Penyakit Parkinson"
+    ],
+    "availability_malaysia": {
+      "public_hospitals": 22,
+      "private_hospitals": 35,
+      "specialists_count": 110,
+      "wait_time_avg_days": 42
+    },
+    "emergency_keywords": ["stroke", "seizure", "severe headache"]
+  },
+  {
+    "specialty_code": "ANES",
+    "name_en": "Anesthesiology",
+    "name_ms": "Anestesiologi",
+    "name_zh": "麻醉科",
+    "name_ta": "மயக்க மருந்தியல்",
+    "description_en": "Medical specialty focused on perioperative medicine and pain management",
+    "description_ms": "Kepakaran perubatan yang memfokuskan perubatan perioperatif dan pengurusan kesakitan",
+    "category": "Medical Specialty",
+    "subspecialties": [
+      "Cardiac Anesthesia",
+      "Pediatric Anesthesia",
+      "Pain Medicine",
+      "Critical Care"
+    ],
+    "common_procedures_ms": [
+      "Bius am",
+      "Bius setempat",
+      "Rawatan kesakitan",
+      "Penjagaan kritikal"
+    ],
+    "availability_malaysia": {
+      "public_hospitals": 45,
+      "private_hospitals": 68,
+      "specialists_count": 290,
+      "wait_time_avg_days": 7
+    },
+    "role": "Perioperative care, pain management, critical care"
+  }
+]

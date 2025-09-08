@@ -1,0 +1,779 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MediMate Malaysia - Health Monitoring Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 1rem 2rem;
+            box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header h1 {
+            color: #2c3e50;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .flag {
+            font-size: 1.5rem;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 2rem auto;
+            padding: 0 2rem;
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 1.5rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: between;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid #eee;
+        }
+
+        .card-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #2c3e50;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        .status-healthy {
+            background-color: #2ecc71;
+            box-shadow: 0 0 8px rgba(46, 204, 113, 0.5);
+        }
+
+        .status-warning {
+            background-color: #f39c12;
+            box-shadow: 0 0 8px rgba(243, 156, 18, 0.5);
+        }
+
+        .status-critical {
+            background-color: #e74c3c;
+            box-shadow: 0 0 8px rgba(231, 76, 60, 0.5);
+        }
+
+        .status-unknown {
+            background-color: #95a5a6;
+        }
+
+        .metric-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid #f8f9fa;
+        }
+
+        .metric-row:last-child {
+            border-bottom: none;
+        }
+
+        .metric-label {
+            font-weight: 500;
+            color: #5a6c7d;
+        }
+
+        .metric-value {
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .metric-value.good {
+            color: #2ecc71;
+        }
+
+        .metric-value.warning {
+            color: #f39c12;
+        }
+
+        .metric-value.critical {
+            color: #e74c3c;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background-color: #ecf0f1;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 0.5rem;
+        }
+
+        .progress-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+
+        .progress-good {
+            background: linear-gradient(90deg, #2ecc71, #27ae60);
+        }
+
+        .progress-warning {
+            background: linear-gradient(90deg, #f39c12, #e67e22);
+        }
+
+        .progress-critical {
+            background: linear-gradient(90deg, #e74c3c, #c0392b);
+        }
+
+        .refresh-button {
+            background: linear-gradient(45deg, #3498db, #2980b9);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            margin: 1rem 0;
+        }
+
+        .refresh-button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(52, 152, 219, 0.4);
+        }
+
+        .refresh-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .last-updated {
+            text-align: center;
+            color: #7f8c8d;
+            margin: 2rem 0;
+            font-style: italic;
+        }
+
+        .alert-banner {
+            background: linear-gradient(45deg, #e74c3c, #c0392b);
+            color: white;
+            padding: 1rem 2rem;
+            margin: 1rem 0;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            animation: pulse 2s infinite;
+        }
+
+        .alert-banner.warning {
+            background: linear-gradient(45deg, #f39c12, #e67e22);
+        }
+
+        .alert-banner.info {
+            background: linear-gradient(45deg, #3498db, #2980b9);
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.8; }
+            100% { opacity: 1; }
+        }
+
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            color: #7f8c8d;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .malaysian-services {
+            background: linear-gradient(45deg, #c0392b, #e74c3c);
+            color: white;
+        }
+
+        .malaysian-services .card-title {
+            color: white;
+        }
+
+        .malaysian-services .metric-label {
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .malaysian-services .metric-value {
+            color: white;
+        }
+
+        .cultural-validation {
+            background: linear-gradient(45deg, #f39c12, #e67e22);
+            color: white;
+        }
+
+        .cultural-validation .card-title {
+            color: white;
+        }
+
+        .cultural-validation .metric-label {
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .cultural-validation .metric-value {
+            color: white;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 0 1rem;
+            }
+            
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .header {
+                padding: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>
+            <span class="flag">🇲🇾</span>
+            MediMate Malaysia - Health Monitoring Dashboard
+            <span class="status-indicator status-healthy" id="overallStatus"></span>
+        </h1>
+    </div>
+
+    <div class="container">
+        <div id="alertBanner" class="alert-banner" style="display: none;">
+            <span>⚠️</span>
+            <div id="alertMessage"></div>
+        </div>
+
+        <button class="refresh-button" onclick="refreshDashboard()" id="refreshBtn">
+            🔄 Refresh Dashboard
+        </button>
+
+        <div id="loadingIndicator" class="loading">
+            <div class="spinner"></div>
+            <p>Loading health data...</p>
+        </div>
+
+        <div class="dashboard-grid" id="dashboardGrid" style="display: none;">
+            <!-- System Overview Card -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">
+                        <span class="status-indicator status-healthy" id="systemStatus"></span>
+                        System Overview
+                    </div>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">CPU Usage</span>
+                    <span class="metric-value" id="cpuUsage">--</span>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill progress-good" id="cpuProgress" style="width: 0%"></div>
+                </div>
+                
+                <div class="metric-row">
+                    <span class="metric-label">Memory Usage</span>
+                    <span class="metric-value" id="memoryUsage">--</span>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill progress-good" id="memoryProgress" style="width: 0%"></div>
+                </div>
+                
+                <div class="metric-row">
+                    <span class="metric-label">Disk Usage</span>
+                    <span class="metric-value" id="diskUsage">--</span>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill progress-good" id="diskProgress" style="width: 0%"></div>
+                </div>
+            </div>
+
+            <!-- Docker Services Card -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">
+                        <span class="status-indicator status-healthy" id="dockerStatus"></span>
+                        Docker Services
+                    </div>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">PostgreSQL</span>
+                    <span class="metric-value" id="postgresStatus">--</span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">Redis Cache</span>
+                    <span class="metric-value" id="redisStatus">--</span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">MinIO Storage</span>
+                    <span class="metric-value" id="minioStatus">--</span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">Running Containers</span>
+                    <span class="metric-value" id="containerCount">--</span>
+                </div>
+            </div>
+
+            <!-- Performance Metrics Card -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">
+                        <span class="status-indicator status-healthy" id="performanceStatus"></span>
+                        Performance Metrics
+                    </div>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">DB Response Time</span>
+                    <span class="metric-value" id="dbResponseTime">--</span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">Redis Response Time</span>
+                    <span class="metric-value" id="redisResponseTime">--</span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">MinIO Response Time</span>
+                    <span class="metric-value" id="minioResponseTime">--</span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">Load Average (1min)</span>
+                    <span class="metric-value" id="loadAverage">--</span>
+                </div>
+            </div>
+
+            <!-- Malaysian Cultural Services Card -->
+            <div class="card malaysian-services">
+                <div class="card-header">
+                    <div class="card-title">
+                        <span class="status-indicator status-healthy" id="culturalStatus"></span>
+                        🇲🇾 Malaysian Services
+                    </div>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">Cultural Data Status</span>
+                    <span class="metric-value" id="culturalDataStatus">--</span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">Language Support</span>
+                    <span class="metric-value" id="languageSupport">--</span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">Healthcare Compliance</span>
+                    <span class="metric-value" id="complianceStatus">--</span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">Regional Data</span>
+                    <span class="metric-value" id="regionalData">--</span>
+                </div>
+            </div>
+
+            <!-- Network & Security Card -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">
+                        <span class="status-indicator status-healthy" id="networkStatus"></span>
+                        Network & Security
+                    </div>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">Internet Connectivity</span>
+                    <span class="metric-value" id="internetStatus">--</span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">Local Network Latency</span>
+                    <span class="metric-value" id="localLatency">--</span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">SSL/TLS Status</span>
+                    <span class="metric-value" id="sslStatus">--</span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">Security Audit</span>
+                    <span class="metric-value" id="securityAudit">--</span>
+                </div>
+            </div>
+
+            <!-- Environment Validation Card -->
+            <div class="card cultural-validation">
+                <div class="card-header">
+                    <div class="card-title">
+                        <span class="status-indicator status-healthy" id="envStatus"></span>
+                        🏥 Environment Status
+                    </div>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">Development Tools</span>
+                    <span class="metric-value" id="devToolsStatus">--</span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">VSCode Configuration</span>
+                    <span class="metric-value" id="vscodeStatus">--</span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">File System</span>
+                    <span class="metric-value" id="filesystemStatus">--</span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">Environment Variables</span>
+                    <span class="metric-value" id="envVarsStatus">--</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="last-updated" id="lastUpdated">
+            Last updated: Never
+        </div>
+    </div>
+
+    <script>
+        // Dashboard state
+        let isLoading = false;
+        let lastUpdateTime = null;
+        
+        // Auto-refresh interval (5 minutes)
+        const AUTO_REFRESH_INTERVAL = 5 * 60 * 1000;
+        let autoRefreshTimer = null;
+
+        // Simulated health data (replace with actual API calls)
+        function generateMockHealthData() {
+            const now = new Date();
+            return {
+                timestamp: now.toISOString(),
+                system: {
+                    cpu_usage: Math.random() * 80,
+                    memory_usage: Math.random() * 70,
+                    disk_usage: Math.random() * 60,
+                    load_average: (Math.random() * 2).toFixed(2)
+                },
+                services: {
+                    postgres: Math.random() > 0.1 ? 'healthy' : 'warning',
+                    redis: Math.random() > 0.05 ? 'healthy' : 'critical',
+                    minio: Math.random() > 0.15 ? 'healthy' : 'warning',
+                    container_count: Math.floor(Math.random() * 8) + 3
+                },
+                performance: {
+                    db_response_time: Math.floor(Math.random() * 500) + 50,
+                    redis_response_time: Math.floor(Math.random() * 100) + 10,
+                    minio_response_time: Math.floor(Math.random() * 300) + 100
+                },
+                cultural: {
+                    data_status: Math.random() > 0.1 ? 'valid' : 'error',
+                    language_support: 'EN, MS, ZH, TA',
+                    compliance: Math.random() > 0.2 ? 'compliant' : 'review needed',
+                    regional_data: '13 states + 3 territories'
+                },
+                network: {
+                    internet: Math.random() > 0.05 ? 'connected' : 'disconnected',
+                    local_latency: Math.floor(Math.random() * 50) + 1,
+                    ssl_status: 'enabled',
+                    security_audit: Math.random() > 0.3 ? 'passed' : 'issues found'
+                },
+                environment: {
+                    dev_tools: Math.random() > 0.1 ? 'configured' : 'missing tools',
+                    vscode: Math.random() > 0.05 ? 'configured' : 'needs setup',
+                    filesystem: 'accessible',
+                    env_vars: Math.random() > 0.2 ? 'configured' : 'incomplete'
+                }
+            };
+        }
+
+        // Update status indicators
+        function updateStatusIndicator(elementId, status) {
+            const element = document.getElementById(elementId);
+            if (!element) return;
+            
+            element.className = 'status-indicator';
+            
+            if (status === 'healthy' || status === 'configured' || status === 'valid' || status === 'compliant' || status === 'connected' || status === 'enabled' || status === 'passed' || status === 'accessible') {
+                element.classList.add('status-healthy');
+            } else if (status === 'warning' || status === 'review needed' || status === 'issues found' || status === 'incomplete' || status === 'needs setup') {
+                element.classList.add('status-warning');
+            } else if (status === 'critical' || status === 'error' || status === 'disconnected' || status === 'missing tools') {
+                element.classList.add('status-critical');
+            } else {
+                element.classList.add('status-unknown');
+            }
+        }
+
+        // Update metric values
+        function updateMetricValue(elementId, value, type = '') {
+            const element = document.getElementById(elementId);
+            if (!element) return;
+            
+            element.textContent = value;
+            element.className = 'metric-value';
+            
+            if (type) {
+                element.classList.add(type);
+            }
+        }
+
+        // Update progress bars
+        function updateProgressBar(progressId, value, max = 100) {
+            const element = document.getElementById(progressId);
+            if (!element) return;
+            
+            const percentage = Math.min((value / max) * 100, 100);
+            element.style.width = `${percentage}%`;
+            
+            element.className = 'progress-fill';
+            if (percentage < 60) {
+                element.classList.add('progress-good');
+            } else if (percentage < 80) {
+                element.classList.add('progress-warning');
+            } else {
+                element.classList.add('progress-critical');
+            }
+        }
+
+        // Format status text
+        function formatStatus(status) {
+            return status.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+        }
+
+        // Update dashboard with health data
+        function updateDashboard(healthData) {
+            // System metrics
+            updateMetricValue('cpuUsage', `${healthData.system.cpu_usage.toFixed(1)}%`, 
+                healthData.system.cpu_usage > 80 ? 'critical' : healthData.system.cpu_usage > 60 ? 'warning' : 'good');
+            updateProgressBar('cpuProgress', healthData.system.cpu_usage);
+            
+            updateMetricValue('memoryUsage', `${healthData.system.memory_usage.toFixed(1)}%`,
+                healthData.system.memory_usage > 85 ? 'critical' : healthData.system.memory_usage > 70 ? 'warning' : 'good');
+            updateProgressBar('memoryProgress', healthData.system.memory_usage);
+            
+            updateMetricValue('diskUsage', `${healthData.system.disk_usage.toFixed(1)}%`,
+                healthData.system.disk_usage > 90 ? 'critical' : healthData.system.disk_usage > 75 ? 'warning' : 'good');
+            updateProgressBar('diskProgress', healthData.system.disk_usage);
+            
+            updateMetricValue('loadAverage', healthData.system.load_average);
+
+            // Docker services
+            updateMetricValue('postgresStatus', formatStatus(healthData.services.postgres));
+            updateMetricValue('redisStatus', formatStatus(healthData.services.redis));
+            updateMetricValue('minioStatus', formatStatus(healthData.services.minio));
+            updateMetricValue('containerCount', healthData.services.container_count);
+
+            // Performance metrics
+            updateMetricValue('dbResponseTime', `${healthData.performance.db_response_time}ms`,
+                healthData.performance.db_response_time > 1000 ? 'critical' : healthData.performance.db_response_time > 500 ? 'warning' : 'good');
+            updateMetricValue('redisResponseTime', `${healthData.performance.redis_response_time}ms`,
+                healthData.performance.redis_response_time > 100 ? 'warning' : 'good');
+            updateMetricValue('minioResponseTime', `${healthData.performance.minio_response_time}ms`,
+                healthData.performance.minio_response_time > 2000 ? 'critical' : healthData.performance.minio_response_time > 1000 ? 'warning' : 'good');
+
+            // Malaysian cultural services
+            updateMetricValue('culturalDataStatus', formatStatus(healthData.cultural.data_status));
+            updateMetricValue('languageSupport', healthData.cultural.language_support);
+            updateMetricValue('complianceStatus', formatStatus(healthData.cultural.compliance));
+            updateMetricValue('regionalData', healthData.cultural.regional_data);
+
+            // Network & security
+            updateMetricValue('internetStatus', formatStatus(healthData.network.internet));
+            updateMetricValue('localLatency', `${healthData.network.local_latency}ms`);
+            updateMetricValue('sslStatus', formatStatus(healthData.network.ssl_status));
+            updateMetricValue('securityAudit', formatStatus(healthData.network.security_audit));
+
+            // Environment
+            updateMetricValue('devToolsStatus', formatStatus(healthData.environment.dev_tools));
+            updateMetricValue('vscodeStatus', formatStatus(healthData.environment.vscode));
+            updateMetricValue('filesystemStatus', formatStatus(healthData.environment.filesystem));
+            updateMetricValue('envVarsStatus', formatStatus(healthData.environment.env_vars));
+
+            // Update status indicators
+            updateStatusIndicator('systemStatus', 'healthy');
+            updateStatusIndicator('dockerStatus', healthData.services.postgres);
+            updateStatusIndicator('performanceStatus', 'healthy');
+            updateStatusIndicator('culturalStatus', healthData.cultural.data_status);
+            updateStatusIndicator('networkStatus', healthData.network.internet);
+            updateStatusIndicator('envStatus', healthData.environment.dev_tools);
+
+            // Update overall status
+            const criticalIssues = [
+                healthData.services.redis === 'critical',
+                healthData.network.internet === 'disconnected',
+                healthData.cultural.data_status === 'error'
+            ].filter(Boolean).length;
+
+            if (criticalIssues > 0) {
+                updateStatusIndicator('overallStatus', 'critical');
+                showAlert('critical', `${criticalIssues} critical issue(s) detected. Please review system status.`);
+            } else {
+                const warnings = [
+                    healthData.services.postgres === 'warning',
+                    healthData.services.minio === 'warning',
+                    healthData.cultural.compliance === 'review needed'
+                ].filter(Boolean).length;
+
+                if (warnings > 0) {
+                    updateStatusIndicator('overallStatus', 'warning');
+                    showAlert('warning', `${warnings} warning(s) detected. System is functional but attention may be needed.`);
+                } else {
+                    updateStatusIndicator('overallStatus', 'healthy');
+                    hideAlert();
+                }
+            }
+
+            // Update timestamp
+            lastUpdateTime = new Date(healthData.timestamp);
+            updateLastUpdatedTime();
+        }
+
+        // Show alert banner
+        function showAlert(type, message) {
+            const banner = document.getElementById('alertBanner');
+            const messageEl = document.getElementById('alertMessage');
+            
+            banner.className = `alert-banner ${type}`;
+            messageEl.textContent = message;
+            banner.style.display = 'flex';
+        }
+
+        // Hide alert banner
+        function hideAlert() {
+            document.getElementById('alertBanner').style.display = 'none';
+        }
+
+        // Update last updated time
+        function updateLastUpdatedTime() {
+            const element = document.getElementById('lastUpdated');
+            if (lastUpdateTime) {
+                element.textContent = `Last updated: ${lastUpdateTime.toLocaleString()}`;
+            }
+        }
+
+        // Refresh dashboard data
+        async function refreshDashboard() {
+            if (isLoading) return;
+            
+            isLoading = true;
+            const refreshBtn = document.getElementById('refreshBtn');
+            refreshBtn.disabled = true;
+            refreshBtn.textContent = '🔄 Refreshing...';
+
+            // Show loading indicator
+            document.getElementById('loadingIndicator').style.display = 'block';
+            document.getElementById('dashboardGrid').style.display = 'none';
+
+            try {
+                // Simulate API call delay
+                await new Promise(resolve => setTimeout(resolve, 2000));
+                
+                // In a real implementation, replace this with actual API call:
+                // const response = await fetch('/api/health/dashboard');
+                // const healthData = await response.json();
+                
+                const healthData = generateMockHealthData();
+                updateDashboard(healthData);
+
+                // Hide loading indicator and show dashboard
+                document.getElementById('loadingIndicator').style.display = 'none';
+                document.getElementById('dashboardGrid').style.display = 'grid';
+
+            } catch (error) {
+                console.error('Failed to refresh dashboard:', error);
+                showAlert('critical', 'Failed to refresh dashboard data. Please try again.');
+            } finally {
+                isLoading = false;
+                refreshBtn.disabled = false;
+                refreshBtn.textContent = '🔄 Refresh Dashboard';
+            }
+        }
+
+        // Setup auto-refresh
+        function setupAutoRefresh() {
+            if (autoRefreshTimer) {
+                clearInterval(autoRefreshTimer);
+            }
+            
+            autoRefreshTimer = setInterval(() => {
+                if (!isLoading) {
+                    refreshDashboard();
+                }
+            }, AUTO_REFRESH_INTERVAL);
+        }
+
+        // Initialize dashboard
+        document.addEventListener('DOMContentLoaded', () => {
+            refreshDashboard();
+            setupAutoRefresh();
+            
+            // Update time display every minute
+            setInterval(updateLastUpdatedTime, 60000);
+        });
+
+        // Cleanup on page unload
+        window.addEventListener('beforeunload', () => {
+            if (autoRefreshTimer) {
+                clearInterval(autoRefreshTimer);
+            }
+        });
+    </script>
+</body>
+</html>

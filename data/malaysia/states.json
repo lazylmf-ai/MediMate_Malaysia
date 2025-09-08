@@ -1,0 +1,326 @@
+[
+  {
+    "id": "01",
+    "name_en": "Johor",
+    "name_ms": "Johor",
+    "capital": "Johor Bahru",
+    "capital_ms": "Johor Bahru",
+    "region": "Peninsular Malaysia",
+    "population": 4000000,
+    "area_km2": 19984,
+    "timezone": "Asia/Kuala_Lumpur",
+    "major_cities": ["Johor Bahru", "Batu Pahat", "Muar", "Pontian"],
+    "major_hospitals": [
+      "Hospital Sultanah Aminah",
+      "Hospital Batu Pahat",
+      "KPJ Johor Specialist Hospital"
+    ],
+    "healthcare_districts": 10,
+    "medical_colleges": ["International Medical University Johor"],
+    "languages": ["ms", "zh", "ta", "en"]
+  },
+  {
+    "id": "02",
+    "name_en": "Kedah",
+    "name_ms": "Kedah",
+    "capital": "Alor Setar",
+    "capital_ms": "Alor Setar",
+    "region": "Peninsular Malaysia",
+    "population": 2200000,
+    "area_km2": 9500,
+    "timezone": "Asia/Kuala_Lumpur",
+    "major_cities": ["Alor Setar", "Sungai Petani", "Kulim", "Langkawi"],
+    "major_hospitals": [
+      "Hospital Sultanah Bahiyah",
+      "Hospital Sungai Petani",
+      "Hospital Kulim"
+    ],
+    "healthcare_districts": 9,
+    "medical_colleges": ["AIMST University"],
+    "languages": ["ms", "zh", "ta", "en"]
+  },
+  {
+    "id": "03",
+    "name_en": "Kelantan",
+    "name_ms": "Kelantan",
+    "capital": "Kota Bharu",
+    "capital_ms": "Kota Bharu",
+    "region": "Peninsular Malaysia",
+    "population": 1900000,
+    "area_km2": 15099,
+    "timezone": "Asia/Kuala_Lumpur",
+    "major_cities": ["Kota Bharu", "Tanah Merah", "Pasir Mas", "Gua Musang"],
+    "major_hospitals": [
+      "Hospital Raja Perempuan Zainab II",
+      "Hospital Tanah Merah",
+      "Hospital Gua Musang"
+    ],
+    "healthcare_districts": 10,
+    "medical_colleges": ["Universiti Sains Malaysia - Health Campus"],
+    "languages": ["ms", "zh", "en", "ta"]
+  },
+  {
+    "id": "04",
+    "name_en": "Malacca",
+    "name_ms": "Melaka",
+    "capital": "Malacca City",
+    "capital_ms": "Bandaraya Melaka",
+    "region": "Peninsular Malaysia",
+    "population": 950000,
+    "area_km2": 1664,
+    "timezone": "Asia/Kuala_Lumpur",
+    "major_cities": ["Malacca City", "Jasin", "Alor Gajah"],
+    "major_hospitals": [
+      "Hospital Melaka",
+      "Mahkota Medical Centre",
+      "Pantai Hospital Ayer Keroh"
+    ],
+    "healthcare_districts": 3,
+    "medical_colleges": ["Melaka Manipal Medical College"],
+    "languages": ["ms", "zh", "ta", "en"]
+  },
+  {
+    "id": "05",
+    "name_en": "Negeri Sembilan",
+    "name_ms": "Negeri Sembilan",
+    "capital": "Seremban",
+    "capital_ms": "Seremban",
+    "region": "Peninsular Malaysia",
+    "population": 1200000,
+    "area_km2": 6686,
+    "timezone": "Asia/Kuala_Lumpur",
+    "major_cities": ["Seremban", "Port Dickson", "Nilai", "Rembau"],
+    "major_hospitals": [
+      "Hospital Tuanku Jaafar",
+      "Hospital Port Dickson",
+      "KPJ Seremban Specialist Hospital"
+    ],
+    "healthcare_districts": 7,
+    "medical_colleges": ["INTI International University"],
+    "languages": ["ms", "zh", "ta", "en"]
+  },
+  {
+    "id": "06",
+    "name_en": "Pahang",
+    "name_ms": "Pahang",
+    "capital": "Kuantan",
+    "capital_ms": "Kuantan",
+    "region": "Peninsular Malaysia",
+    "population": 1700000,
+    "area_km2": 35965,
+    "timezone": "Asia/Kuala_Lumpur",
+    "major_cities": ["Kuantan", "Temerloh", "Bentong", "Raub"],
+    "major_hospitals": [
+      "Hospital Tengku Ampuan Afzan",
+      "Hospital Temerloh",
+      "Hospital Bentong"
+    ],
+    "healthcare_districts": 11,
+    "medical_colleges": ["International Islamic University Malaysia - Kulliyyah of Medicine"],
+    "languages": ["ms", "zh", "en", "ta"]
+  },
+  {
+    "id": "07",
+    "name_en": "Penang",
+    "name_ms": "Pulau Pinang",
+    "capital": "George Town",
+    "capital_ms": "George Town",
+    "region": "Peninsular Malaysia",
+    "population": 1800000,
+    "area_km2": 1048,
+    "timezone": "Asia/Kuala_Lumpur",
+    "major_cities": ["George Town", "Butterworth", "Bukit Mertajam", "Bayan Lepas"],
+    "major_hospitals": [
+      "Penang General Hospital",
+      "Lam Wah Ee Hospital",
+      "Gleneagles Penang",
+      "Island Hospital"
+    ],
+    "healthcare_districts": 5,
+    "medical_colleges": ["Universiti Sains Malaysia - School of Medical Sciences"],
+    "languages": ["zh", "ms", "ta", "en"]
+  },
+  {
+    "id": "08",
+    "name_en": "Perak",
+    "name_ms": "Perak",
+    "capital": "Ipoh",
+    "capital_ms": "Ipoh",
+    "region": "Peninsular Malaysia",
+    "population": 2500000,
+    "area_km2": 21005,
+    "timezone": "Asia/Kuala_Lumpur",
+    "major_cities": ["Ipoh", "Taiping", "Sitiawan", "Teluk Intan"],
+    "major_hospitals": [
+      "Hospital Raja Permaisuri Bainun",
+      "Hospital Taiping",
+      "Pantai Hospital Ipoh"
+    ],
+    "healthcare_districts": 10,
+    "medical_colleges": ["Universiti Kuala Lumpur - Royal College of Medicine Perak"],
+    "languages": ["ms", "zh", "ta", "en"]
+  },
+  {
+    "id": "09",
+    "name_en": "Perlis",
+    "name_ms": "Perlis",
+    "capital": "Kangar",
+    "capital_ms": "Kangar",
+    "region": "Peninsular Malaysia",
+    "population": 260000,
+    "area_km2": 821,
+    "timezone": "Asia/Kuala_Lumpur",
+    "major_cities": ["Kangar", "Arau"],
+    "major_hospitals": [
+      "Hospital Tuanku Fauziah"
+    ],
+    "healthcare_districts": 1,
+    "medical_colleges": [],
+    "languages": ["ms", "zh", "ta", "en"]
+  },
+  {
+    "id": "10",
+    "name_en": "Selangor",
+    "name_ms": "Selangor",
+    "capital": "Shah Alam",
+    "capital_ms": "Shah Alam",
+    "region": "Peninsular Malaysia",
+    "population": 6500000,
+    "area_km2": 8104,
+    "timezone": "Asia/Kuala_Lumpur",
+    "major_cities": ["Shah Alam", "Petaling Jaya", "Subang Jaya", "Klang"],
+    "major_hospitals": [
+      "Hospital Tengku Ampuan Rahimah",
+      "Hospital Selayang",
+      "Sunway Medical Centre",
+      "Prince Court Medical Centre"
+    ],
+    "healthcare_districts": 9,
+    "medical_colleges": [
+      "Monash University Malaysia - Jeffrey Cheah School of Medicine",
+      "Taylor's University - School of Medicine"
+    ],
+    "languages": ["ms", "zh", "ta", "en"]
+  },
+  {
+    "id": "11",
+    "name_en": "Terengganu",
+    "name_ms": "Terengganu",
+    "capital": "Kuala Terengganu",
+    "capital_ms": "Kuala Terengganu",
+    "region": "Peninsular Malaysia",
+    "population": 1200000,
+    "area_km2": 13035,
+    "timezone": "Asia/Kuala_Lumpur",
+    "major_cities": ["Kuala Terengganu", "Kemaman", "Dungun", "Marang"],
+    "major_hospitals": [
+      "Hospital Sultanah Nur Zahirah",
+      "Hospital Kemaman",
+      "Hospital Dungun"
+    ],
+    "healthcare_districts": 8,
+    "medical_colleges": ["Universiti Sultan Zainal Abidin - Faculty of Medicine"],
+    "languages": ["ms", "zh", "en", "ta"]
+  },
+  {
+    "id": "12",
+    "name_en": "Sabah",
+    "name_ms": "Sabah",
+    "capital": "Kota Kinabalu",
+    "capital_ms": "Kota Kinabalu",
+    "region": "East Malaysia",
+    "population": 3400000,
+    "area_km2": 73904,
+    "timezone": "Asia/Kuching",
+    "major_cities": ["Kota Kinabalu", "Sandakan", "Tawau", "Lahad Datu"],
+    "major_hospitals": [
+      "Queen Elizabeth Hospital",
+      "Hospital Duchess of Kent",
+      "Hospital Tawau"
+    ],
+    "healthcare_districts": 23,
+    "medical_colleges": ["Universiti Malaysia Sabah - School of Medicine"],
+    "languages": ["ms", "zh", "en", "dusun", "bajau"]
+  },
+  {
+    "id": "13",
+    "name_en": "Sarawak",
+    "name_ms": "Sarawak",
+    "capital": "Kuching",
+    "capital_ms": "Kuching",
+    "region": "East Malaysia",
+    "population": 2800000,
+    "area_km2": 124450,
+    "timezone": "Asia/Kuching",
+    "major_cities": ["Kuching", "Miri", "Sibu", "Bintulu"],
+    "major_hospitals": [
+      "Sarawak General Hospital",
+      "Hospital Miri",
+      "Hospital Sibu"
+    ],
+    "healthcare_districts": 11,
+    "medical_colleges": ["Universiti Malaysia Sarawak - Faculty of Medicine and Health Sciences"],
+    "languages": ["ms", "zh", "en", "iban", "bidayuh"]
+  },
+  {
+    "id": "14",
+    "name_en": "Federal Territory of Kuala Lumpur",
+    "name_ms": "Wilayah Persekutuan Kuala Lumpur",
+    "capital": "Kuala Lumpur",
+    "capital_ms": "Kuala Lumpur",
+    "region": "Federal Territory",
+    "population": 1800000,
+    "area_km2": 243,
+    "timezone": "Asia/Kuala_Lumpur",
+    "major_cities": ["Kuala Lumpur"],
+    "major_hospitals": [
+      "Hospital Kuala Lumpur",
+      "University Malaya Medical Centre",
+      "Gleneagles Kuala Lumpur",
+      "Pantai Hospital Kuala Lumpur"
+    ],
+    "healthcare_districts": 1,
+    "medical_colleges": [
+      "University of Malaya - Faculty of Medicine",
+      "International Medical University"
+    ],
+    "languages": ["ms", "en", "zh", "ta"]
+  },
+  {
+    "id": "15",
+    "name_en": "Federal Territory of Labuan",
+    "name_ms": "Wilayah Persekutuan Labuan",
+    "capital": "Victoria",
+    "capital_ms": "Victoria",
+    "region": "Federal Territory",
+    "population": 100000,
+    "area_km2": 91,
+    "timezone": "Asia/Kuching",
+    "major_cities": ["Victoria"],
+    "major_hospitals": [
+      "Hospital Labuan"
+    ],
+    "healthcare_districts": 1,
+    "medical_colleges": [],
+    "languages": ["ms", "en", "zh"]
+  },
+  {
+    "id": "16",
+    "name_en": "Federal Territory of Putrajaya",
+    "name_ms": "Wilayah Persekutuan Putrajaya",
+    "capital": "Putrajaya",
+    "capital_ms": "Putrajaya",
+    "region": "Federal Territory",
+    "population": 110000,
+    "area_km2": 49,
+    "timezone": "Asia/Kuala_Lumpur",
+    "major_cities": ["Putrajaya"],
+    "major_hospitals": [
+      "Hospital Putrajaya",
+      "Putrajaya Hospital"
+    ],
+    "healthcare_districts": 1,
+    "medical_colleges": [],
+    "languages": ["ms", "en", "zh", "ta"]
+  }
+]
