@@ -1,0 +1,284 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Launch Backend (Node.js)",
+      "type": "node",
+      "request": "launch",
+      "program": "${workspaceFolder}/backend/src/app.js",
+      "env": {
+        "NODE_ENV": "development"
+      },
+      "envFile": "${workspaceFolder}/.env",
+      "console": "integratedTerminal",
+      "restart": true,
+      "runtimeExecutable": "node",
+      "skipFiles": [
+        "<node_internals>/**"
+      ],
+      "outFiles": [
+        "${workspaceFolder}/backend/dist/**/*.js"
+      ],
+      "resolveSourceMapLocations": [
+        "${workspaceFolder}/**",
+        "!**/node_modules/**"
+      ]
+    },
+    {
+      "name": "Launch Frontend (React Dev Server)",
+      "type": "node",
+      "request": "launch",
+      "cwd": "${workspaceFolder}/frontend",
+      "program": "${workspaceFolder}/frontend/node_modules/.bin/react-scripts",
+      "args": ["start"],
+      "env": {
+        "BROWSER": "none",
+        "NODE_ENV": "development"
+      },
+      "envFile": "${workspaceFolder}/.env",
+      "console": "integratedTerminal",
+      "restart": true
+    },
+    {
+      "name": "Attach to Backend Process",
+      "type": "node",
+      "request": "attach",
+      "port": 9229,
+      "restart": true,
+      "localRoot": "${workspaceFolder}/backend",
+      "remoteRoot": "/app",
+      "skipFiles": [
+        "<node_internals>/**"
+      ]
+    },
+    {
+      "name": "Debug Jest Tests (Backend)",
+      "type": "node",
+      "request": "launch",
+      "cwd": "${workspaceFolder}/backend",
+      "program": "${workspaceFolder}/backend/node_modules/.bin/jest",
+      "args": [
+        "--runInBand",
+        "--detectOpenHandles",
+        "--forceExit"
+      ],
+      "env": {
+        "NODE_ENV": "test"
+      },
+      "envFile": "${workspaceFolder}/.env.test",
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen",
+      "disableOptimisticBPs": true
+    },
+    {
+      "name": "Debug Jest Tests (Frontend)",
+      "type": "node",
+      "request": "launch",
+      "cwd": "${workspaceFolder}/frontend",
+      "program": "${workspaceFolder}/frontend/node_modules/.bin/react-scripts",
+      "args": [
+        "test",
+        "--runInBand",
+        "--no-coverage",
+        "--watchAll=false"
+      ],
+      "env": {
+        "NODE_ENV": "test",
+        "CI": "true"
+      },
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen"
+    },
+    {
+      "name": "Debug Python Scripts",
+      "type": "python",
+      "request": "launch",
+      "program": "${file}",
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}",
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}/scripts/python:${env:PYTHONPATH}"
+      },
+      "args": []
+    },
+    {
+      "name": "Debug Health Check Scripts",
+      "type": "node",
+      "request": "launch",
+      "program": "${workspaceFolder}/scripts/health/service-checks.sh",
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}",
+      "env": {
+        "DEBUG": "1"
+      }
+    },
+    {
+      "name": "Debug Docker Compose Services",
+      "type": "node",
+      "request": "launch",
+      "program": "/usr/local/bin/docker-compose",
+      "args": [
+        "-f",
+        "${workspaceFolder}/docker-compose.yml",
+        "up",
+        "--build"
+      ],
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "name": "Chrome Debug (Frontend)",
+      "type": "chrome",
+      "request": "launch",
+      "url": "http://localhost:3000",
+      "webRoot": "${workspaceFolder}/frontend/src",
+      "sourceMapPathOverrides": {
+        "webpack:///src/*": "${webRoot}/*",
+        "webpack:///./src/*": "${webRoot}/*",
+        "webpack:///./~/*": "${workspaceFolder}/frontend/node_modules/*",
+        "webpack:///./*": "${workspaceFolder}/frontend/*",
+        "webpack:////*": "*"
+      },
+      "userDataDir": "${workspaceFolder}/.vscode/chrome-debug-data",
+      "runtimeArgs": [
+        "--disable-web-security",
+        "--disable-features=VizDisplayCompositor"
+      ]
+    },
+    {
+      "name": "Edge Debug (Frontend)",
+      "type": "edge",
+      "request": "launch",
+      "url": "http://localhost:3000",
+      "webRoot": "${workspaceFolder}/frontend/src",
+      "sourceMapPathOverrides": {
+        "webpack:///src/*": "${webRoot}/*",
+        "webpack:///./src/*": "${webRoot}/*"
+      },
+      "userDataDir": "${workspaceFolder}/.vscode/edge-debug-data"
+    },
+    {
+      "name": "Debug Mobile App (React Native)",
+      "type": "reactnative",
+      "request": "launch",
+      "platform": "android",
+      "cwd": "${workspaceFolder}/mobile",
+      "sourceMaps": true,
+      "outDir": "${workspaceFolder}/mobile/.vscode/.react"
+    },
+    {
+      "name": "Debug E2E Tests (Playwright)",
+      "type": "node",
+      "request": "launch",
+      "cwd": "${workspaceFolder}/tests/e2e",
+      "program": "${workspaceFolder}/tests/e2e/node_modules/.bin/playwright",
+      "args": [
+        "test",
+        "--debug"
+      ],
+      "env": {
+        "NODE_ENV": "test",
+        "PLAYWRIGHT_HEADED": "true"
+      },
+      "console": "integratedTerminal"
+    },
+    {
+      "name": "Debug Database Migration",
+      "type": "node",
+      "request": "launch",
+      "program": "${workspaceFolder}/backend/src/scripts/migrate.js",
+      "args": ["--env", "development"],
+      "env": {
+        "NODE_ENV": "development"
+      },
+      "envFile": "${workspaceFolder}/.env",
+      "console": "integratedTerminal"
+    },
+    {
+      "name": "Debug Seed Data Script",
+      "type": "node",
+      "request": "launch",
+      "program": "${workspaceFolder}/scripts/data-seeding/seed-malaysia-data.js",
+      "env": {
+        "NODE_ENV": "development"
+      },
+      "envFile": "${workspaceFolder}/.env",
+      "console": "integratedTerminal"
+    },
+    {
+      "name": "Debug Performance Monitor",
+      "type": "node",
+      "request": "launch",
+      "program": "${workspaceFolder}/scripts/health/performance-monitor.sh",
+      "args": ["single"],
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "name": "Debug Validation Framework",
+      "type": "node",
+      "request": "launch",
+      "program": "${workspaceFolder}/scripts/health/validate-environment.sh",
+      "args": ["validate"],
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}"
+    }
+  ],
+  "compounds": [
+    {
+      "name": "Launch Full Stack (Backend + Frontend)",
+      "configurations": [
+        "Launch Backend (Node.js)",
+        "Launch Frontend (React Dev Server)"
+      ],
+      "stopAll": true,
+      "presentation": {
+        "hidden": false,
+        "group": "fullstack",
+        "order": 1
+      }
+    },
+    {
+      "name": "Debug Full Stack with Chrome",
+      "configurations": [
+        "Launch Backend (Node.js)",
+        "Launch Frontend (React Dev Server)",
+        "Chrome Debug (Frontend)"
+      ],
+      "stopAll": true,
+      "presentation": {
+        "hidden": false,
+        "group": "fullstack",
+        "order": 2
+      }
+    },
+    {
+      "name": "Run All Health Checks",
+      "configurations": [
+        "Debug Health Check Scripts",
+        "Debug Performance Monitor",
+        "Debug Validation Framework"
+      ],
+      "stopAll": true,
+      "presentation": {
+        "hidden": false,
+        "group": "health",
+        "order": 1
+      }
+    },
+    {
+      "name": "Test Suite (All)",
+      "configurations": [
+        "Debug Jest Tests (Backend)",
+        "Debug Jest Tests (Frontend)",
+        "Debug E2E Tests (Playwright)"
+      ],
+      "stopAll": true,
+      "presentation": {
+        "hidden": false,
+        "group": "testing",
+        "order": 1
+      }
+    }
+  ]
+}

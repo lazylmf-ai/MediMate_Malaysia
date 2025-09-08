@@ -1,0 +1,723 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    // Development Tasks
+    {
+      "label": "Start Backend Development Server",
+      "type": "shell",
+      "command": "npm",
+      "args": ["run", "dev"],
+      "options": {
+        "cwd": "${workspaceFolder}/backend"
+      },
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared",
+        "group": "development"
+      },
+      "problemMatcher": "$tsc"
+    },
+    {
+      "label": "Start Frontend Development Server",
+      "type": "shell",
+      "command": "npm",
+      "args": ["start"],
+      "options": {
+        "cwd": "${workspaceFolder}/frontend"
+      },
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared",
+        "group": "development"
+      },
+      "problemMatcher": "$tsc"
+    },
+    {
+      "label": "Start Full Stack Development",
+      "dependsOrder": "parallel",
+      "dependsOn": [
+        "Start Backend Development Server",
+        "Start Frontend Development Server"
+      ],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "panel": "shared",
+        "group": "development"
+      }
+    },
+
+    // Build Tasks
+    {
+      "label": "Build Backend",
+      "type": "shell",
+      "command": "npm",
+      "args": ["run", "build"],
+      "options": {
+        "cwd": "${workspaceFolder}/backend"
+      },
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared",
+        "group": "build"
+      },
+      "problemMatcher": "$tsc"
+    },
+    {
+      "label": "Build Frontend",
+      "type": "shell",
+      "command": "npm",
+      "args": ["run", "build"],
+      "options": {
+        "cwd": "${workspaceFolder}/frontend"
+      },
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared",
+        "group": "build"
+      },
+      "problemMatcher": "$tsc"
+    },
+    {
+      "label": "Build All Projects",
+      "dependsOrder": "parallel",
+      "dependsOn": [
+        "Build Backend",
+        "Build Frontend"
+      ],
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "panel": "shared",
+        "group": "build"
+      }
+    },
+
+    // Docker Tasks
+    {
+      "label": "Docker: Start All Services",
+      "type": "shell",
+      "command": "docker-compose",
+      "args": ["up", "-d"],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared",
+        "group": "docker"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Docker: Stop All Services",
+      "type": "shell",
+      "command": "docker-compose",
+      "args": ["down"],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared",
+        "group": "docker"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Docker: Build and Start Services",
+      "type": "shell",
+      "command": "docker-compose",
+      "args": ["up", "--build", "-d"],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared",
+        "group": "docker"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Docker: View Logs",
+      "type": "shell",
+      "command": "docker-compose",
+      "args": ["logs", "-f"],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared",
+        "group": "docker"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Docker: Clean All",
+      "type": "shell",
+      "command": "docker-compose",
+      "args": ["down", "-v", "--remove-orphans"],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared",
+        "group": "docker"
+      },
+      "problemMatcher": []
+    },
+
+    // Testing Tasks
+    {
+      "label": "Run Backend Tests",
+      "type": "shell",
+      "command": "npm",
+      "args": ["test"],
+      "options": {
+        "cwd": "${workspaceFolder}/backend"
+      },
+      "group": "test",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared",
+        "group": "testing"
+      },
+      "problemMatcher": "$tsc"
+    },
+    {
+      "label": "Run Frontend Tests",
+      "type": "shell",
+      "command": "npm",
+      "args": ["test", "--", "--watchAll=false"],
+      "options": {
+        "cwd": "${workspaceFolder}/frontend"
+      },
+      "group": "test",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared",
+        "group": "testing"
+      },
+      "problemMatcher": "$tsc"
+    },
+    {
+      "label": "Run All Tests",
+      "dependsOrder": "parallel",
+      "dependsOn": [
+        "Run Backend Tests",
+        "Run Frontend Tests"
+      ],
+      "group": {
+        "kind": "test",
+        "isDefault": true
+      },
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "panel": "shared",
+        "group": "testing"
+      }
+    },
+    {
+      "label": "Run E2E Tests",
+      "type": "shell",
+      "command": "npm",
+      "args": ["run", "test:e2e"],
+      "options": {
+        "cwd": "${workspaceFolder}/tests/e2e"
+      },
+      "group": "test",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared",
+        "group": "testing"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Run Tests with Coverage",
+      "type": "shell",
+      "command": "npm",
+      "args": ["run", "test:coverage"],
+      "options": {
+        "cwd": "${workspaceFolder}/backend"
+      },
+      "group": "test",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared",
+        "group": "testing"
+      },
+      "problemMatcher": []
+    },
+
+    // Health Check Tasks
+    {
+      "label": "Run Service Health Checks",
+      "type": "shell",
+      "command": "./scripts/health/service-checks.sh",
+      "args": ["check"],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared",
+        "group": "health"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Run Environment Validation",
+      "type": "shell",
+      "command": "./scripts/health/validate-environment.sh",
+      "args": ["validate"],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared",
+        "group": "health"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Run Performance Monitoring",
+      "type": "shell",
+      "command": "./scripts/health/performance-monitor.sh",
+      "args": ["single"],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared",
+        "group": "health"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Run All Health Checks",
+      "dependsOrder": "sequence",
+      "dependsOn": [
+        "Run Service Health Checks",
+        "Run Environment Validation",
+        "Run Performance Monitoring"
+      ],
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "panel": "shared",
+        "group": "health"
+      }
+    },
+
+    // Database Tasks
+    {
+      "label": "Database: Run Migrations",
+      "type": "shell",
+      "command": "npm",
+      "args": ["run", "migrate"],
+      "options": {
+        "cwd": "${workspaceFolder}/backend"
+      },
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared",
+        "group": "database"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Database: Seed Data",
+      "type": "shell",
+      "command": "npm",
+      "args": ["run", "seed"],
+      "options": {
+        "cwd": "${workspaceFolder}/backend"
+      },
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared",
+        "group": "database"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Database: Reset and Seed",
+      "dependsOrder": "sequence",
+      "dependsOn": [
+        "Database: Run Migrations",
+        "Database: Seed Data"
+      ],
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "panel": "shared",
+        "group": "database"
+      }
+    },
+
+    // Malaysian Data Tasks
+    {
+      "label": "Seed Malaysian Cultural Data",
+      "type": "shell",
+      "command": "node",
+      "args": ["./scripts/data-seeding/seed-malaysia-data.js"],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared",
+        "group": "data"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Validate Malaysian Cultural Data",
+      "type": "shell",
+      "command": "./scripts/health/validate-environment.sh",
+      "args": ["culture"],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared",
+        "group": "data"
+      },
+      "problemMatcher": []
+    },
+
+    // Code Quality Tasks
+    {
+      "label": "Lint Backend Code",
+      "type": "shell",
+      "command": "npm",
+      "args": ["run", "lint"],
+      "options": {
+        "cwd": "${workspaceFolder}/backend"
+      },
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared",
+        "group": "quality"
+      },
+      "problemMatcher": "$eslint-stylish"
+    },
+    {
+      "label": "Lint Frontend Code",
+      "type": "shell",
+      "command": "npm",
+      "args": ["run", "lint"],
+      "options": {
+        "cwd": "${workspaceFolder}/frontend"
+      },
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared",
+        "group": "quality"
+      },
+      "problemMatcher": "$eslint-stylish"
+    },
+    {
+      "label": "Format All Code",
+      "type": "shell",
+      "command": "npm",
+      "args": ["run", "format"],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared",
+        "group": "quality"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Run Security Audit",
+      "type": "shell",
+      "command": "npm",
+      "args": ["audit"],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared",
+        "group": "quality"
+      },
+      "problemMatcher": []
+    },
+
+    // Installation Tasks
+    {
+      "label": "Install Backend Dependencies",
+      "type": "shell",
+      "command": "npm",
+      "args": ["install"],
+      "options": {
+        "cwd": "${workspaceFolder}/backend"
+      },
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared",
+        "group": "install"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Install Frontend Dependencies",
+      "type": "shell",
+      "command": "npm",
+      "args": ["install"],
+      "options": {
+        "cwd": "${workspaceFolder}/frontend"
+      },
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared",
+        "group": "install"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Install All Dependencies",
+      "dependsOrder": "parallel",
+      "dependsOn": [
+        "Install Backend Dependencies",
+        "Install Frontend Dependencies"
+      ],
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "panel": "shared",
+        "group": "install"
+      }
+    },
+
+    // Cleanup Tasks
+    {
+      "label": "Clean Build Artifacts",
+      "type": "shell",
+      "command": "rm",
+      "args": ["-rf", "backend/dist", "frontend/build", "node_modules/.cache"],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared",
+        "group": "cleanup"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Clean Node Modules",
+      "type": "shell",
+      "command": "rm",
+      "args": ["-rf", "backend/node_modules", "frontend/node_modules", "node_modules"],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared",
+        "group": "cleanup"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Clean Docker Resources",
+      "type": "shell",
+      "command": "docker",
+      "args": ["system", "prune", "-f"],
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared",
+        "group": "cleanup"
+      },
+      "problemMatcher": []
+    },
+
+    // Mobile Development Tasks
+    {
+      "label": "Start Mobile Development Server",
+      "type": "shell",
+      "command": "npm",
+      "args": ["start"],
+      "options": {
+        "cwd": "${workspaceFolder}/mobile"
+      },
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared",
+        "group": "mobile"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Build Mobile App (Android)",
+      "type": "shell",
+      "command": "npm",
+      "args": ["run", "android"],
+      "options": {
+        "cwd": "${workspaceFolder}/mobile"
+      },
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared",
+        "group": "mobile"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Build Mobile App (iOS)",
+      "type": "shell",
+      "command": "npm",
+      "args": ["run", "ios"],
+      "options": {
+        "cwd": "${workspaceFolder}/mobile"
+      },
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared",
+        "group": "mobile"
+      },
+      "problemMatcher": []
+    }
+  ],
+  "inputs": [
+    {
+      "id": "testNameFilter",
+      "description": "Test name filter",
+      "default": "",
+      "type": "promptString"
+    },
+    {
+      "id": "migrationName",
+      "description": "Migration name",
+      "default": "",
+      "type": "promptString"
+    },
+    {
+      "id": "dockerService",
+      "description": "Docker service name",
+      "default": "",
+      "type": "pickString",
+      "options": [
+        "postgres",
+        "redis",
+        "minio",
+        "pgadmin",
+        "all"
+      ]
+    }
+  ]
+}
