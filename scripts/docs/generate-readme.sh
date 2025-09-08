@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # MediMate Malaysia - Automated README Generation
 # Generates platform-specific README files based on detected environment
@@ -17,8 +17,13 @@ readonly README_TEMPLATE="$PROJECT_ROOT/docs/README.template.md"
 readonly README_OUTPUT="$PROJECT_ROOT/README.md"
 readonly DOCS_DIR="$PROJECT_ROOT/docs"
 
-# Platform-specific sections
-declare -A PLATFORM_SECTIONS
+# Platform-specific sections (using bash 4+ associative arrays if available)
+if [[ ${BASH_VERSION%%.*} -ge 4 ]]; then
+    declare -A PLATFORM_SECTIONS
+else
+    # Fallback for older bash versions
+    log_warn "Using bash ${BASH_VERSION}, some features may be limited"
+fi
 
 # Initialize platform sections
 init_platform_sections() {
