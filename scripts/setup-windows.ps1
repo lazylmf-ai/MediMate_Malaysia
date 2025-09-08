@@ -155,6 +155,61 @@ function Test-ExecutionPolicy {
     return $true
 }
 
+# Install Scoop package manager as fallback
+function Install-Scoop {
+    Write-LogInfo "Checking Scoop installation..."
+    
+    if (Get-Command scoop -ErrorAction SilentlyContinue) {
+        Write-LogSuccess "Scoop is already installed"
+        Write-LogInfo "Updating Scoop..."
+        try {
+            scoop update
+            return $true
+        }
+        catch {
+            Write-LogError "Scoop update failed: $($_.Exception.Message)"
+            return $false
+        }
+    }
+    
+    Write-LogInfo "Installing Scoop package manager..."
+    
+    try {
+        # Check if user can install to user profile (no admin required)
+        if (Test-Administrator) {
+            Write-LogWarn "Running as administrator - Scoop will be installed system-wide"
+        }
+        
+        Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser -Force
+        [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072
+        Invoke-RestMethod -Uri https://get.scoop.sh | Invoke-Expression
+        
+        # Refresh environment variables
+        $env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path", "User")
+        
+        if (Get-Command scoop -ErrorAction SilentlyContinue) {
+            Write-LogSuccess "Scoop installed successfully"
+            
+            # Add useful buckets
+            Write-LogInfo "Adding essential Scoop buckets..."
+            scoop bucket add main
+            scoop bucket add extras
+            scoop bucket add versions
+            
+            Add-Content -Path $ProgressFile -Value "scoop_installed"
+            return $true
+        }
+        else {
+            Write-LogError "Scoop installation verification failed"
+            return $false
+        }
+    }
+    catch {
+        Write-LogError "Scoop installation failed: $($_.Exception.Message)"
+        return $false
+    }
+}
+
 # Install Chocolatey package manager
 function Install-Chocolatey {
     Write-LogInfo "Checking Chocolatey installation..."
@@ -198,6 +253,68 @@ function Install-Chocolatey {
     }
 }
 
+# Install package manager with fallback support
+function Install-PackageManager {
+    Write-LogInfo "Setting up Windows package management..."
+    
+    # Try Chocolatey first (more comprehensive)
+    if (Install-Chocolatey) {
+        $global:PackageManager = "choco"
+        Write-LogSuccess "Using Chocolatey as primary package manager"
+        return $true
+    }
+    
+    Write-LogWarn "Chocolatey installation failed, trying Scoop as fallback..."
+    
+    # Fall back to Scoop (user-level, no admin required)
+    if (Install-Scoop) {
+        $global:PackageManager = "scoop"
+        Write-LogSuccess "Using Scoop as package manager"
+        return $true
+    }
+    
+    Write-LogError "Both Chocolatey and Scoop installation failed"
+    return $false
+}
+
+# Install package using available package manager
+function Install-Package {
+    param(
+        [string]$PackageName,
+        [string]$ChocoName = $PackageName,
+        [string]$ScoopName = $PackageName,
+        [string]$Version = $null
+    )
+    
+    if (-not $global:PackageManager) {
+        Write-LogError "No package manager available"
+        return $false
+    }
+    
+    try {
+        if ($global:PackageManager -eq "choco") {
+            $installCmd = "choco install $ChocoName -y"
+            if ($Version) {
+                $installCmd += " --version=$Version"
+            }
+            Invoke-Expression $installCmd
+        }
+        elseif ($global:PackageManager -eq "scoop") {
+            $installCmd = "scoop install $ScoopName"
+            if ($Version) {
+                # Scoop version syntax is different
+                $installCmd = "scoop install $ScoopName@$Version"
+            }
+            Invoke-Expression $installCmd
+        }
+        return $true
+    }
+    catch {
+        Write-LogError "Package installation failed for $PackageName : $($_.Exception.Message)"
+        return $false
+    }
+}
+
 # Install Node.js
 function Install-NodeJS {
     param([string]$Version = "18")
@@ -220,24 +337,29 @@ function Install-NodeJS {
     }
     
     try {
-        choco install nodejs --version=$Version.* -y
-        
-        # Refresh environment variables
-        $env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path", "User")
-        
-        # Verify installation
-        $nodeVersion = node --version
-        $npmVersion = npm --version
-        
-        Write-LogSuccess "Node.js $nodeVersion installed successfully"
-        Write-LogSuccess "npm $npmVersion is available"
-        
-        # Update npm to latest version
-        Write-LogInfo "Updating npm to latest version..."
-        npm install -g npm@latest
-        
-        Add-Content -Path $ProgressFile -Value "node_installed"
-        return $true
+        # Use package manager abstraction
+        if (Install-Package -PackageName "nodejs" -ChocoName "nodejs" -ScoopName "nodejs" -Version "$Version.*") {
+            # Refresh environment variables
+            $env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path", "User")
+            
+            # Verify installation
+            $nodeVersion = node --version
+            $npmVersion = npm --version
+            
+            Write-LogSuccess "Node.js $nodeVersion installed successfully"
+            Write-LogSuccess "npm $npmVersion is available"
+            
+            # Update npm to latest version
+            Write-LogInfo "Updating npm to latest version..."
+            npm install -g npm@latest
+            
+            Add-Content -Path $ProgressFile -Value "node_installed"
+            return $true
+        }
+        else {
+            Write-LogError "Node.js installation failed through package manager"
+            return $false
+        }
     }
     catch {
         Write-LogError "Node.js installation failed: $($_.Exception.Message)"
@@ -268,20 +390,25 @@ function Install-Python {
     }
     
     try {
-        choco install python --version=$Version.* -y
-        
-        # Refresh environment variables
-        $env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path", "User")
-        
-        # Verify installation
-        $pythonVersion = python --version
-        $pipVersion = pip --version
-        
-        Write-LogSuccess "Python $pythonVersion installed successfully"
-        Write-LogSuccess "pip is available"
-        
-        Add-Content -Path $ProgressFile -Value "python_installed"
-        return $true
+        # Use package manager abstraction
+        if (Install-Package -PackageName "python" -ChocoName "python" -ScoopName "python" -Version "$Version.*") {
+            # Refresh environment variables
+            $env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path", "User")
+            
+            # Verify installation
+            $pythonVersion = python --version
+            $pipVersion = pip --version
+            
+            Write-LogSuccess "Python $pythonVersion installed successfully"
+            Write-LogSuccess "pip is available"
+            
+            Add-Content -Path $ProgressFile -Value "python_installed"
+            return $true
+        }
+        else {
+            Write-LogError "Python installation failed through package manager"
+            return $false
+        }
     }
     catch {
         Write-LogError "Python installation failed: $($_.Exception.Message)"
@@ -306,17 +433,22 @@ function Install-Git {
     }
     
     try {
-        choco install git -y
-        
-        # Refresh environment variables
-        $env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path", "User")
-        
-        # Verify installation
-        $gitVersion = git --version
-        Write-LogSuccess "Git installed successfully: $gitVersion"
-        
-        Add-Content -Path $ProgressFile -Value "git_installed"
-        return $true
+        # Use package manager abstraction
+        if (Install-Package -PackageName "git" -ChocoName "git" -ScoopName "git") {
+            # Refresh environment variables
+            $env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path", "User")
+            
+            # Verify installation
+            $gitVersion = git --version
+            Write-LogSuccess "Git installed successfully: $gitVersion"
+            
+            Add-Content -Path $ProgressFile -Value "git_installed"
+            return $true
+        }
+        else {
+            Write-LogError "Git installation failed through package manager"
+            return $false
+        }
     }
     catch {
         Write-LogError "Git installation failed: $($_.Exception.Message)"
@@ -356,14 +488,19 @@ function Install-Docker {
     }
     
     try {
-        choco install docker-desktop -y
-        
-        Write-LogSuccess "Docker Desktop installed successfully"
-        Write-LogInfo "Please start Docker Desktop manually from the Start Menu"
-        Write-LogInfo "Docker Desktop needs to be running for the development environment"
-        
-        Add-Content -Path $ProgressFile -Value "docker_installed"
-        return $true
+        # Use package manager abstraction with different package names
+        if (Install-Package -PackageName "docker-desktop" -ChocoName "docker-desktop" -ScoopName "docker") {
+            Write-LogSuccess "Docker Desktop installed successfully"
+            Write-LogInfo "Please start Docker Desktop manually from the Start Menu"
+            Write-LogInfo "Docker Desktop needs to be running for the development environment"
+            
+            Add-Content -Path $ProgressFile -Value "docker_installed"
+            return $true
+        }
+        else {
+            Write-LogError "Docker Desktop installation failed through package manager"
+            return $false
+        }
     }
     catch {
         Write-LogError "Docker Desktop installation failed: $($_.Exception.Message)"
@@ -376,20 +513,20 @@ function Install-DevTools {
     Write-LogInfo "Installing additional development tools..."
     
     $tools = @(
-        "jq",
-        "curl",
-        "wget",
-        "unzip",
-        "7zip"
+        @{Name="jq"; Choco="jq"; Scoop="jq"},
+        @{Name="curl"; Choco="curl"; Scoop="curl"},
+        @{Name="wget"; Choco="wget"; Scoop="wget"},
+        @{Name="unzip"; Choco="unzip"; Scoop="unzip"},
+        @{Name="7zip"; Choco="7zip"; Scoop="7zip"}
     )
     
     foreach ($tool in $tools) {
         try {
-            Write-LogInfo "Installing $tool..."
-            choco install $tool -y
+            Write-LogInfo "Installing $($tool.Name)..."
+            Install-Package -PackageName $tool.Name -ChocoName $tool.Choco -ScoopName $tool.Scoop
         }
         catch {
-            Write-LogWarn "Failed to install $tool, but continuing..."
+            Write-LogWarn "Failed to install $($tool.Name), but continuing..."
         }
     }
     
@@ -397,7 +534,7 @@ function Install-DevTools {
     try {
         if (-not (Get-Command code -ErrorAction SilentlyContinue)) {
             Write-LogInfo "Installing Visual Studio Code..."
-            choco install vscode -y
+            Install-Package -PackageName "vscode" -ChocoName "vscode" -ScoopName "vscode"
         }
         else {
             Write-LogDebug "Visual Studio Code is already installed"
@@ -486,6 +623,17 @@ function Test-CompleteSetup {
     Write-LogInfo "Running complete setup validation..."
     
     $validationResults = @()
+    
+    # Test Package Manager
+    if ($global:PackageManager -eq "choco" -and (Get-Command choco -ErrorAction SilentlyContinue)) {
+        $validationResults += "✓ Chocolatey package manager"
+    }
+    elseif ($global:PackageManager -eq "scoop" -and (Get-Command scoop -ErrorAction SilentlyContinue)) {
+        $validationResults += "✓ Scoop package manager"
+    }
+    else {
+        $validationResults += "✗ No package manager available"
+    }
     
     # Test Node.js
     try {
@@ -602,9 +750,9 @@ function Start-WindowsSetup {
             return 1
         }
         
-        # Install Chocolatey
-        if (-not (Install-Chocolatey)) {
-            Write-LogError "Chocolatey installation failed"
+        # Install Package Manager (Chocolatey with Scoop fallback)
+        if (-not (Install-PackageManager)) {
+            Write-LogError "Package manager installation failed"
             return 1
         }
         
