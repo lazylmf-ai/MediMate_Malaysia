@@ -1,0 +1,112 @@
+{
+  "recommendations": [
+    // Core Development Extensions
+    "ms-vscode.vscode-typescript-next",
+    "ms-vscode.vscode-eslint",
+    "esbenp.prettier-vscode",
+    "bradlc.vscode-tailwindcss",
+    "formulahendry.auto-rename-tag",
+    "ms-vscode.vscode-json",
+    
+    // React/Frontend Development
+    "dsznajder.es7-react-js-snippets",
+    "ms-vscode.vscode-typescript-next",
+    "burkeholland.simple-react-snippets",
+    "formulahendry.auto-close-tag",
+    "ms-vscode.css-vars",
+    
+    // Node.js/Backend Development
+    "ms-vscode.vscode-node-azure-pack",
+    "christian-kohler.npm-intellisense",
+    "formulahendry.code-runner",
+    "ms-vscode.vscode-node-debug2",
+    
+    // Python Development (for scripts and data processing)
+    "ms-python.python",
+    "ms-python.black-formatter",
+    "ms-python.pylint",
+    "ms-python.mypy-type-checker",
+    
+    // Database Tools
+    "ms-mssql.mssql",
+    "cweijan.vscode-postgresql-client2",
+    "formulahendry.vscode-mysql",
+    "cweijan.dbclient-jdbc",
+    
+    // Docker & DevOps
+    "ms-azuretools.vscode-docker",
+    "ms-kubernetes-tools.vscode-kubernetes-tools",
+    "ms-vscode-remote.remote-containers",
+    "formulahendry.docker-explorer",
+    
+    // Git & Version Control
+    "eamodio.gitlens",
+    "mhutchie.git-graph",
+    "donjayamanne.githistory",
+    "github.vscode-pull-request-github",
+    
+    // Testing & Quality
+    "ms-vscode.test-adapter-converter",
+    "hbenl.vscode-test-explorer",
+    "orta.vscode-jest",
+    "ms-playwright.playwright",
+    "streetsidesoftware.code-spell-checker",
+    
+    // Productivity & UI
+    "vscode-icons-team.vscode-icons",
+    "pkief.material-icon-theme",
+    "ms-vscode.theme-predawnkit",
+    "zhuangtongfa.material-theme",
+    "aaron-bond.better-comments",
+    "alefragnani.bookmarks",
+    "gruntfuggly.todo-tree",
+    
+    // Markdown & Documentation
+    "yzhang.markdown-all-in-one",
+    "davidanson.vscode-markdownlint",
+    "shd101wyy.markdown-preview-enhanced",
+    "ms-vscode.wordcount",
+    
+    // API Development & Testing
+    "humao.rest-client",
+    "ms-vscode.vscode-httpyac",
+    "rangav.vscode-thunder-client",
+    "ms-vscode.vscode-json5",
+    
+    // Healthcare & Compliance Specific
+    "ms-vscode.vscode-fhir-tools",
+    "redhat.vscode-yaml",
+    "ms-vscode.hexeditor",
+    
+    // Malaysian Cultural & Internationalization
+    "ms-ceintl.vscode-language-pack-ms",
+    "lokalise.i18n-ally",
+    "formulahendry.auto-translate",
+    
+    // Performance & Monitoring
+    "ms-vscode.vscode-performance-profiler",
+    "wallabyjs.quokka-vscode",
+    "ms-vscode.vscode-coverage-viewer",
+    
+    // Security
+    "ms-vscode.vscode-security-issues",
+    "snyk-security.snyk-vulnerability-scanner",
+    
+    // Utility Extensions
+    "christian-kohler.path-intellisense",
+    "ms-vscode.vscode-color",
+    "formulahendry.auto-complete-tag",
+    "ms-vscode.live-server",
+    "ritwickdey.liveserver",
+    "ms-vscode.remote-explorer",
+    "ms-vscode.remote-ssh"
+  ],
+  
+  "unwantedRecommendations": [
+    // Extensions that might conflict or aren't needed
+    "ms-vscode.vscode-typescript",
+    "hookyqr.beautify",
+    "ms-vscode.brackets-keybindings",
+    "ms-vscode.sublime-keybindings"
+  ]
+}

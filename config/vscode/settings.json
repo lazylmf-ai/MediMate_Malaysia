@@ -1,0 +1,336 @@
+{
+  // Editor Settings
+  "editor.tabSize": 2,
+  "editor.insertSpaces": true,
+  "editor.detectIndentation": true,
+  "editor.trimAutoWhitespace": true,
+  "editor.formatOnSave": true,
+  "editor.formatOnPaste": true,
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "explicit",
+    "source.organizeImports": "explicit",
+    "source.fixAll": "explicit"
+  },
+  "editor.rulers": [80, 100, 120],
+  "editor.wordWrap": "bounded",
+  "editor.wordWrapColumn": 100,
+  "editor.bracketPairColorization.enabled": true,
+  "editor.guides.bracketPairs": true,
+  "editor.minimap.enabled": true,
+  "editor.minimap.maxColumn": 100,
+  "editor.suggestSelection": "first",
+  "editor.quickSuggestions": {
+    "other": "on",
+    "comments": "off",
+    "strings": "on"
+  },
+
+  // File Settings
+  "files.autoSave": "onWindowChange",
+  "files.trimTrailingWhitespace": true,
+  "files.insertFinalNewline": true,
+  "files.trimFinalNewlines": true,
+  "files.encoding": "utf8",
+  "files.eol": "\n",
+  "files.exclude": {
+    "**/node_modules": true,
+    "**/dist": true,
+    "**/build": true,
+    "**/.git": true,
+    "**/.DS_Store": true,
+    "**/coverage": true,
+    "**/*.log": true,
+    "**/logs": false,
+    "**/.vscode/settings.json": false
+  },
+  "files.watcherExclude": {
+    "**/node_modules/**": true,
+    "**/dist/**": true,
+    "**/build/**": true,
+    "**/.git/objects/**": true,
+    "**/.git/subtree-cache/**": true,
+    "**/coverage/**": true
+  },
+  "files.associations": {
+    "*.env.*": "properties",
+    "*.config.js": "javascript",
+    "*.config.ts": "typescript",
+    "Dockerfile*": "dockerfile",
+    "docker-compose*.yml": "dockercompose",
+    "*.md": "markdown"
+  },
+
+  // Search Settings
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/dist": true,
+    "**/build": true,
+    "**/coverage": true,
+    "**/.git": true,
+    "**/*.log": true
+  },
+  "search.useIgnoreFiles": true,
+  "search.smartCase": true,
+
+  // Language Specific Settings
+  "[javascript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.tabSize": 2,
+    "editor.insertSpaces": true
+  },
+  "[typescript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.tabSize": 2,
+    "editor.insertSpaces": true
+  },
+  "[javascriptreact]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.tabSize": 2,
+    "editor.insertSpaces": true
+  },
+  "[typescriptreact]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.tabSize": 2,
+    "editor.insertSpaces": true
+  },
+  "[json]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.tabSize": 2,
+    "editor.insertSpaces": true
+  },
+  "[jsonc]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.tabSize": 2,
+    "editor.insertSpaces": true
+  },
+  "[css]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.tabSize": 2,
+    "editor.insertSpaces": true
+  },
+  "[scss]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.tabSize": 2,
+    "editor.insertSpaces": true
+  },
+  "[html]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.tabSize": 2,
+    "editor.insertSpaces": true
+  },
+  "[markdown]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.wordWrap": "wordWrapColumn",
+    "editor.wordWrapColumn": 80,
+    "editor.quickSuggestions": {
+      "comments": "off",
+      "strings": "off",
+      "other": "off"
+    }
+  },
+  "[yaml]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.tabSize": 2,
+    "editor.insertSpaces": true
+  },
+  "[dockerfile]": {
+    "editor.tabSize": 4,
+    "editor.insertSpaces": true
+  },
+  "[shell]": {
+    "editor.tabSize": 4,
+    "editor.insertSpaces": true
+  },
+  "[python]": {
+    "editor.defaultFormatter": "ms-python.black-formatter",
+    "editor.tabSize": 4,
+    "editor.insertSpaces": true
+  },
+  "[sql]": {
+    "editor.tabSize": 2,
+    "editor.insertSpaces": true
+  },
+
+  // Extension Specific Settings
+
+  // ESLint
+  "eslint.enable": true,
+  "eslint.run": "onType",
+  "eslint.format.enable": true,
+  "eslint.workingDirectories": ["frontend", "backend"],
+  "eslint.validate": [
+    "javascript",
+    "javascriptreact",
+    "typescript",
+    "typescriptreact"
+  ],
+
+  // Prettier
+  "prettier.enable": true,
+  "prettier.requireConfig": true,
+  "prettier.useEditorConfig": false,
+
+  // TypeScript
+  "typescript.suggest.autoImports": true,
+  "typescript.suggest.includeCompletionsForModuleExports": true,
+  "typescript.preferences.includePackageJsonAutoImports": "on",
+  "typescript.updateImportsOnFileMove.enabled": "always",
+  "typescript.inlayHints.parameterNames.enabled": "literals",
+  "typescript.inlayHints.parameterTypes.enabled": false,
+  "typescript.inlayHints.variableTypes.enabled": false,
+  "typescript.inlayHints.propertyDeclarationTypes.enabled": true,
+  "typescript.inlayHints.functionLikeReturnTypes.enabled": false,
+
+  // JavaScript
+  "javascript.suggest.autoImports": true,
+  "javascript.updateImportsOnFileMove.enabled": "always",
+
+  // Python
+  "python.defaultInterpreterPath": "./venv/bin/python",
+  "python.formatting.provider": "black",
+  "python.linting.enabled": true,
+  "python.linting.pylintEnabled": true,
+  "python.linting.flake8Enabled": false,
+  "python.linting.mypyEnabled": true,
+  "python.testing.unittestEnabled": false,
+  "python.testing.pytestEnabled": true,
+
+  // Git
+  "git.enableSmartCommit": true,
+  "git.confirmSync": false,
+  "git.autofetch": true,
+  "git.autofetchPeriod": 180,
+  "git.enableStatusBarSync": true,
+  "git.showPushSuccessNotification": true,
+
+  // GitLens
+  "gitlens.currentLine.enabled": false,
+  "gitlens.hovers.currentLine.over": "line",
+  "gitlens.codeLens.enabled": false,
+  "gitlens.blame.format": "${message|50?} ${agoOrDate|14-}",
+  "gitlens.statusBar.enabled": false,
+
+  // Docker
+  "docker.showStartPage": false,
+
+  // Terminal
+  "terminal.integrated.shell.osx": "/bin/zsh",
+  "terminal.integrated.shell.linux": "/bin/bash",
+  "terminal.integrated.shell.windows": "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+  "terminal.integrated.fontSize": 12,
+  "terminal.integrated.fontFamily": "Monaco, 'Courier New', monospace",
+  "terminal.integrated.scrollback": 10000,
+  "terminal.integrated.copyOnSelection": true,
+
+  // Explorer
+  "explorer.confirmDelete": true,
+  "explorer.confirmDragAndDrop": true,
+  "explorer.sortOrder": "type",
+  "explorer.compactFolders": false,
+
+  // Breadcrumbs
+  "breadcrumbs.enabled": true,
+  "breadcrumbs.symbolPath": "on",
+
+  // Problems
+  "problems.decorations.enabled": true,
+
+  // Workbench
+  "workbench.editor.enablePreview": false,
+  "workbench.editor.closeOnFileDelete": true,
+  "workbench.editor.highlightModifiedTabs": true,
+  "workbench.startupEditor": "newUntitledFile",
+  "workbench.colorTheme": "Default Dark+",
+  "workbench.iconTheme": "vscode-icons",
+  "workbench.tree.indent": 20,
+  "workbench.list.smoothScrolling": true,
+
+  // Debug
+  "debug.allowBreakpointsEverywhere": true,
+  "debug.inlineValues": "auto",
+  "debug.showBreakpointsInOverviewRuler": true,
+
+  // IntelliSense
+  "vsintellicode.modify.editor.suggestSelection": "automaticallyOverrodeDefaultValue",
+
+  // Live Server
+  "liveServer.settings.donotShowInfoMsg": true,
+  "liveServer.settings.donotVerifyTags": true,
+
+  // MediMate Malaysia Specific Settings
+  "medimate.culture.defaultLanguage": "en",
+  "medimate.culture.supportedLanguages": ["en", "ms", "zh", "ta"],
+  "medimate.healthcare.complianceMode": "development",
+  "medimate.database.autoMigrate": false,
+  "medimate.security.auditMode": true,
+  
+  // Code Spell Checker for healthcare terminology
+  "cSpell.words": [
+    "MediMate",
+    "PostgreSQL",
+    "Redis",
+    "MinIO",
+    "Kubernetes",
+    "kubectl",
+    "namespace",
+    "deployment",
+    "configmap",
+    "healthcheck",
+    "middleware",
+    "validator",
+    "serializer",
+    "deserializer",
+    "malaysia",
+    "malaysian",
+    "bahasa",
+    "malay",
+    "mandarin",
+    "tamil",
+    "healthcare",
+    "telemedicine",
+    "teleconsultation",
+    "EMR",
+    "EHR",
+    "FHIR",
+    "HL7",
+    "HIPAA",
+    "PDPA",
+    "selangor",
+    "kuala",
+    "lumpur",
+    "penang",
+    "johor",
+    "sabah",
+    "sarawak",
+    "perak",
+    "kedah",
+    "kelantan",
+    "terengganu",
+    "pahang",
+    "negeri",
+    "sembilan",
+    "malacca",
+    "melaka",
+    "perlis",
+    "putrajaya",
+    "labuan"
+  ],
+  
+  // Performance Settings
+  "extensions.autoCheckUpdates": false,
+  "extensions.autoUpdate": false,
+  "telemetry.telemetryLevel": "off",
+  "update.mode": "manual",
+  
+  // Malaysian Cultural Data Validation
+  "json.schemas": [
+    {
+      "fileMatch": ["**/data/malaysia/*.json"],
+      "url": "./config/schemas/malaysia-cultural-data.schema.json"
+    },
+    {
+      "fileMatch": ["**/config/*.json"],
+      "url": "./config/schemas/medimate-config.schema.json"
+    }
+  ]
+}

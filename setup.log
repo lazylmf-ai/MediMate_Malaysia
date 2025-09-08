@@ -1,0 +1,24 @@
+=== MediMate Malaysia Setup Log ===
+Started: 2025-09-07 13:24:20 UTC
+Platform: Darwin 24.5.0
+User: lazylmf
+Working Directory: /Users/lazylmf/MediMate/MediMate_cc
+=======================================
+
+[INFO] 2025-09-07 21:24:20 - Starting MediMate Malaysia healthcare platform setup
+[INFO] 2025-09-07 21:24:20 - Project root: /Users/lazylmf/MediMate/MediMate_cc
+[INFO] 2025-09-07 21:24:20 - Configuration: verbose=false, skip-docker=false, production=false
+[INFO] 2025-09-07 21:24:20 - Initializing healthcare platform setup performance monitoring...
+[INFO] 2025-09-07 21:24:20 - Starting phase: Complete Healthcare Platform Setup
+[INFO] 2025-09-07 21:24:20 - Starting phase: Platform Detection & Compatibility
+[INFO] 2025-09-07 21:24:20 - Running enhanced cross-platform detection...
+[INFO] 2025-09-07 21:24:20 - Platform: macOS 15.5
+[INFO] 2025-09-07 21:24:20 - Completed phase: platform_detection (0s)
+[INFO] 2025-09-07 21:24:20 - Running cross-platform compatibility tests only
+[INFO] 2025-09-07 21:24:20 - Test mode: simplified compatibility verification
+[INFO] 2025-09-07 21:24:20 - ✓ Platform detection: working
+[INFO] 2025-09-07 21:24:20 - ✓ Logging system: working
+[INFO] 2025-09-07 21:24:20 - ✓ Performance monitoring: working
+[INFO] 2025-09-07 21:24:20 - ✓ System memory: 8GB
+[INFO] 2025-09-07 21:24:20 - ✓ Package manager: brew available
+[SUCCESS] 2025-09-07 21:24:20 - Cross-platform compatibility tests completed successfully

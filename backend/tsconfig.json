@@ -1,0 +1,141 @@
+{
+  "compilerOptions": {
+    /* Language and Environment */
+    "target": "ES2022",
+    "lib": ["ES2022"],
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "allowJs": false,
+    "checkJs": false,
+    
+    /* Emit */
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "removeComments": true,
+    "noEmit": false,
+    "downlevelIteration": true,
+    "sourceMap": true,
+    "declaration": true,
+    "declarationMap": true,
+    
+    /* Interop Constraints */
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "isolatedModules": true,
+    
+    /* Type Checking - Strict Healthcare Standards */
+    "strict": true,
+    "strictNullChecks": true,
+    "strictFunctionTypes": true,
+    "strictBindCallApply": true,
+    "strictPropertyInitialization": true,
+    "noImplicitAny": true,
+    "noImplicitReturns": true,
+    "noImplicitThis": true,
+    "noImplicitOverride": true,
+    "noPropertyAccessFromIndexSignature": true,
+    "noUncheckedIndexedAccess": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "exactOptionalPropertyTypes": true,
+    "noFallthroughCasesInSwitch": true,
+    
+    /* Healthcare-Specific Compiler Options */
+    "alwaysStrict": true,
+    "useDefineForClassFields": true,
+    "noImplicitUseStrict": false,
+    
+    /* Path Mapping for Malaysian Healthcare Modules */
+    "baseUrl": "./src",
+    "paths": {
+      "@/*": ["*"],
+      "@config/*": ["config/*"],
+      "@middleware/*": ["middleware/*"],
+      "@utils/*": ["utils/*"],
+      "@models/*": ["models/*"],
+      "@routes/*": ["routes/*"],
+      "@services/*": ["services/*"],
+      "@cultural/*": ["services/cultural/*"],
+      "@healthcare/*": ["services/healthcare/*"],
+      "@pdpa/*": ["middleware/pdpa/*"],
+      "@security/*": ["middleware/security/*"],
+      "@types/*": ["types/*"],
+      "@tests/*": ["../tests/*"]
+    },
+    
+    /* Skip LibCheck for faster compilation but ensure healthcare types */
+    "skipLibCheck": false,
+    
+    /* Experimental Decorators for Healthcare API */
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    
+    /* Advanced Options for Healthcare Compliance */
+    "resolveJsonModule": true,
+    "allowUnreachableCode": false,
+    "allowUnusedLabels": false,
+    "noStrictGenericChecks": false,
+    
+    /* Output Formatting */
+    "pretty": true,
+    "preserveConstEnums": true,
+    
+    /* Watch Options for Development */
+    "watchOptions": {
+      "watchFile": "priorityPollingInterval",
+      "watchDirectory": "dynamicPriorityPolling",
+      "fallbackPolling": "dynamicPriority",
+      "synchronousWatchDirectory": true,
+      "excludeDirectories": [
+        "**/node_modules",
+        "**/dist",
+        "**/coverage",
+        "**/.git"
+      ]
+    }
+  },
+  
+  "include": [
+    "src/**/*",
+    "types/**/*",
+    "../types/**/*",
+    "tests/**/*"
+  ],
+  
+  "exclude": [
+    "node_modules",
+    "dist",
+    "coverage",
+    "**/*.spec.ts",
+    "**/*.test.ts",
+    ".nyc_output",
+    "build",
+    "tmp"
+  ],
+  
+  /* TypeScript Healthcare Project References */
+  "references": [
+    {
+      "path": "../mobile/tsconfig.json"
+    }
+  ],
+  
+  "compileOnSave": false,
+  
+  /* Healthcare-Specific TypeScript Settings */
+  "typeAcquisition": {
+    "enable": true,
+    "include": [
+      "node",
+      "express",
+      "jest",
+      "pg",
+      "redis"
+    ],
+    "exclude": [
+      "jquery",
+      "lodash"
+    ]
+  }
+}

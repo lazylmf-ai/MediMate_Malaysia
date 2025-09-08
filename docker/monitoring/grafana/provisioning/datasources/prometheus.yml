@@ -1,0 +1,170 @@
+# Grafana Datasource Configuration for MediMate Malaysia
+# Connects to Prometheus for healthcare metrics visualization
+
+apiVersion: 1
+
+deleteDatasources:
+  - name: Prometheus
+    orgId: 1
+
+datasources:
+  # Primary Prometheus datasource
+  - name: Prometheus
+    type: prometheus
+    access: proxy
+    orgId: 1
+    url: http://prometheus:9090
+    isDefault: true
+    version: 1
+    editable: true
+    jsonData:
+      graphiteVersion: "1.1"
+      tlsAuth: false
+      tlsAuthWithCACert: false
+      httpMethod: POST
+      timeInterval: 30s
+      queryTimeout: 60s
+      # Enable range queries for better performance
+      customQueryParameters: ""
+      # Malaysian timezone
+      timezone: "Asia/Kuala_Lumpur"
+    secureJsonData:
+      {}
+      # Add authentication if needed in production
+      # httpHeaderValue1: 'Bearer token'
+    
+  # PostgreSQL datasource (for direct database queries)
+  - name: PostgreSQL
+    type: postgres
+    access: proxy
+    orgId: 1
+    url: postgres:5432
+    database: medimate_dev
+    user: postgres
+    isDefault: false
+    version: 1
+    editable: true
+    jsonData:
+      sslmode: disable
+      postgresVersion: 1500
+      timescaledb: false
+      # Malaysian timezone for date queries
+      timezone: "Asia/Kuala_Lumpur"
+    secureJsonData:
+      password: postgres123
+    
+  # Redis datasource (if Redis datasource plugin is available)
+  - name: Redis
+    type: redis-datasource
+    access: proxy
+    orgId: 1  
+    url: redis:6379
+    database: ""
+    isDefault: false
+    version: 1
+    editable: true
+    jsonData:
+      client: "standalone"
+      poolSize: 5
+      timeout: 10
+      pingInterval: 0
+      pipelineWindow: 0
+    secureJsonData:
+      password: redis123
+
+  # TestData datasource for dashboard development
+  - name: TestData
+    type: testdata
+    access: proxy
+    orgId: 1
+    isDefault: false
+    version: 1
+    editable: true
+    jsonData:
+      {}
+
+  # Malaysian Healthcare Mock API datasource (JSON)
+  - name: MOH_API_Mock
+    type: simplejson
+    access: proxy
+    orgId: 1
+    url: http://mock-moh-api:8080/__admin/
+    isDefault: false
+    version: 1
+    editable: true
+    jsonData:
+      timeout: 30
+    secureJsonData:
+      {}
+
+  # Prayer Times Mock API datasource (JSON)  
+  - name: Prayer_Times_Mock
+    type: simplejson
+    access: proxy
+    orgId: 1
+    url: http://mock-prayer-api:8080/__admin/
+    isDefault: false
+    version: 1
+    editable: true
+    jsonData:
+      timeout: 30
+    secureJsonData:
+      {}
+
+# Template variables for Malaysian healthcare context
+templateVariables:
+  - name: environment
+    type: constant
+    current:
+      value: development
+    options:
+      - development
+      - testing
+      - production
+      
+  - name: malaysian_state
+    type: constant
+    current:
+      value: "Selangor"
+    options:
+      - "Johor"
+      - "Kedah" 
+      - "Kelantan"
+      - "Melaka"
+      - "Negeri Sembilan"
+      - "Pahang"
+      - "Penang"
+      - "Perak"
+      - "Perlis"
+      - "Sabah"
+      - "Sarawak"
+      - "Selangor"
+      - "Terengganu"
+      - "Kuala Lumpur"
+      - "Labuan"
+      - "Putrajaya"
+      
+  - name: prayer_time
+    type: constant
+    current:
+      value: "all"
+    options:
+      - "all"
+      - "fajr"
+      - "dhuhr"  
+      - "asr"
+      - "maghrib"
+      - "isha"
+      
+  - name: medication_category
+    type: constant
+    current:
+      value: "all"
+    options:
+      - "all"
+      - "diabetes"
+      - "hypertension"
+      - "heart_disease"
+      - "mental_health"
+      - "pain_relief"
+      - "antibiotics"

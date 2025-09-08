@@ -1,0 +1,213 @@
+[
+  {
+    "code": "ms",
+    "name_en": "Malay",
+    "name_native": "Bahasa Melayu",
+    "name_ms": "Bahasa Melayu",
+    "official": true,
+    "national": true,
+    "speakers": 20000000,
+    "regions": ["Peninsular Malaysia", "East Malaysia"],
+    "script": "Latin",
+    "iso639_1": "ms",
+    "iso639_2": "may",
+    "iso639_3": "zlm",
+    "medical_terms_available": true,
+    "healthcare_translation_priority": 1,
+    "common_greetings": {
+      "hello": "Selamat datang",
+      "good_morning": "Selamat pagi",
+      "how_are_you": "Apa khabar?",
+      "thank_you": "Terima kasih",
+      "please": "Tolong",
+      "excuse_me": "Maafkan saya"
+    },
+    "medical_phrases": {
+      "doctor": "Doktor",
+      "nurse": "Jururawat",
+      "hospital": "Hospital",
+      "medicine": "Ubat",
+      "pain": "Sakit",
+      "fever": "Demam",
+      "appointment": "Temujanji",
+      "emergency": "Kecemasan"
+    }
+  },
+  {
+    "code": "en",
+    "name_en": "English",
+    "name_native": "English",
+    "name_ms": "Bahasa Inggeris",
+    "official": true,
+    "national": false,
+    "speakers": 15000000,
+    "regions": ["Peninsular Malaysia", "East Malaysia"],
+    "script": "Latin",
+    "iso639_1": "en",
+    "iso639_2": "eng",
+    "iso639_3": "eng",
+    "medical_terms_available": true,
+    "healthcare_translation_priority": 2,
+    "common_greetings": {
+      "hello": "Hello",
+      "good_morning": "Good morning",
+      "how_are_you": "How are you?",
+      "thank_you": "Thank you",
+      "please": "Please",
+      "excuse_me": "Excuse me"
+    },
+    "medical_phrases": {
+      "doctor": "Doctor",
+      "nurse": "Nurse",
+      "hospital": "Hospital",
+      "medicine": "Medicine",
+      "pain": "Pain",
+      "fever": "Fever",
+      "appointment": "Appointment",
+      "emergency": "Emergency"
+    }
+  },
+  {
+    "code": "zh",
+    "name_en": "Chinese",
+    "name_native": "中文",
+    "name_ms": "Bahasa Cina",
+    "official": false,
+    "national": false,
+    "speakers": 7000000,
+    "regions": ["Peninsular Malaysia", "East Malaysia"],
+    "script": "Chinese characters",
+    "variants": ["Mandarin", "Cantonese", "Hokkien", "Teochew", "Hakka"],
+    "iso639_1": "zh",
+    "iso639_2": "chi",
+    "iso639_3": "zho",
+    "medical_terms_available": true,
+    "healthcare_translation_priority": 3,
+    "common_greetings": {
+      "hello": "你好",
+      "good_morning": "早安",
+      "how_are_you": "你好吗？",
+      "thank_you": "谢谢",
+      "please": "请",
+      "excuse_me": "不好意思"
+    },
+    "medical_phrases": {
+      "doctor": "医生",
+      "nurse": "护士",
+      "hospital": "医院",
+      "medicine": "药",
+      "pain": "疼痛",
+      "fever": "发烧",
+      "appointment": "预约",
+      "emergency": "紧急情况"
+    }
+  },
+  {
+    "code": "ta",
+    "name_en": "Tamil",
+    "name_native": "தமிழ்",
+    "name_ms": "Tamil",
+    "official": false,
+    "national": false,
+    "speakers": 2000000,
+    "regions": ["Peninsular Malaysia"],
+    "script": "Tamil script",
+    "iso639_1": "ta",
+    "iso639_2": "tam",
+    "iso639_3": "tam",
+    "medical_terms_available": true,
+    "healthcare_translation_priority": 4,
+    "common_greetings": {
+      "hello": "வணக்கம்",
+      "good_morning": "காலை வணக்கம்",
+      "how_are_you": "எப்படி இருக்கிறீர்கள்?",
+      "thank_you": "நன்றி",
+      "please": "தயவுசெய்து",
+      "excuse_me": "மன்னிக்கவும்"
+    },
+    "medical_phrases": {
+      "doctor": "மருத்துவர்",
+      "nurse": "செவிலியர்",
+      "hospital": "மருத்துவமனை",
+      "medicine": "மருந்து",
+      "pain": "வலி",
+      "fever": "காய்ச்சல்",
+      "appointment": "சந்திப்பு",
+      "emergency": "அவசரநிலை"
+    }
+  },
+  {
+    "code": "dusun",
+    "name_en": "Dusun",
+    "name_native": "Bahasa Dusun",
+    "name_ms": "Bahasa Dusun",
+    "official": false,
+    "national": false,
+    "speakers": 300000,
+    "regions": ["Sabah"],
+    "script": "Latin",
+    "iso639_3": "dtp",
+    "medical_terms_available": false,
+    "healthcare_translation_priority": 5,
+    "common_greetings": {
+      "hello": "Kosuo do",
+      "thank_you": "Komagaau"
+    },
+    "notes": "Indigenous language of Sabah, limited medical terminology available"
+  },
+  {
+    "code": "iban",
+    "name_en": "Iban",
+    "name_native": "Jaku Iban",
+    "name_ms": "Bahasa Iban",
+    "official": false,
+    "national": false,
+    "speakers": 750000,
+    "regions": ["Sarawak"],
+    "script": "Latin",
+    "iso639_3": "iba",
+    "medical_terms_available": false,
+    "healthcare_translation_priority": 5,
+    "common_greetings": {
+      "hello": "Apai khabar",
+      "thank_you": "Terima kasih"
+    },
+    "notes": "Indigenous language of Sarawak, limited medical terminology available"
+  },
+  {
+    "code": "bajau",
+    "name_en": "Bajau",
+    "name_native": "Bahasa Bajau",
+    "name_ms": "Bahasa Bajau",
+    "official": false,
+    "national": false,
+    "speakers": 200000,
+    "regions": ["Sabah"],
+    "script": "Latin",
+    "iso639_3": "bdr",
+    "medical_terms_available": false,
+    "healthcare_translation_priority": 6,
+    "common_greetings": {
+      "hello": "Salamualaikum"
+    },
+    "notes": "Sea nomad language, primarily in coastal Sabah"
+  },
+  {
+    "code": "bidayuh",
+    "name_en": "Bidayuh",
+    "name_native": "Biatah",
+    "name_ms": "Bahasa Bidayuh",
+    "official": false,
+    "national": false,
+    "speakers": 170000,
+    "regions": ["Sarawak"],
+    "script": "Latin",
+    "iso639_3": "sne",
+    "medical_terms_available": false,
+    "healthcare_translation_priority": 6,
+    "common_greetings": {
+      "hello": "Kamusta"
+    },
+    "notes": "Indigenous language of Sarawak, multiple dialects"
+  }
+]

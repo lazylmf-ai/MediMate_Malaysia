@@ -1,0 +1,332 @@
+version: '3.8'
+
+# Test environment overrides for MediMate Malaysia
+# Optimized for automated testing with isolated databases and fast startup
+
+services:
+  # PostgreSQL Test Overrides
+  postgres:
+    image: postgres:15-alpine
+    container_name: medimate_postgres_test
+    environment:
+      POSTGRES_DB: medimate_test
+      POSTGRES_USER: test_user
+      POSTGRES_PASSWORD: test_password
+      POSTGRES_TEST_DB: medimate_test_isolated
+      # Fast startup for testing
+      PGDATA: /var/lib/postgresql/data/pgdata
+    tmpfs:
+      # Use tmpfs for faster I/O in tests (data is ephemeral)
+      - /var/lib/postgresql/data:rw,noexec,nosuid,size=512m
+    volumes:
+      # Test-specific initialization
+      - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+      - ./docker/postgres/schema.sql:/docker-entrypoint-initdb.d/02-schema.sql:ro
+      - ./docker/postgres/test-seed.sql:/docker-entrypoint-initdb.d/03-test-seed.sql:ro
+    command: >
+      postgres
+      -c fsync=off
+      -c synchronous_commit=off
+      -c full_page_writes=off
+      -c checkpoint_segments=32
+      -c checkpoint_completion_target=0.9
+      -c wal_buffers=16MB
+      -c shared_buffers=256MB
+      -c max_connections=100
+      -c log_min_duration_statement=1000
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U test_user -d medimate_test"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+    networks:
+      - medimate-test-network
+    profiles:
+      - test
+    labels:
+      - "medimate.service=postgres"
+      - "medimate.environment=test"
+      - "medimate.data-persistence=false"
+
+  # Redis Test Overrides
+  redis:
+    image: redis:7-alpine
+    container_name: medimate_redis_test
+    command: >
+      redis-server
+      --save ""
+      --appendonly no
+      --maxmemory 128mb
+      --maxmemory-policy allkeys-lru
+      --databases 4
+      --timeout 0
+      --tcp-keepalive 60
+    tmpfs:
+      # Use tmpfs for test data (ephemeral)
+      - /data:rw,noexec,nosuid,size=128m
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 3s
+      timeout: 2s
+      retries: 5
+      start_period: 5s
+    networks:
+      - medimate-test-network
+    profiles:
+      - test
+    labels:
+      - "medimate.service=redis"
+      - "medimate.environment=test"
+      - "medimate.data-persistence=false"
+
+  # MinIO Test Overrides
+  minio:
+    image: minio/minio:latest
+    container_name: medimate_minio_test
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: testuser
+      MINIO_ROOT_PASSWORD: testpassword123
+      MINIO_DEFAULT_BUCKETS: test-uploads,test-documents
+    tmpfs:
+      # Use tmpfs for test data (ephemeral)
+      - /data:rw,noexec,nosuid,size=256m
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    networks:
+      - medimate-test-network
+    profiles:
+      - test
+    labels:
+      - "medimate.service=minio"
+      - "medimate.environment=test"
+      - "medimate.data-persistence=false"
+
+  # MinIO Test Initialization
+  minio-test-init:
+    image: minio/mc:latest
+    container_name: medimate_minio_test_init
+    depends_on:
+      minio:
+        condition: service_healthy
+    environment:
+      MINIO_ROOT_USER: testuser
+      MINIO_ROOT_PASSWORD: testpassword123
+      MINIO_DEFAULT_BUCKETS: test-uploads,test-documents
+    networks:
+      - medimate-test-network
+    entrypoint: |
+      sh -c "
+      mc alias set test-minio http://minio:9000 $$MINIO_ROOT_USER $$MINIO_ROOT_PASSWORD
+      
+      # Wait for MinIO
+      until mc ready test-minio; do
+        echo 'Waiting for test MinIO...'
+        sleep 1
+      done
+      
+      # Create test buckets
+      for bucket in $$MINIO_DEFAULT_BUCKETS; do
+        IFS=',' read -ra BUCKET_ARRAY <<< \"$$MINIO_DEFAULT_BUCKETS\"
+        for b in \${BUCKET_ARRAY[@]}; do
+          b=\$(echo \$b | xargs)
+          if ! mc ls test-minio/\$b > /dev/null 2>&1; then
+            echo 'Creating test bucket:' \$b
+            mc mb test-minio/\$b
+            mc policy set public test-minio/\$b
+          fi
+        done
+      done
+      
+      echo 'Test MinIO ready'
+      "
+    restart: "no"
+    profiles:
+      - test
+
+  # Test Database Seeder
+  test-seeder:
+    image: postgres:15-alpine
+    container_name: medimate_test_seeder
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      PGHOST: postgres
+      PGPORT: 5432
+      PGUSER: test_user
+      PGPASSWORD: test_password
+      PGDATABASE: medimate_test
+    volumes:
+      - ./docker/postgres/test-seed.sql:/test-seed.sql:ro
+      - ./scripts/test-data-loader.sh:/test-data-loader.sh:ro
+    networks:
+      - medimate-test-network
+    command: >
+      sh -c "
+      echo 'Loading test data...'
+      
+      # Wait for database to be ready
+      while ! pg_isready -h postgres -U test_user -d medimate_test; do
+        echo 'Waiting for test database...'
+        sleep 1
+      done
+      
+      # Load additional test data
+      psql -h postgres -U test_user -d medimate_test -f /test-seed.sql
+      
+      echo 'Test data loaded successfully'
+      "
+    restart: "no"
+    profiles:
+      - test
+
+  # Test Mock Services (Lightweight)
+  test-mock-api:
+    image: wiremock/wiremock:latest
+    container_name: medimate_test_mock_api
+    command: >
+      --port 8080
+      --root-dir /home/wiremock
+      --disable-banner
+      --no-request-journal
+    volumes:
+      - ./docker/mock-apis/test:/home/wiremock:ro
+    networks:
+      - medimate-test-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/__admin/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+    profiles:
+      - test
+    labels:
+      - "medimate.service=mock-api"
+      - "medimate.environment=test"
+
+  # Test Results Reporter
+  test-reporter:
+    image: alpine:latest
+    container_name: medimate_test_reporter
+    depends_on:
+      - postgres
+      - redis
+      - minio
+      - test-mock-api
+    volumes:
+      - ./test-reports:/test-reports
+      - ./scripts/test-health-check.sh:/test-health-check.sh:ro
+    networks:
+      - medimate-test-network
+    command: >
+      sh -c "
+      apk add --no-cache curl postgresql-client redis
+      
+      echo 'Running test environment health checks...'
+      
+      # Check PostgreSQL
+      pg_isready -h postgres -U test_user -d medimate_test
+      if [ \$? -eq 0 ]; then
+        echo '✅ PostgreSQL: Ready'
+      else
+        echo '❌ PostgreSQL: Failed'
+        exit 1
+      fi
+      
+      # Check Redis
+      redis-cli -h redis ping
+      if [ \$? -eq 0 ]; then
+        echo '✅ Redis: Ready'
+      else
+        echo '❌ Redis: Failed'
+        exit 1
+      fi
+      
+      # Check MinIO
+      curl -f http://minio:9000/minio/health/live
+      if [ \$? -eq 0 ]; then
+        echo '✅ MinIO: Ready'
+      else
+        echo '❌ MinIO: Failed'
+        exit 1
+      fi
+      
+      # Check Mock API
+      curl -f http://test-mock-api:8080/__admin/health
+      if [ \$? -eq 0 ]; then
+        echo '✅ Mock API: Ready'
+      else
+        echo '❌ Mock API: Failed'
+        exit 1
+      fi
+      
+      echo '🎉 All test services are healthy!'
+      
+      # Generate test environment report
+      cat > /test-reports/environment-status.json << EOF
+      {
+        \"timestamp\": \"\$(date -Iseconds)\",
+        \"environment\": \"test\",
+        \"services\": {
+          \"postgres\": \"healthy\",
+          \"redis\": \"healthy\",
+          \"minio\": \"healthy\",
+          \"mock-api\": \"healthy\"
+        },
+        \"malaysian_features\": {
+          \"cultural_data\": true,
+          \"prayer_times\": true,
+          \"healthcare_providers\": true,
+          \"test_users\": true
+        }
+      }
+      EOF
+      
+      echo 'Test environment report generated: /test-reports/environment-status.json'
+      "
+    restart: "no"
+    profiles:
+      - test
+
+networks:
+  medimate-test-network:
+    driver: bridge
+    name: medimate-test-network
+    ipam:
+      config:
+        - subnet: 172.21.0.0/16
+
+volumes:
+  test-reports:
+    driver: local
+
+# Test-specific environment variables
+x-test-env: &test-env
+  NODE_ENV: test
+  LOG_LEVEL: warn
+  MALAYSIA_TIMEZONE: Asia/Kuala_Lumpur
+  CULTURAL_FEATURES_ENABLED: "true"
+  MOCK_APIS_ENABLED: "true"
+  DATABASE_URL: postgresql://test_user:test_password@postgres:5432/medimate_test
+  REDIS_URL: redis://redis:6379/0
+  MINIO_ENDPOINT: http://minio:9000
+  MINIO_ACCESS_KEY: testuser
+  MINIO_SECRET_KEY: testpassword123
+  TEST_MODE: "true"
+  PARALLEL_TESTS: "true"
+
+# Test performance optimizations
+x-test-performance: &test-performance
+  cpus: '0.5'
+  memory: 512M
+  
+# Test restart policy (fail fast)
+x-test-restart: &test-restart
+  restart: "no"

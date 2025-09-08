@@ -1,0 +1,66 @@
+# Grafana Dashboard Provisioning for MediMate Malaysia
+# Automatically loads Malaysian healthcare dashboards
+
+apiVersion: 1
+
+providers:
+  # Main dashboards directory
+  - name: 'medimate-dashboards'
+    orgId: 1
+    folder: 'MediMate Malaysia'
+    type: file
+    disableDeletion: false
+    editable: true
+    updateIntervalSeconds: 10
+    allowUiUpdates: true
+    options:
+      path: /var/lib/grafana/dashboards
+      foldersFromFilesStructure: true
+
+  # Healthcare specific dashboards
+  - name: 'healthcare-dashboards'
+    orgId: 1
+    folder: 'Healthcare Monitoring'
+    type: file
+    disableDeletion: false  
+    editable: true
+    updateIntervalSeconds: 30
+    allowUiUpdates: true
+    options:
+      path: /var/lib/grafana/dashboards/healthcare
+
+  # Malaysian cultural dashboards  
+  - name: 'cultural-dashboards'
+    orgId: 1
+    folder: 'Malaysian Cultural'
+    type: file
+    disableDeletion: false
+    editable: true
+    updateIntervalSeconds: 300  # 5 minutes (cultural data changes less frequently)
+    allowUiUpdates: true
+    options:
+      path: /var/lib/grafana/dashboards/cultural
+
+  # Infrastructure dashboards
+  - name: 'infrastructure-dashboards'
+    orgId: 1
+    folder: 'Infrastructure'
+    type: file
+    disableDeletion: false
+    editable: true
+    updateIntervalSeconds: 30
+    allowUiUpdates: true
+    options:
+      path: /var/lib/grafana/dashboards/infrastructure
+
+  # Development dashboards (dev environment only)
+  - name: 'development-dashboards'
+    orgId: 1
+    folder: 'Development'
+    type: file
+    disableDeletion: false
+    editable: true
+    updateIntervalSeconds: 10
+    allowUiUpdates: true
+    options:
+      path: /var/lib/grafana/dashboards/development

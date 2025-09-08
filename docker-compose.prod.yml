@@ -1,0 +1,450 @@
+version: '3.8'
+
+# Production environment overrides for MediMate Malaysia
+# Optimized for security, performance, and Malaysian healthcare compliance
+
+services:
+  # PostgreSQL Production Configuration
+  postgres:
+    image: postgres:15-alpine
+    container_name: medimate_postgres_prod
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password
+      PGDATA: /var/lib/postgresql/data/pgdata
+    secrets:
+      - postgres_password
+      - postgres_ssl_cert
+      - postgres_ssl_key
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - /etc/ssl/certs/postgres-cert.pem:/run/secrets/postgres_ssl_cert:ro
+      - /etc/ssl/private/postgres-key.pem:/run/secrets/postgres_ssl_key:ro
+      - ./docker/postgres/prod-init.sql:/docker-entrypoint-initdb.d/01-prod-init.sql:ro
+      - ./docker/postgres/schema.sql:/docker-entrypoint-initdb.d/02-schema.sql:ro
+    command: >
+      postgres
+      -c ssl=on
+      -c ssl_cert_file=/run/secrets/postgres_ssl_cert
+      -c ssl_key_file=/run/secrets/postgres_ssl_key
+      -c ssl_ciphers='ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384'
+      -c ssl_prefer_server_ciphers=on
+      -c log_connections=on
+      -c log_disconnections=on
+      -c log_checkpoints=on
+      -c log_lock_waits=on
+      -c log_temp_files=0
+      -c log_autovacuum_min_duration=0
+      -c checkpoint_completion_target=0.9
+      -c wal_buffers=16MB
+      -c default_statistics_target=100
+      -c shared_preload_libraries='pg_stat_statements'
+      -c max_connections=200
+      -c shared_buffers=512MB
+      -c effective_cache_size=2GB
+      -c maintenance_work_mem=256MB
+      -c work_mem=8MB
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 2G
+        reservations:
+          cpus: '1.0'
+          memory: 1G
+      restart_policy:
+        condition: unless-stopped
+        delay: 10s
+        max_attempts: 3
+        window: 120s
+    networks:
+      - medimate-backend
+    logging:
+      driver: json-file
+      options:
+        max-size: "50m"
+        max-file: "5"
+    labels:
+      - "medimate.service=postgres"
+      - "medimate.environment=production"
+      - "medimate.data-tier=primary"
+      - "medimate.backup=required"
+
+  # Redis Production Configuration
+  redis:
+    image: redis:7-alpine
+    container_name: medimate_redis_prod
+    command: >
+      redis-server /usr/local/etc/redis/redis.conf
+      --requirepass ${REDIS_PASSWORD}
+      --save 900 1
+      --save 300 10
+      --save 60 10000
+      --appendonly yes
+      --appendfsync everysec
+      --maxmemory 1gb
+      --maxmemory-policy allkeys-lru
+      --tcp-keepalive 300
+      --timeout 300
+    volumes:
+      - redis_data:/data
+      - ./docker/redis/redis-prod.conf:/usr/local/etc/redis/redis.conf:ro
+    healthcheck:
+      test: ["CMD", "redis-cli", "--no-auth-warning", "-a", "${REDIS_PASSWORD}", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1.5G
+        reservations:
+          cpus: '0.5'
+          memory: 1G
+      restart_policy:
+        condition: unless-stopped
+        delay: 5s
+        max_attempts: 3
+        window: 60s
+    networks:
+      - medimate-backend
+    logging:
+      driver: json-file
+      options:
+        max-size: "20m"
+        max-file: "3"
+    labels:
+      - "medimate.service=redis"
+      - "medimate.environment=production"
+      - "medimate.data-tier=cache"
+      - "medimate.backup=optional"
+
+  # MinIO Production Configuration
+  minio:
+    image: minio/minio:latest
+    container_name: medimate_minio_prod
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER_FILE: /run/secrets/minio_root_user
+      MINIO_ROOT_PASSWORD_FILE: /run/secrets/minio_root_password
+      MINIO_DEFAULT_BUCKETS: ${MINIO_BUCKETS}
+      MINIO_PROMETHEUS_AUTH_TYPE: public
+      MINIO_PROMETHEUS_URL: http://prometheus:9090
+      MINIO_BROWSER_REDIRECT_URL: https://storage.medimate.my
+      # Healthcare compliance settings
+      MINIO_API_CORS_ALLOW_ORIGIN: https://medimate.my,https://admin.medimate.my
+      MINIO_COMPRESSION_ENABLE: "on"
+      MINIO_COMPRESSION_EXTENSIONS: .pdf,.txt,.csv,.json
+      MINIO_HEAL_ENABLE: "on"
+    secrets:
+      - minio_root_user
+      - minio_root_password
+      - minio_ssl_cert
+      - minio_ssl_key
+    volumes:
+      - minio_data:/data
+      - /etc/ssl/certs/minio-cert.pem:/run/secrets/minio_ssl_cert:ro
+      - /etc/ssl/private/minio-key.pem:/run/secrets/minio_ssl_key:ro
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 60s
+      timeout: 30s
+      retries: 3
+      start_period: 120s
+    deploy:
+      resources:
+        limits:
+          cpus: '1.5'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 1G
+      restart_policy:
+        condition: unless-stopped
+        delay: 15s
+        max_attempts: 3
+        window: 180s
+    networks:
+      - medimate-backend
+      - medimate-storage
+    logging:
+      driver: json-file
+      options:
+        max-size: "100m"
+        max-file: "5"
+    labels:
+      - "medimate.service=minio"
+      - "medimate.environment=production"
+      - "medimate.data-tier=storage"
+      - "medimate.backup=critical"
+      - "traefik.enable=true"
+      - "traefik.http.routers.minio.rule=Host(`storage.medimate.my`)"
+      - "traefik.http.services.minio.loadbalancer.server.port=9000"
+
+  # Production MinIO Initialization
+  minio-prod-init:
+    image: minio/mc:latest
+    container_name: medimate_minio_prod_init
+    depends_on:
+      minio:
+        condition: service_healthy
+    environment:
+      MINIO_BUCKETS: ${MINIO_BUCKETS}
+    secrets:
+      - minio_root_user
+      - minio_root_password
+    networks:
+      - medimate-backend
+    entrypoint: |
+      sh -c "
+      # Read credentials from secrets
+      MINIO_ROOT_USER=\$(cat /run/secrets/minio_root_user)
+      MINIO_ROOT_PASSWORD=\$(cat /run/secrets/minio_root_password)
+      
+      mc alias set prod-minio http://minio:9000 \$MINIO_ROOT_USER \$MINIO_ROOT_PASSWORD
+      
+      # Wait for MinIO to be ready
+      until mc ready prod-minio; do
+        echo 'Waiting for production MinIO...'
+        sleep 5
+      done
+      
+      # Create production buckets with compliance settings
+      IFS=',' read -ra BUCKET_ARRAY <<< \"\$MINIO_BUCKETS\"
+      for bucket in \"\${BUCKET_ARRAY[@]}\"; do
+        bucket=\$(echo \$bucket | xargs)
+        
+        if ! mc ls prod-minio/\$bucket > /dev/null 2>&1; then
+          echo 'Creating production bucket:' \$bucket
+          mc mb prod-minio/\$bucket
+          
+          # Set healthcare compliance policies
+          case \$bucket in
+            *-medical-*|*-health-*|*-prescription-*)
+              mc policy set private prod-minio/\$bucket
+              mc version enable prod-minio/\$bucket
+              # 7 years retention for medical records
+              mc ilm add --expiry-days 2555 prod-minio/\$bucket
+              ;;
+            *-avatar-*|*-profile-*)
+              mc policy set public prod-minio/\$bucket
+              mc ilm add --expiry-days 365 prod-minio/\$bucket
+              ;;
+            *)
+              mc policy set download prod-minio/\$bucket
+              mc version enable prod-minio/\$bucket
+              ;;
+          esac
+          
+          echo 'Production bucket configured:' \$bucket
+        fi
+      done
+      
+      echo 'Production MinIO initialization completed'
+      "
+    restart: "no"
+    labels:
+      - "medimate.service=minio-init"
+      - "medimate.environment=production"
+
+  # Production Backup Service
+  backup-service:
+    image: postgres:15-alpine
+    container_name: medimate_backup_service
+    depends_on:
+      - postgres
+    environment:
+      PGHOST: postgres
+      PGUSER: ${POSTGRES_USER}
+      PGPASSWORD_FILE: /run/secrets/postgres_password
+      BACKUP_ENCRYPTION_KEY_FILE: /run/secrets/backup_encryption_key
+      S3_BACKUP_BUCKET: ${BACKUP_BUCKET}
+      S3_ACCESS_KEY_FILE: /run/secrets/s3_backup_access_key
+      S3_SECRET_KEY_FILE: /run/secrets/s3_backup_secret_key
+    secrets:
+      - postgres_password
+      - backup_encryption_key
+      - s3_backup_access_key
+      - s3_backup_secret_key
+    volumes:
+      - backup_data:/backup
+      - ./scripts/backup-script.sh:/backup-script.sh:ro
+    networks:
+      - medimate-backend
+    command: >
+      sh -c "
+      apk add --no-cache aws-cli gpg
+      
+      # Daily backup cron job
+      echo '0 2 * * * /backup-script.sh' | crontab -
+      
+      # Run backup script immediately
+      /backup-script.sh
+      
+      # Start cron daemon
+      crond -f -d 8
+      "
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+      restart_policy:
+        condition: unless-stopped
+        delay: 30s
+        max_attempts: 3
+        window: 300s
+    labels:
+      - "medimate.service=backup"
+      - "medimate.environment=production"
+      - "medimate.compliance=pdpa"
+
+  # Production Log Aggregator
+  log-aggregator:
+    image: fluent/fluent-bit:latest
+    container_name: medimate_log_aggregator
+    volumes:
+      - ./docker/logging/fluent-bit.conf:/fluent-bit/etc/fluent-bit.conf:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    environment:
+      - ELASTICSEARCH_HOST=${ELASTICSEARCH_HOST}
+      - ELASTICSEARCH_PORT=${ELASTICSEARCH_PORT}
+    networks:
+      - medimate-monitoring
+    deploy:
+      resources:
+        limits:
+          cpus: '0.3'
+          memory: 256M
+        reservations:
+          cpus: '0.1'
+          memory: 128M
+      restart_policy:
+        condition: unless-stopped
+    labels:
+      - "medimate.service=log-aggregator"
+      - "medimate.environment=production"
+
+secrets:
+  postgres_password:
+    external: true
+    name: medimate_postgres_password
+  postgres_ssl_cert:
+    external: true
+    name: medimate_postgres_ssl_cert
+  postgres_ssl_key:
+    external: true
+    name: medimate_postgres_ssl_key
+  minio_root_user:
+    external: true
+    name: medimate_minio_root_user
+  minio_root_password:
+    external: true
+    name: medimate_minio_root_password
+  minio_ssl_cert:
+    external: true
+    name: medimate_minio_ssl_cert
+  minio_ssl_key:
+    external: true
+    name: medimate_minio_ssl_key
+  backup_encryption_key:
+    external: true
+    name: medimate_backup_encryption_key
+  s3_backup_access_key:
+    external: true
+    name: medimate_s3_backup_access_key
+  s3_backup_secret_key:
+    external: true
+    name: medimate_s3_backup_secret_key
+
+networks:
+  medimate-backend:
+    driver: bridge
+    name: medimate-backend
+    ipam:
+      config:
+        - subnet: 172.22.0.0/16
+    internal: true  # Backend network isolated from external access
+    
+  medimate-storage:
+    driver: bridge
+    name: medimate-storage
+    ipam:
+      config:
+        - subnet: 172.23.0.0/16
+        
+  medimate-monitoring:
+    driver: bridge
+    name: medimate-monitoring
+    ipam:
+      config:
+        - subnet: 172.24.0.0/16
+
+volumes:
+  postgres_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /mnt/medimate-data/postgres
+  redis_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /mnt/medimate-data/redis
+  minio_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /mnt/medimate-data/minio
+  backup_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /mnt/medimate-backups
+
+# Production environment variables
+x-production-env: &production-env
+  NODE_ENV: production
+  LOG_LEVEL: info
+  MALAYSIA_TIMEZONE: Asia/Kuala_Lumpur
+  CULTURAL_FEATURES_ENABLED: "true"
+  HEALTHCARE_COMPLIANCE_MODE: "strict"
+  PDPA_COMPLIANCE_ENABLED: "true"
+  SSL_ENABLED: "true"
+  SECURITY_HEADERS_ENABLED: "true"
+  RATE_LIMITING_ENABLED: "true"
+  AUDIT_LOGGING_ENABLED: "true"
+  
+# Production resource limits
+x-production-limits: &production-limits
+  deploy:
+    resources:
+      limits:
+        cpus: '1.0'
+        memory: 1G
+      reservations:
+        cpus: '0.25'
+        memory: 256M
+
+# Production restart policy
+x-production-restart: &production-restart
+  deploy:
+    restart_policy:
+      condition: unless-stopped
+      delay: 30s
+      max_attempts: 3
+      window: 300s

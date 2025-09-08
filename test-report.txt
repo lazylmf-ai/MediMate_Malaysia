@@ -1,0 +1,164 @@
+=================================================================
+MediMate Malaysia Setup Scripts Test Report
+=================================================================
+Generated: 2025-09-07 07:06:57 UTC
+Platform: Darwin 24.5.0
+Test Environment: Mengs-MacBook-Air.local
+
+SUMMARY
+-------
+Test Suites Run: 2
+Test Suites Passed: 2
+Test Suites Failed: 0
+
+Individual Tests: 22
+Individual Passed: 22
+Individual Failed: 0
+
+OVERALL STATUS: ✅ ALL TESTS PASSED
+
+DETAILED RESULTS
+----------------
+
+=== Common Functions Test Suite ===
+Running MediMate Malaysia Common Functions Test Suite
+====================================================
+
+[DEBUG] Logging initialized - level: 0, file: /tmp/medimate-test.log
+Testing logging initialization... [DEBUG] Logging initialized - level: 0, file: /tmp/test-logging-init.log
+PASSED
+Testing logging functions... [DEBUG] Logging initialized - level: 0, file: /tmp/test-logging-functions.log
+[DEBUG] Debug message
+[INFO] Info message
+[WARN] Warning message
+[ERROR] Error message
+[SUCCESS] Success message
+PASSED
+Testing platform detection... [DEBUG] Platform detected: macOS
+PASSED
+Testing architecture detection... PASSED
+Testing command existence check... PASSED
+Testing version comparison... PASSED
+Testing directory creation... [DEBUG] Creating directory: /tmp/medimate-test-dir
+[DEBUG] Directory already exists: /tmp/medimate-test-dir
+PASSED
+Testing progress tracking... [DEBUG] Progress tracked: test_step_1
+[DEBUG] Progress tracked: test_step_2
+PASSED
+Testing system memory detection... PASSED
+Testing command execution... [DEBUG] Logging initialized - level: 0, file: /tmp/test-execute-command.log
+[DEBUG] Testing echo command: echo 'test command'
+test command
+[DEBUG] Command succeeded: echo 'test command'
+[DEBUG] Testing false command: false
+[ERROR] Command failed: false (exit code: 1)
+[DEBUG] Testing false command with allow failure: false
+[WARN] Command failed but continuing: false (exit code: 1)
+PASSED
+Testing CI environment detection... PASSED
+
+====================================================
+Test Results:
+  Tests Run: 11
+  Passed: 11
+  Failed: 0
+  Status: ALL TESTS PASSED ✅
+
+Test log available at: /tmp/medimate-test.log
+
+
+=== Validation Functions Test Suite ===
+Running MediMate Malaysia Validation Functions Test Suite
+========================================================
+
+[DEBUG] Logging initialized - level: 0, file: /tmp/medimate-validation-test.log
+Testing version comparison... PASSED
+Testing version extraction... PASSED
+Testing Node.js validation... [DEBUG] Logging initialized - level: 0, file: /tmp/medimate-validation-test.log
+[INFO] Validating Node.js installation...
+[DEBUG] Found Node.js version: v24.7.0
+[SUCCESS] Node.js v24.7.0 is installed and meets requirements
+[DEBUG] Found npm version: 11.5.1
+[SUCCESS] npm 11.5.1 is available
+[INFO] Validating Node.js installation...
+[DEBUG] Found Node.js version: v24.7.0
+[ERROR] Node.js version v24.7.0 is below minimum required version 999.0.0
+PASSED
+Testing Git validation... [DEBUG] Logging initialized - level: 0, file: /tmp/medimate-validation-test.log
+[INFO] Validating Git installation...
+[DEBUG] Found Git version: 2.39.5
+[SUCCESS] Git 2.39.5 meets requirements
+[INFO] Validating Git installation...
+[DEBUG] Found Git version: 2.39.5
+[WARN] Git version 2.39.5 is below recommended version 999.0.0
+[WARN] Some features may not work correctly
+PASSED
+Testing Python validation... [DEBUG] Logging initialized - level: 0, file: /tmp/medimate-validation-test.log
+[INFO] Validating Python installation...
+[DEBUG] Found Python version: 3.13.7
+[SUCCESS] Python 3.13.7 meets requirements
+[DEBUG] Found pip version: 
+[SUCCESS] pip is available
+[INFO] Validating Python installation...
+[DEBUG] Found Python version: 3.13.7
+[ERROR] Python version 3.13.7 is below minimum required version 999.0.0
+PASSED
+Testing Docker validation... [DEBUG] Logging initialized - level: 0, file: /tmp/medimate-validation-test.log
+[INFO] Skipping Docker validation (--skip-docker flag used)
+[INFO] Validating Docker installation...
+[ERROR] Docker is not installed
+[ERROR] Please install Docker Desktop from: https://www.docker.com/products/docker-desktop/
+  Docker not installed - skipping daemon tests
+PASSED
+Testing package manager validation... [DEBUG] Logging initialized - level: 0, file: /tmp/medimate-validation-test.log
+[DEBUG] Platform detected: macOS
+[INFO] Validating package managers for platform: macos
+[SUCCESS] Homebrew 4.6.9 is installed
+PASSED
+Testing custom dependency validation... [DEBUG] Logging initialized - level: 0, file: /tmp/medimate-validation-test.log
+[INFO] Validating Bash Shell...
+[SUCCESS] Bash Shell is installed
+[INFO] Validating Fake Command...
+[ERROR] Fake Command is not installed
+[INFO] Install fake command
+[INFO] Validating Git...
+[SUCCESS] Git 2.39.5 meets requirements
+[INFO] Validating Git...
+[ERROR] Git version 2.39.5 is below minimum required version 999.0.0
+[INFO] Install Git
+PASSED
+Testing network validation... [DEBUG] Logging initialized - level: 0, file: /tmp/medimate-validation-test.log
+[INFO] Validating network connectivity...
+[DEBUG] Testing connectivity to: https://registry.npmjs.org
+[DEBUG] ✓ https://registry.npmjs.org is reachable
+[DEBUG] Testing connectivity to: https://github.com
+[DEBUG] ✓ https://github.com is reachable
+[DEBUG] Testing connectivity to: https://docker.com
+[DEBUG] ✓ https://docker.com is reachable
+PASSED
+Testing dev tools validation... [DEBUG] Logging initialized - level: 0, file: /tmp/medimate-validation-test.log
+[INFO] Validating development tools...
+[INFO] Vim is available as text editor
+[SUCCESS] curl is available for downloads
+[SUCCESS] unzip utility is available
+PASSED
+Testing validation report generation... [DEBUG] Logging initialized - level: 0, file: /tmp/medimate-validation-test.log
+[INFO] Generating validation report: /tmp/test-validation-report.txt
+df: invalid option -- B
+usage: df [--libxo] [-b | -g | -H | -h | -k | -m | -P] [-acIilnY] [-,] [-T type] [-t type]
+          [file | filesystem ...]
+[SUCCESS] Validation report saved to: /tmp/test-validation-report.txt
+PASSED
+
+========================================================
+Test Results:
+  Tests Run: 11
+  Passed: 11
+  Failed: 0
+  Status: ALL TESTS PASSED ✅
+
+Test log available at: /tmp/medimate-validation-test.log
+
+=================================================================
+End of Test Report
+=================================================================
