@@ -31,6 +31,11 @@ import culturalRoutes from './routes/cultural';
 import medicationRoutes from './routes/medication';
 import prayerTimesRoutes from './routes/prayer-times';
 import holidaysRoutes from './routes/holidays';
+import patientsRoutes from './routes/patients';
+import providersRoutes from './routes/providers';
+import appointmentsRoutes from './routes/appointments';
+import medicalRecordsRoutes from './routes/medical-records';
+import emergencyAccessRoutes from './routes/emergency-access';
 
 // Load environment configuration
 config({ path: path.resolve(__dirname, '../.env') });
@@ -139,8 +144,8 @@ class MediMateBackendApplication {
       limit: '10mb',
       verify: (req, res, buf) => {
         // Log healthcare data handling for PDPA compliance
-        if (req.path.includes('/patient') || req.path.includes('/medication')) {
-          console.log(`🏥 Healthcare data received: ${req.method} ${req.path}`);
+        if (req.url?.includes('/patient') || req.url?.includes('/medication')) {
+          console.log(`🏥 Healthcare data received: ${req.method} ${req.url}`);
         }
       }
     }));
@@ -189,6 +194,11 @@ class MediMateBackendApplication {
 
     // Healthcare data routes (requires authentication)
     this.app.use('/api/v1/medications', medicationRoutes);
+    this.app.use('/api/v1/patients', patientsRoutes);
+    this.app.use('/api/v1/providers', providersRoutes);
+    this.app.use('/api/v1/appointments', appointmentsRoutes);
+    this.app.use('/api/v1/medical-records', medicalRecordsRoutes);
+    this.app.use('/api/v1/emergency-access', emergencyAccessRoutes);
 
     // Malaysian cultural context endpoint
     this.app.get('/api/v1/context', (req: Request, res: Response) => {
@@ -290,9 +300,11 @@ class MediMateBackendApplication {
     // Development - allow all localhost ports
     return [
       ...baseOrigins,
-      /^http:\/\/localhost:\d+$/,
-      /^http:\/\/127\.0\.0\.1:\d+$/,
-      /^http:\/\/10\.0\.2\.2:\d+$/ // Android emulator
+      'http://localhost:3001',
+      'http://localhost:3002',
+      'http://localhost:8080',
+      'http://127.0.0.1:3000',
+      'http://10.0.2.2:8081'
     ];
   }
 
