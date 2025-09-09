@@ -167,7 +167,7 @@ export class WebSocketHandlers {
         });
     }
 
-    async handleProviderMessage(socket: Socket, data: { recipientId: string; message: string; priority: 'low' | 'medium' | 'high' | 'urgent' }): Promise<void> {
+    async handleProviderMessage(socket: Socket, data: { recipientId: string; message: string; priority: 'low' | 'medium' | 'high' | 'critical' }): Promise<void> {
         const user: WebSocketUser = socket.data.user;
 
         // Only healthcare providers can send provider messages

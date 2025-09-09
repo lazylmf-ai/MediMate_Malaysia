@@ -558,4 +558,37 @@ export class PrayerTimeService {
       active
     };
   }
+
+  async getCurrentPrayerTime(stateCode: string): Promise<{ name: string; time: string } | null> {
+    try {
+      const currentStatus = await this.getCurrentPrayerStatus(stateCode);
+      if (currentStatus.isCurrentlyPrayerTime) {
+        return {
+          name: currentStatus.currentPrayer,
+          time: currentStatus.prayerTimes[currentStatus.currentPrayer.toLowerCase() as keyof PrayerTimes]
+        };
+      }
+      return null;
+    } catch (error) {
+      console.error('Failed to get current prayer time:', error);
+      return null;
+    }
+  }
+
+  async getPrayerTimesForDate(date: Date, stateCode: string): Promise<Array<{ name: string; time: string }>> {
+    try {
+      const prayerData = await this.getPrayerTimes(stateCode, date);
+      const prayerNames = ['fajr', 'syuruk', 'dhuhr', 'asr', 'maghrib', 'isha'];
+      
+      return prayerNames.map(name => ({
+        name: name.charAt(0).toUpperCase() + name.slice(1),
+        time: prayerData.prayer_times[name as keyof PrayerTimes]
+      }));
+    } catch (error) {
+      console.error('Failed to get prayer times for date:', error);
+      return [];
+    }
+  }
 }
+
+export default PrayerTimeService;

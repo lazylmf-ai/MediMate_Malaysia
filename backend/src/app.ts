@@ -61,12 +61,12 @@ class MediMateBackendApplication {
   private readonly environment: string;
   
   // Real-time services
-  private webSocketService: WebSocketService;
-  private redisService: RedisService;
-  private notificationService: NotificationService;
-  private monitoringService: MonitoringService;
-  private webhookService: WebhookService;
-  private dashboardService: DashboardService;
+  private webSocketService!: WebSocketService;
+  private redisService!: RedisService;
+  private notificationService!: NotificationService;
+  private monitoringService!: MonitoringService;
+  private webhookService!: WebhookService;
+  private dashboardService!: DashboardService;
 
   constructor() {
     this.app = express();

@@ -8,7 +8,8 @@
 import { RedisService } from '../cache/redisService';
 import { DatabaseService } from '../database/databaseService';
 import { AuditService } from '../audit/auditService';
-import axios, { AxiosResponse, AxiosError } from 'axios';
+import axios from 'axios';
+import { AxiosResponse, AxiosError } from 'axios';
 import crypto from 'crypto';
 import * as cron from 'node-cron';
 

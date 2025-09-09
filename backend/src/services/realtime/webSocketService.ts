@@ -493,7 +493,7 @@ export class WebSocketService {
         await handlers.handleEmergencyAlertSubscription(socket);
     }
 
-    private async handleProviderMessage(socket: Socket, data: { recipientId: string; message: string; priority: 'low' | 'medium' | 'high' | 'urgent' }): Promise<void> {
+    private async handleProviderMessage(socket: Socket, data: { recipientId: string; message: string; priority: 'low' | 'medium' | 'high' | 'critical' }): Promise<void> {
         const handlers = new (await import('./webSocketHandlers')).default();
         await handlers.handleProviderMessage(socket, data);
     }

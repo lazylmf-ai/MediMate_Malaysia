@@ -10,11 +10,24 @@ import { DatabaseService } from '../database/databaseService';
 export interface AuditEvent {
     eventType: string;
     userId?: string;
-    description: string;
+    description?: string;
     metadata?: any;
     ipAddress?: string;
     userAgent?: string;
     complianceReason?: string;
+}
+
+export interface HealthcareAuditEvent {
+    eventType: string;
+    userId?: string;
+    userType?: string;
+    patientId?: string;
+    providerId?: string;
+    success: boolean;
+    errorMessage?: string;
+    ipAddress?: string;
+    userAgent?: string;
+    metadata?: any;
 }
 
 export class AuditService {
@@ -44,13 +57,36 @@ export class AuditService {
             `, [
                 event.eventType,
                 event.userId || null,
-                event.description,
+                event.description || 'System event',
                 event.ipAddress || null,
                 event.userAgent || null
             ]);
         } catch (error) {
             console.error('Audit logging failed:', error);
             // Don't throw error to prevent breaking main functionality
+        }
+    }
+
+    async logHealthcareEvent(event: HealthcareAuditEvent): Promise<void> {
+        const db = this.dbService.getConnection();
+        
+        try {
+            // For now, log to the authentication_audit table with additional metadata
+            await db.none(`
+                INSERT INTO authentication_audit (
+                    event_type, user_id, event_description, ip_address, user_agent,
+                    event_status, auth_method, risk_score, created_at
+                ) VALUES ($1, $2, $3, $4, $5, $6, 'healthcare', 0, NOW())
+            `, [
+                event.eventType,
+                event.userId || null,
+                `Healthcare event: ${event.eventType}${event.errorMessage ? ` - ${event.errorMessage}` : ''}`,
+                event.ipAddress || null,
+                event.userAgent || null,
+                event.success ? 'success' : 'failure'
+            ]);
+        } catch (error) {
+            console.error('Failed to log healthcare audit event:', error);
         }
     }
 }

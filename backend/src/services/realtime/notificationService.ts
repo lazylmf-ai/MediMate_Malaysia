@@ -100,7 +100,7 @@ export class NotificationService {
 
         // Initialize Email transporter
         if (process.env.EMAIL_SERVICE) {
-            this.emailTransporter = nodemailer.createTransporter({
+            this.emailTransporter = nodemailer.createTransport({
                 service: process.env.EMAIL_SERVICE,
                 auth: {
                     user: process.env.EMAIL_USER,
