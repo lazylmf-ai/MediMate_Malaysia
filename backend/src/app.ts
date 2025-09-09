@@ -28,6 +28,7 @@ import { PDPAComplianceService } from './services/pdpa-compliance.service';
 // Import routes
 import healthRoutes from './routes/health';
 import culturalRoutes from './routes/cultural';
+import culturalIntelligenceRoutes from './routes/cultural/culturalRoutes';
 import medicationRoutes from './routes/medication';
 import prayerTimesRoutes from './routes/prayer-times';
 import holidaysRoutes from './routes/holidays';
@@ -189,6 +190,7 @@ class MediMateBackendApplication {
 
     // Malaysian cultural intelligence routes
     this.app.use('/api/v1/cultural', culturalRoutes);
+    this.app.use('/api/cultural', culturalIntelligenceRoutes); // New comprehensive cultural services
     this.app.use('/api/v1/prayer-times', prayerTimesRoutes);
     this.app.use('/api/v1/holidays', holidaysRoutes);
 

@@ -37,19 +37,13 @@
     "typeRoots": ["./node_modules/@types", "./src/types"]
   },
   "include": [
-    "src/**/*",
-    "tests/**/*",
-    "middleware/**/*",
-    "services/**/*",
-    "controllers/**/*",
-    "utils/**/*"
+    "src/**/*"
   ],
   "exclude": [
     "node_modules",
     "dist",
     "coverage",
-    "**/*.test.ts",
-    "**/*.spec.ts"
+    "tests"
   ],
   "ts-node": {
     "esm": false,
