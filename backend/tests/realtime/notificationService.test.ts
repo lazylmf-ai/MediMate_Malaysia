@@ -625,7 +625,7 @@ describe('Notification Service', () => {
                 priority: 'invalid_priority' as any,
                 recipient: {
                     ...testRecipient,
-                    channels: null // Invalid channels
+                    channels: [] as any // Invalid channels
                 },
                 title: '',
                 message: null

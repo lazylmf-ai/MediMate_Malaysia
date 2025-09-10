@@ -51,6 +51,18 @@ export class WebSocketService {
     private databaseService: DatabaseService;
     private activeConnections: Map<string, WebSocketUser> = new Map();
     private connectionRooms: Map<string, Set<string>> = new Map(); // userId -> Set of room names
+    
+    // Rate limiting and connection control
+    private rateLimitMap: Map<string, { count: number; resetTime: number }> = new Map();
+    private connectionAttempts: Map<string, { count: number; lastAttempt: number }> = new Map();
+    
+    // Configuration
+    private readonly RATE_LIMIT_WINDOW = 60 * 1000; // 1 minute
+    private readonly RATE_LIMIT_MAX_REQUESTS = 30; // Max requests per window per user
+    private readonly CONNECTION_LIMIT_PER_USER = 5; // Max connections per user
+    private readonly CONNECTION_LIMIT_GLOBAL = 1000; // Max global connections
+    private readonly CONNECTION_ATTEMPT_WINDOW = 60 * 1000; // 1 minute
+    private readonly MAX_CONNECTION_ATTEMPTS = 10; // Max attempts per window
 
     private constructor(httpServer: HTTPServer) {
         this.redisService = RedisService.getInstance();
@@ -154,12 +166,48 @@ export class WebSocketService {
             }
         });
 
-        // Rate limiting middleware
-        this.io.use((socket: Socket, next) => {
-            // Simple rate limiting - can be enhanced with Redis-based rate limiting
-            socket.data.lastActivity = Date.now();
-            socket.data.messageCount = 0;
-            next();
+        // Enhanced rate limiting middleware
+        this.io.use(async (socket: Socket, next) => {
+            try {
+                const clientIP = socket.handshake.address || 'unknown';
+                const userId = socket.data.user?.userId;
+                
+                // Check global connection limit
+                if (this.getActiveConnectionsCount() >= this.CONNECTION_LIMIT_GLOBAL) {
+                    throw new Error('Server connection limit reached');
+                }
+                
+                // Check connection attempts rate limiting (by IP)
+                if (!this.checkConnectionAttemptLimit(clientIP)) {
+                    throw new Error('Too many connection attempts from this IP');
+                }
+                
+                // Check per-user connection limit (if authenticated)
+                if (userId && this.getUserConnectionCount(userId) >= this.CONNECTION_LIMIT_PER_USER) {
+                    throw new Error('User connection limit reached');
+                }
+                
+                // Initialize rate limiting data for this socket
+                socket.data.lastActivity = Date.now();
+                socket.data.messageCount = 0;
+                socket.data.rateLimitResetTime = Date.now() + this.RATE_LIMIT_WINDOW;
+                
+                next();
+            } catch (error) {
+                console.error('WebSocket rate limiting failed:', error);
+                
+                await this.auditService.logHealthcareEvent({
+                    eventType: 'websocket_connection_rate_limited',
+                    success: false,
+                    metadata: {
+                        socketId: socket.id,
+                        clientIP: socket.handshake.address,
+                        reason: error instanceof Error ? error.message : 'Unknown error'
+                    }
+                });
+                
+                next(new Error('Connection rate limited'));
+            }
         });
     }
 
@@ -537,6 +585,94 @@ export class WebSocketService {
 
     public async sendToProvider(providerId: string, message: any): Promise<void> {
         this.io.to(`provider:${providerId}`).emit('provider_message', message);
+    }
+
+    // Rate limiting helper methods
+    private checkConnectionAttemptLimit(clientIP: string): boolean {
+        const now = Date.now();
+        const attempts = this.connectionAttempts.get(clientIP);
+        
+        if (!attempts) {
+            this.connectionAttempts.set(clientIP, { count: 1, lastAttempt: now });
+            return true;
+        }
+        
+        // Reset if window has expired
+        if (now - attempts.lastAttempt > this.CONNECTION_ATTEMPT_WINDOW) {
+            this.connectionAttempts.set(clientIP, { count: 1, lastAttempt: now });
+            return true;
+        }
+        
+        // Check if within limit
+        if (attempts.count >= this.MAX_CONNECTION_ATTEMPTS) {
+            return false;
+        }
+        
+        // Increment count
+        attempts.count++;
+        attempts.lastAttempt = now;
+        return true;
+    }
+
+    private getUserConnectionCount(userId: string): number {
+        return Array.from(this.activeConnections.values()).filter(user => user.userId === userId).length;
+    }
+
+    public checkMessageRateLimit(socket: any, userId: string): boolean {
+        const now = Date.now();
+        
+        // Check per-socket rate limit
+        if (socket.data.rateLimitResetTime && now > socket.data.rateLimitResetTime) {
+            socket.data.messageCount = 0;
+            socket.data.rateLimitResetTime = now + this.RATE_LIMIT_WINDOW;
+        }
+        
+        if (socket.data.messageCount >= this.RATE_LIMIT_MAX_REQUESTS) {
+            return false;
+        }
+        
+        socket.data.messageCount++;
+        socket.data.lastActivity = now;
+        return true;
+    }
+
+    public cleanupRateLimitMaps(): void {
+        const now = Date.now();
+        
+        // Clean up connection attempts map
+        for (const [ip, data] of this.connectionAttempts.entries()) {
+            if (now - data.lastAttempt > this.CONNECTION_ATTEMPT_WINDOW) {
+                this.connectionAttempts.delete(ip);
+            }
+        }
+        
+        // Clean up rate limit map
+        for (const [key, data] of this.rateLimitMap.entries()) {
+            if (now > data.resetTime) {
+                this.rateLimitMap.delete(key);
+            }
+        }
+    }
+
+    // Rate limiting statistics
+    public getRateLimitStats(): {
+        rateLimitedIPs: number;
+        activeRateLimits: number;
+        averageMessagesPerConnection: number;
+        totalConnections: number;
+        connectionsByUserType: Record<string, number>;
+    } {
+        const activeConnections = this.getActiveConnectionsCount();
+        const totalMessages = Array.from(this.io.sockets.sockets.values())
+            .reduce((sum, socket) => sum + (socket.data?.messageCount || 0), 0);
+
+        return {
+            rateLimitedIPs: this.connectionAttempts.size,
+            activeRateLimits: this.rateLimitMap.size,
+            averageMessagesPerConnection: activeConnections > 0 ? totalMessages / activeConnections : 0,
+            totalConnections: activeConnections,
+            connectionsByUserType: this.getActiveUserTypes()
+        };
     }
 }
 
