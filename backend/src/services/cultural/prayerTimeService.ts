@@ -562,10 +562,10 @@ export class PrayerTimeService {
   async getCurrentPrayerTime(stateCode: string): Promise<{ name: string; time: string } | null> {
     try {
       const currentStatus = await this.getCurrentPrayerStatus(stateCode);
-      if (currentStatus.isCurrentlyPrayerTime) {
+      if (currentStatus.current_prayer) {
         return {
-          name: currentStatus.currentPrayer,
-          time: currentStatus.prayerTimes[currentStatus.currentPrayer.toLowerCase() as keyof PrayerTimes]
+          name: currentStatus.current_prayer,
+          time: currentStatus.prayer_times.prayer_times[currentStatus.current_prayer.toLowerCase() as keyof PrayerTimes]
         };
       }
       return null;

@@ -21,9 +21,14 @@ import { healthcareLoggingMiddleware } from './middleware/logging';
 import { errorHandlingMiddleware } from './middleware/error-handling';
 
 // Import Malaysian healthcare services
-import { CulturalDataService } from './services/cultural-data.service';
 import { HealthcareSecurityService } from './services/healthcare-security.service';
 import { PDPAComplianceService } from './services/pdpa-compliance.service';
+
+// Import Malaysian cultural services
+import { CulturalPreferenceService } from './services/cultural/culturalPreferenceService';
+import { PrayerTimeService } from './services/cultural/prayerTimeService';
+import { LanguageService } from './services/cultural/languageService';
+import { HalalValidationService } from './services/cultural/halalValidationService';
 
 // Import real-time services
 import { WebSocketService } from './services/realtime/webSocketService';
@@ -269,9 +274,17 @@ class MediMateBackendApplication {
     console.log('🏥 Initializing Malaysian healthcare services...');
 
     try {
-      // Initialize cultural data service
-      const culturalService = new CulturalDataService();
-      await culturalService.initialize();
+      // Initialize cultural services
+      const prayerTimeService = new PrayerTimeService();
+      const languageService = new LanguageService();
+      const halalValidationService = new HalalValidationService();
+      const culturalPreferenceService = new CulturalPreferenceService();
+      
+      await Promise.all([
+        languageService.initialize(),
+        halalValidationService.initialize(),
+        culturalPreferenceService.initialize()
+      ]);
 
       // Initialize healthcare security service
       const securityService = new HealthcareSecurityService();
@@ -282,7 +295,10 @@ class MediMateBackendApplication {
       await pdpaService.initialize();
 
       // Store services in app context for middleware access
-      this.app.locals.culturalService = culturalService;
+      this.app.locals.culturalPreferenceService = culturalPreferenceService;
+      this.app.locals.prayerTimeService = prayerTimeService;
+      this.app.locals.languageService = languageService;
+      this.app.locals.halalValidationService = halalValidationService;
       this.app.locals.securityService = securityService;
       this.app.locals.pdpaService = pdpaService;
 

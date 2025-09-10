@@ -424,7 +424,7 @@ export class HalalValidationService {
         timeout: 5000
       });
 
-      if (response.data && response.data.halal_status) {
+      if (response.data && (response.data as any).halal_status) {
         return this.formatJakimResponse(response.data, medicationName, manufacturer);
       }
 

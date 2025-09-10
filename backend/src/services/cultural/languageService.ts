@@ -428,6 +428,44 @@ export class LanguageService {
           hospital: 'Hospital',
           medicine: 'Medicine'
         }
+      },
+      {
+        code: 'zh',
+        name_en: 'Chinese',
+        name_native: '中文',
+        name_ms: 'Bahasa Cina',
+        official: false,
+        medical_terms_available: true,
+        healthcare_translation_priority: 3,
+        common_greetings: {
+          hello: '你好',
+          good_morning: '早上好',
+          thank_you: '谢谢'
+        },
+        medical_phrases: {
+          doctor: '医生',
+          hospital: '医院',
+          medicine: '药'
+        }
+      },
+      {
+        code: 'ta',
+        name_en: 'Tamil',
+        name_native: 'தமிழ்',
+        name_ms: 'Bahasa Tamil',
+        official: false,
+        medical_terms_available: true,
+        healthcare_translation_priority: 4,
+        common_greetings: {
+          hello: 'வணக்கம்',
+          good_morning: 'காலை வணக்கம்',
+          thank_you: 'நன்றி'
+        },
+        medical_phrases: {
+          doctor: 'மருத்துவர்',
+          hospital: 'மருத்துவமனை',
+          medicine: 'மருந்து'
+        }
       }
     ];
 
@@ -446,7 +484,7 @@ export class LanguageService {
         ms: translations.ms,
         zh: translations.zh,
         ta: translations.ta,
-        cultural_considerations: translations.cultural_considerations
+        cultural_considerations: (translations as any).cultural_considerations
       };
 
       this.medicalTerminology.set(key, terminology);
@@ -507,7 +545,7 @@ export class LanguageService {
   private async translateHealthcarePhrase(
     text: string,
     targetLanguage: string,
-    context?: TranslationResult
+    context?: TranslationContext
   ): Promise<TranslationResult | null> {
     const lowerText = text.toLowerCase();
     

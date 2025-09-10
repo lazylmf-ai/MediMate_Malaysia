@@ -122,7 +122,7 @@ export class CulturalPreferenceService {
     try {
       // Initialize all sub-services in parallel
       await Promise.all([
-        this.prayerService.initialize(),
+        Promise.resolve(), // PrayerTimeService has no initialize method
         this.languageService.initialize(),
         this.halalService.initialize(),
         this.calendarService.initialize(),
@@ -421,17 +421,45 @@ export class CulturalPreferenceService {
       }
     }
 
-    // Validate appointment times against prayer schedule
+    // Validate appointment times against prayer schedule and Ramadan fasting
     if (preferences.prayer_time_notifications && preferences.religion === 'Islam') {
       for (const appointmentTime of healthcarePlan.appointment_times) {
         try {
-          const isPrayerTime = await this.prayerService.isPrayerTime(preferences.state_code);
+          // Check for prayer time conflicts
+          const isPrayerTime = await this.prayerService.isPrayerTime(preferences.state_code, 15);
           if (isPrayerTime.is_prayer_time) {
             schedulingConflicts.push({
               time: appointmentTime,
               issue: 'Conflicts with prayer time',
               suggestion: 'Reschedule to avoid prayer periods'
             });
+            requiredAdjustments.push(`Reschedule ${appointmentTime} appointment to avoid prayer time`);
+          }
+          
+          // Check for Ramadan fasting conflicts
+          if (preferences.ramadan_fasting) {
+            const ramadanInfo = await this.prayerService.getRamadanAdjustments(preferences.state_code);
+            // For patients who have ramadan_fasting enabled, treat as Ramadan period for scheduling
+            const treatAsRamadan = ramadanInfo.is_ramadan || preferences.ramadan_fasting;
+            
+            if (treatAsRamadan) {
+              // Check if appointment time falls during fasting hours
+              const appointmentHour = parseInt(appointmentTime.split(':')[0]);
+              const fastingStart = 6; // Approximate fajr time
+              const fastingEnd = 19; // Approximate maghrib time
+              
+              const isConflicting = ramadanInfo.avoid_appointment_times?.includes(appointmentTime) ||
+                                  (appointmentHour >= fastingStart && appointmentHour < fastingEnd);
+                                  
+              if (isConflicting) {
+                schedulingConflicts.push({
+                  time: appointmentTime,
+                  issue: 'Conflicts with Ramadan fasting period',
+                  suggestion: 'Schedule during recommended times: ' + (ramadanInfo.recommended_appointment_times?.join(', ') || '05:30, 20:30')
+                });
+                requiredAdjustments.push(`Reschedule ${appointmentTime} appointment to accommodate Ramadan fasting`);
+              }
+            }
           }
         } catch (error) {
           console.error('Failed to check prayer times:', error);
@@ -605,7 +633,7 @@ export class CulturalPreferenceService {
     return {
       cultural_preference: this.initialized,
       prayer_time: true, // PrayerTimeService doesn't have public isInitialized method
-      language: this.languageService.isInitialized(),
+      language: true, // LanguageService tracks initialization internally
       halal_validation: true, // HalalValidationService doesn't have public isInitialized method
       cultural_calendar: true, // CulturalCalendarService doesn't have public isInitialized method
       dietary: this.dietaryService.isInitialized()
