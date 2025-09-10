@@ -126,7 +126,7 @@ export interface MalaysianPractitioner extends Practitioner {
   // Malaysian medical licenses and certifications
   qualification?: Array<{
     identifier?: Array<{
-      use?: string;
+      use?: 'usual' | 'official' | 'temp' | 'secondary' | 'old';
       type?: {
         coding: Array<{
           system: string;

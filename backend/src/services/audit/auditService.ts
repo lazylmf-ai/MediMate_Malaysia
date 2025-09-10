@@ -89,6 +89,37 @@ export class AuditService {
             console.error('Failed to log healthcare audit event:', error);
         }
     }
+
+    async logDataAccess(
+        userId: string,
+        resourceType: string,
+        resourceId: string,
+        action: string,
+        success: boolean,
+        ipAddress?: string,
+        userAgent?: string,
+        metadata?: any
+    ): Promise<void> {
+        const db = this.dbService.getConnection();
+        
+        try {
+            await db.none(`
+                INSERT INTO authentication_audit (
+                    event_type, user_id, event_description, ip_address, user_agent,
+                    event_status, auth_method, risk_score, created_at
+                ) VALUES ($1, $2, $3, $4, $5, $6, 'data_access', 0, NOW())
+            `, [
+                'data_access',
+                userId || null,
+                `Data access: ${action} ${resourceType}${resourceId ? ` (ID: ${resourceId})` : ''}`,
+                ipAddress || null,
+                userAgent || null,
+                success ? 'success' : 'failure'
+            ]);
+        } catch (error) {
+            console.error('Failed to log data access audit event:', error);
+        }
+    }
 }
 
 export default AuditService;
