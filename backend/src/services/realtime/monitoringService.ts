@@ -562,22 +562,133 @@ export class MonitoringService {
 
     private async storeMonitoringThresholds(patientId: string, thresholds: VitalThresholds): Promise<void> {
         const db = this.databaseService.getConnection();
-        // Implementation for storing thresholds
+        
+        await db.none(`
+            INSERT INTO patient_vital_thresholds (
+                patient_id, heart_rate_min, heart_rate_max, systolic_min, systolic_max,
+                diastolic_min, diastolic_max, temperature_min, temperature_max,
+                oxygen_saturation_min, glucose_level_min, glucose_level_max,
+                respiratory_rate_min, respiratory_rate_max, custom_thresholds,
+                alert_severity, cultural_considerations, created_at, updated_at
+            ) VALUES (
+                $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, NOW(), NOW()
+            )
+            ON CONFLICT (patient_id) DO UPDATE SET
+                heart_rate_min = EXCLUDED.heart_rate_min,
+                heart_rate_max = EXCLUDED.heart_rate_max,
+                systolic_min = EXCLUDED.systolic_min,
+                systolic_max = EXCLUDED.systolic_max,
+                diastolic_min = EXCLUDED.diastolic_min,
+                diastolic_max = EXCLUDED.diastolic_max,
+                temperature_min = EXCLUDED.temperature_min,
+                temperature_max = EXCLUDED.temperature_max,
+                oxygen_saturation_min = EXCLUDED.oxygen_saturation_min,
+                glucose_level_min = EXCLUDED.glucose_level_min,
+                glucose_level_max = EXCLUDED.glucose_level_max,
+                respiratory_rate_min = EXCLUDED.respiratory_rate_min,
+                respiratory_rate_max = EXCLUDED.respiratory_rate_max,
+                custom_thresholds = EXCLUDED.custom_thresholds,
+                alert_severity = EXCLUDED.alert_severity,
+                cultural_considerations = EXCLUDED.cultural_considerations,
+                updated_at = NOW()
+        `, [
+            patientId,
+            thresholds.heartRateMin,
+            thresholds.heartRateMax,
+            thresholds.systolicMin,
+            thresholds.systolicMax,
+            thresholds.diastolicMin,
+            thresholds.diastolicMax,
+            thresholds.temperatureMin,
+            thresholds.temperatureMax,
+            thresholds.oxygenSaturationMin,
+            thresholds.glucoseLevelMin,
+            thresholds.glucoseLevelMax,
+            thresholds.respiratoryRateMin,
+            thresholds.respiratoryRateMax,
+            JSON.stringify(thresholds.customThresholds || {}),
+            thresholds.alertSeverity,
+            JSON.stringify(thresholds.culturalConsiderations)
+        ]);
     }
 
     private async storeVitalSigns(vitals: VitalSigns): Promise<void> {
         const db = this.databaseService.getConnection();
-        // Implementation for storing vital signs
+        
+        await db.none(`
+            INSERT INTO vital_signs (
+                patient_id, device_id, timestamp, heart_rate, blood_pressure_systolic,
+                blood_pressure_diastolic, temperature, oxygen_saturation, respiratory_rate,
+                glucose_level, weight, metadata, created_at
+            ) VALUES (
+                $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, NOW()
+            )
+        `, [
+            vitals.patientId,
+            vitals.deviceId || null,
+            vitals.timestamp,
+            vitals.heartRate || null,
+            vitals.bloodPressureSystolic || null,
+            vitals.bloodPressureDiastolic || null,
+            vitals.temperature || null,
+            vitals.oxygenSaturation || null,
+            vitals.respiratoryRate || null,
+            vitals.glucoseLevel || null,
+            vitals.weight || null,
+            JSON.stringify(vitals.metadata || {})
+        ]);
     }
 
     private async storeMonitoringAlert(alert: MonitoringAlert): Promise<void> {
         const db = this.databaseService.getConnection();
-        // Implementation for storing alerts
+        
+        await db.none(`
+            INSERT INTO monitoring_alerts (
+                id, patient_id, alert_type, severity, vital_type, current_value,
+                threshold_value, trend, message, cultural_context, created_at,
+                acknowledged_at, acknowledged_by
+            ) VALUES (
+                $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13
+            )
+        `, [
+            alert.id,
+            alert.patientId,
+            alert.alertType,
+            alert.severity,
+            alert.vitalType,
+            alert.currentValue,
+            alert.thresholdValue,
+            alert.trend,
+            alert.message,
+            JSON.stringify(alert.culturalContext),
+            alert.createdAt,
+            alert.acknowledgedAt || null,
+            alert.acknowledgedBy || null
+        ]);
     }
 
     private async storeMonitoringSession(monitoring: PatientMonitoringStatus): Promise<void> {
         const db = this.databaseService.getConnection();
-        // Implementation for storing monitoring session
+        
+        await db.none(`
+            INSERT INTO monitoring_sessions (
+                patient_id, is_active, last_data_received, connected_devices,
+                alerts_active, monitoring_started, monitoring_ended, thresholds,
+                total_vitals_received, session_duration_seconds, created_at
+            ) VALUES (
+                $1, $2, $3, $4, $5, $6, NOW(), $7, $8, $9, NOW()
+            )
+        `, [
+            monitoring.patientId,
+            monitoring.isActive,
+            monitoring.lastDataReceived,
+            JSON.stringify(monitoring.connectedDevices),
+            monitoring.alertsActive,
+            monitoring.monitoringStarted,
+            JSON.stringify(monitoring.thresholds),
+            monitoring.vitalsHistory.length,
+            Math.floor((Date.now() - monitoring.monitoringStarted.getTime()) / 1000)
+        ]);
     }
 
     private async getPatientCulturalPreferences(patientId: string): Promise<any> {

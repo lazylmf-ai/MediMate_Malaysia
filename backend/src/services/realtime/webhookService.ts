@@ -666,21 +666,94 @@ export class WebhookService {
     }
 
     private async storeWebhookEndpoint(endpoint: WebhookEndpoint): Promise<void> {
-        // Implementation for storing webhook endpoint in database
         const db = this.databaseService.getConnection();
-        // SQL implementation would go here
+        
+        await db.none(`
+            INSERT INTO webhook_endpoints (
+                id, name, url, method, is_active, secret, headers, event_types,
+                retry_policy, rate_limiting, timeout, cultural_context,
+                healthcare_integration, created_at, updated_at, total_calls,
+                successful_calls, failed_calls
+            ) VALUES (
+                $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18
+            )
+        `, [
+            endpoint.id,
+            endpoint.name,
+            endpoint.url,
+            endpoint.method,
+            endpoint.isActive,
+            endpoint.secret || null,
+            JSON.stringify(endpoint.headers || {}),
+            JSON.stringify(endpoint.eventTypes),
+            JSON.stringify(endpoint.retryPolicy),
+            JSON.stringify(endpoint.rateLimiting),
+            endpoint.timeout,
+            JSON.stringify(endpoint.culturalContext),
+            JSON.stringify(endpoint.healthcareIntegration),
+            endpoint.createdAt,
+            endpoint.updatedAt,
+            endpoint.totalCalls,
+            endpoint.successfulCalls,
+            endpoint.failedCalls
+        ]);
     }
 
     private async updateWebhookEndpointInDB(endpoint: WebhookEndpoint): Promise<void> {
-        // Implementation for updating webhook endpoint in database
         const db = this.databaseService.getConnection();
-        // SQL implementation would go here
+        
+        await db.none(`
+            UPDATE webhook_endpoints SET
+                name = $2,
+                url = $3,
+                method = $4,
+                is_active = $5,
+                secret = $6,
+                headers = $7,
+                event_types = $8,
+                retry_policy = $9,
+                rate_limiting = $10,
+                timeout = $11,
+                cultural_context = $12,
+                healthcare_integration = $13,
+                updated_at = $14,
+                total_calls = $15,
+                successful_calls = $16,
+                failed_calls = $17,
+                last_successful_call = $18,
+                last_failed_call = $19
+            WHERE id = $1
+        `, [
+            endpoint.id,
+            endpoint.name,
+            endpoint.url,
+            endpoint.method,
+            endpoint.isActive,
+            endpoint.secret || null,
+            JSON.stringify(endpoint.headers || {}),
+            JSON.stringify(endpoint.eventTypes),
+            JSON.stringify(endpoint.retryPolicy),
+            JSON.stringify(endpoint.rateLimiting),
+            endpoint.timeout,
+            JSON.stringify(endpoint.culturalContext),
+            JSON.stringify(endpoint.healthcareIntegration),
+            endpoint.updatedAt,
+            endpoint.totalCalls,
+            endpoint.successfulCalls,
+            endpoint.failedCalls,
+            endpoint.lastSuccessfulCall || null,
+            endpoint.lastFailedCall || null
+        ]);
     }
 
     private async softDeleteWebhookEndpoint(webhookId: string): Promise<void> {
-        // Implementation for soft deleting webhook endpoint
         const db = this.databaseService.getConnection();
-        // SQL implementation would go here
+        
+        await db.none(`
+            UPDATE webhook_endpoints 
+            SET is_active = false, updated_at = NOW()
+            WHERE id = $1
+        `, [webhookId]);
     }
 
     private async updateWebhookStatistics(webhookId: string, success: boolean): Promise<void> {
@@ -737,16 +810,60 @@ export class WebhookService {
     }
 
     private async cleanupOldWebhookEvents(): Promise<void> {
-        // Clean up webhook events older than 30 days
         const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-        // Implementation for cleanup would go here
+        
+        try {
+            const db = this.databaseService.getConnection();
+            
+            // Clean up old webhook delivery logs
+            const deletedCount = await db.one(`
+                DELETE FROM webhook_delivery_logs 
+                WHERE created_at < $1
+                RETURNING COUNT(*) as deleted_count
+            `, [thirtyDaysAgo]);
+
+            console.log(`✅ Cleaned up ${deletedCount.deleted_count} old webhook events`);
+        } catch (error) {
+            console.error('❌ Failed to cleanup old webhook events:', error);
+        }
     }
 
     private async performWebhookHealthChecks(): Promise<void> {
-        // Perform health checks on webhook endpoints
         for (const [webhookId, endpoint] of this.webhookEndpoints.entries()) {
-            if (endpoint.isActive) {
-                // Implementation for health check would go here
+            if (!endpoint.isActive) continue;
+
+            try {
+                // Simple health check - attempt a HEAD request
+                const axios = require('axios');
+                const response = await axios.head(endpoint.url, {
+                    timeout: 5000,
+                    headers: {
+                        'User-Agent': 'MediMate-Malaysia-HealthCheck/1.0'
+                    }
+                });
+
+                // If endpoint is responding, update last successful call
+                if (response.status >= 200 && response.status < 300) {
+                    endpoint.lastSuccessfulCall = new Date();
+                    endpoint.updatedAt = new Date();
+                }
+            } catch (error) {
+                // Log health check failure
+                endpoint.lastFailedCall = new Date();
+                endpoint.updatedAt = new Date();
+
+                console.warn(`⚠️ Health check failed for webhook ${endpoint.name} (${webhookId}):`, 
+                    error instanceof Error ? error.message : 'Unknown error');
+
+                // If endpoint has been failing for too long, consider disabling it
+                const daysSinceLastSuccess = endpoint.lastSuccessfulCall 
+                    ? Math.floor((Date.now() - endpoint.lastSuccessfulCall.getTime()) / (24 * 60 * 60 * 1000))
+                    : Infinity;
+
+                if (daysSinceLastSuccess > 7) { // 7 days
+                    console.warn(`⚠️ Webhook ${endpoint.name} has not been healthy for ${daysSinceLastSuccess} days`);
+                    // Could auto-disable here if needed
+                }
             }
         }
     }
