@@ -1,8 +1,8 @@
 /**
  * Root Navigator
  * 
- * Top-level navigation with authentication guards that switches
- * between authenticated and unauthenticated navigation stacks.
+ * Top-level navigation with authentication guards, deep linking support,
+ * error boundaries, and cultural context awareness.
  */
 
 import React, { useEffect } from 'react';
@@ -14,6 +14,10 @@ import { loadStoredUser } from '@/store/slices/authSlice';
 import { setInitialized } from '@/store/slices/appSlice';
 import AuthNavigator from './AuthNavigator';
 import MainNavigator from './MainNavigator';
+import { NavigationErrorBoundary } from './ErrorBoundary';
+import { DEEP_LINK_PREFIXES, DEEP_LINK_CONFIG } from './DeepLinkingConfig';
+import { ContextualAnimationSelector, AnimationThemeManager } from './TransitionAnimations';
+import { useDeepLinking } from '@/hooks/useDeepLinking';
 import { COLORS, TYPOGRAPHY } from '@/constants/config';
 import type { RootStackParamList } from '@/types/navigation';
 
@@ -23,6 +27,10 @@ export default function RootNavigator() {
   const dispatch = useAppDispatch();
   const { isAuthenticated, isLoading } = useAppSelector((state) => state.auth);
   const { isInitialized } = useAppSelector((state) => state.app);
+  const { profile } = useAppSelector((state) => state.cultural);
+  
+  // Initialize deep linking
+  const deepLinking = useDeepLinking();
 
   useEffect(() => {
     const initializeApp = async () => {
@@ -40,40 +48,77 @@ export default function RootNavigator() {
     if (!isInitialized) {
       initializeApp();
     }
-  }, [isInitialized]);
+  }, [dispatch, isInitialized]);
+
+  // Configure animation theme based on cultural profile
+  useEffect(() => {
+    if (profile) {
+      // Set animation theme based on user preferences
+      if (profile.language === 'ms' && profile.prayerTimes?.enabled) {
+        AnimationThemeManager.setTheme('serene');
+      } else if (profile.familyStructure?.elderlyMembers > 0) {
+        AnimationThemeManager.setTheme('gentle');
+      } else {
+        AnimationThemeManager.setTheme('standard');
+      }
+
+      // Configure accessibility if needed
+      if (profile.familyStructure?.elderlyMembers > 0) {
+        AnimationThemeManager.setAccessibilityMode(true);
+      }
+    }
+  }, [profile]);
+
+  // Prepare linking configuration
+  const linking = {
+    prefixes: __DEV__ ? DEEP_LINK_PREFIXES.development : DEEP_LINK_PREFIXES.production,
+    config: DEEP_LINK_CONFIG,
+  };
 
   // Show loading screen while initializing
   if (!isInitialized || isLoading) {
     return <LoadingScreen />;
   }
 
+  // Cultural context for error boundary
+  const culturalContext = profile ? {
+    language: profile.language,
+    theme: AnimationThemeManager.getCurrentTheme(),
+  } : undefined;
+
   return (
-    <NavigationContainer>
-      <Stack.Navigator
-        screenOptions={{
-          headerShown: false,
-          animation: 'fade',
-        }}
-      >
-        {isAuthenticated ? (
-          <Stack.Screen
-            name="Main"
-            component={MainNavigator}
-            options={{
-              gestureEnabled: false, // Prevent swipe back to auth
-            }}
-          />
-        ) : (
-          <Stack.Screen
-            name="Auth"
-            component={AuthNavigator}
-            options={{
-              gestureEnabled: false, // Prevent swipe gestures during auth
-            }}
-          />
-        )}
-      </Stack.Navigator>
-    </NavigationContainer>
+    <NavigationErrorBoundary culturalContext={culturalContext}>
+      <NavigationContainer linking={linking}>
+        <Stack.Navigator
+          screenOptions={({ route }) => {
+            const animations = ContextualAnimationSelector.getAnimationForRoute(route.name);
+            
+            return {
+              headerShown: false,
+              ...animations,
+            };
+          }}
+        >
+          {isAuthenticated ? (
+            <Stack.Screen
+              name="Main"
+              component={MainNavigator}
+              options={{
+                gestureEnabled: false, // Prevent swipe back to auth
+              }}
+            />
+          ) : (
+            <Stack.Screen
+              name="Auth"
+              component={AuthNavigator}
+              options={{
+                gestureEnabled: false, // Prevent swipe gestures during auth
+              }}
+            />
+          )}
+        </Stack.Navigator>
+      </NavigationContainer>
+    </NavigationErrorBoundary>
   );
 }
 
