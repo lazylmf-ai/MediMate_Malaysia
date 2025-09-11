@@ -496,6 +496,361 @@ export class ApiKeyService {
   }
 
   /**
+   * Generate sandbox test data for developers
+   */
+  public async generateSandboxData(
+    developerId: string,
+    dataType: 'patients' | 'appointments' | 'medications' | 'cultural_events' | 'prayer_times',
+    options: {
+      count?: number;
+      malaysianProfiles?: {
+        includeRaces?: string[];
+        includeReligions?: string[];
+        states?: string[];
+        languages?: string[];
+      };
+      culturalConsiderations?: {
+        includePrayerTimes?: boolean;
+        includeHalalPreferences?: boolean;
+        includeRamadanAdjustments?: boolean;
+        includeCulturalEvents?: boolean;
+      };
+    } = {}
+  ): Promise<{
+    success: boolean;
+    data: {
+      generatedCount: number;
+      dataType: string;
+      generatedData: any[];
+      culturalMetadata: {
+        racialDistribution: Record<string, number>;
+        religiousDistribution: Record<string, number>;
+        languageDistribution: Record<string, number>;
+        stateDistribution: Record<string, number>;
+      };
+      usageNotes: string[];
+    };
+    error?: string;
+  }> {
+    const developer = this.developers.get(developerId);
+    if (!developer) {
+      return { success: false, data: {} as any, error: 'Developer not found' };
+    }
+
+    const count = Math.min(options.count || 10, 100); // Max 100 items
+    const generatedData: any[] = [];
+    const culturalMetadata = {
+      racialDistribution: {} as Record<string, number>,
+      religiousDistribution: {} as Record<string, number>,
+      languageDistribution: {} as Record<string, number>,
+      stateDistribution: {} as Record<string, number>
+    };
+
+    // Malaysian data sets
+    const malaysianRaces = options.malaysianProfiles?.includeRaces || ['Malay', 'Chinese', 'Indian', 'Iban', 'Kadazan'];
+    const malaysianReligions = options.malaysianProfiles?.includeReligions || ['Islam', 'Buddhism', 'Christianity', 'Hinduism'];
+    const malaysianStates = options.malaysianProfiles?.states || ['KUL', 'SGR', 'JHR', 'PNG', 'PRK', 'PHG', 'TRG', 'KTN', 'PLS', 'KDH', 'MLK', 'NSN', 'SWK'];
+    const malaysianLanguages = options.malaysianProfiles?.languages || ['ms', 'en', 'zh', 'ta'];
+
+    // Generate data based on type
+    for (let i = 0; i < count; i++) {
+      let item: any = {};
+
+      // Randomly select Malaysian characteristics
+      const race = malaysianRaces[Math.floor(Math.random() * malaysianRaces.length)];
+      const religion = malaysianReligions[Math.floor(Math.random() * malaysianReligions.length)];
+      const state = malaysianStates[Math.floor(Math.random() * malaysianStates.length)];
+      const language = malaysianLanguages[Math.floor(Math.random() * malaysianLanguages.length)];
+
+      // Update metadata
+      culturalMetadata.racialDistribution[race] = (culturalMetadata.racialDistribution[race] || 0) + 1;
+      culturalMetadata.religiousDistribution[religion] = (culturalMetadata.religiousDistribution[religion] || 0) + 1;
+      culturalMetadata.languageDistribution[language] = (culturalMetadata.languageDistribution[language] || 0) + 1;
+      culturalMetadata.stateDistribution[state] = (culturalMetadata.stateDistribution[state] || 0) + 1;
+
+      switch (dataType) {
+        case 'patients':
+          item = this.generateMalaysianPatient(race, religion, state, language, options.culturalConsiderations);
+          break;
+        case 'appointments':
+          item = this.generateMalaysianAppointment(state, language, options.culturalConsiderations);
+          break;
+        case 'medications':
+          item = this.generateHalalMedication(religion === 'Islam');
+          break;
+        case 'cultural_events':
+          item = this.generateCulturalEvent(state, religion);
+          break;
+        case 'prayer_times':
+          item = this.generatePrayerTimeData(state);
+          break;
+      }
+
+      generatedData.push(item);
+    }
+
+    const usageNotes = [
+      'This is synthetic test data for development purposes only',
+      'Data follows Malaysian healthcare patterns and cultural norms',
+      'PDPA compliance features are included for testing',
+      'Cultural considerations are embedded throughout the data',
+      'Use this data to test integration scenarios safely'
+    ];
+
+    console.log(`🧪 Generated ${count} ${dataType} test items for developer ${developerId}`);
+
+    return {
+      success: true,
+      data: {
+        generatedCount: count,
+        dataType,
+        generatedData,
+        culturalMetadata,
+        usageNotes
+      }
+    };
+  }
+
+  /**
+   * Generate Malaysian patient test data
+   */
+  private generateMalaysianPatient(race: string, religion: string, state: string, language: string, culturalOptions?: any): any {
+    const malaysianNames = {
+      Malay: { male: ['Ahmad', 'Ali', 'Hassan', 'Ibrahim'], female: ['Siti', 'Fatimah', 'Aminah', 'Khadijah'] },
+      Chinese: { male: ['Wei Ming', 'Jia Wei', 'Kai Xin', 'Zhi Hao'], female: ['Li Hua', 'Mei Ling', 'Xiao Yu', 'Jing Yi'] },
+      Indian: { male: ['Raj', 'Kumar', 'Suresh', 'Raman'], female: ['Priya', 'Kavitha', 'Meera', 'Asha'] }
+    };
+
+    const gender = Math.random() > 0.5 ? 'male' : 'female';
+    const namePool = (malaysianNames as any)[race] || malaysianNames.Malay;
+    const firstName = namePool[gender][Math.floor(Math.random() * namePool[gender].length)];
+
+    return {
+      patient_id: uuidv4(),
+      personal_info: {
+        name: `${firstName} ${race === 'Chinese' ? 'Tan' : race === 'Indian' ? 'Sharma' : 'bin Abdullah'}`,
+        mykad_number: this.generateMyKadNumber(),
+        date_of_birth: this.generateRandomDate(new Date('1950-01-01'), new Date('2005-12-31')),
+        gender,
+        race,
+        religion,
+        nationality: 'Malaysian'
+      },
+      contact_info: {
+        phone: `+60${Math.floor(100000000 + Math.random() * 900000000)}`,
+        email: `${firstName.toLowerCase().replace(' ', '')}@email.com`,
+        address: {
+          street: `${Math.floor(1 + Math.random() * 999)} Jalan ${race === 'Malay' ? 'Ampang' : race === 'Chinese' ? 'Petaling' : 'Brickfields'}`,
+          city: this.getStateCapital(state),
+          state: this.getStateName(state),
+          postcode: `${Math.floor(10000 + Math.random() * 90000)}`,
+          country: 'Malaysia'
+        }
+      },
+      cultural_preferences: {
+        primary_language: language,
+        secondary_languages: language === 'ms' ? ['en'] : ['ms'],
+        prayer_time_notifications: religion === 'Islam',
+        halal_medication_only: religion === 'Islam',
+        preferred_gender_provider: religion === 'Islam' ? 'same' : 'no_preference',
+        ramadan_considerations: religion === 'Islam'
+      },
+      pdpa_consent: {
+        data_processing: true,
+        marketing: Math.random() > 0.5,
+        third_party_sharing: false,
+        consent_date: new Date().toISOString()
+      },
+      test_data_metadata: {
+        generated_for_sandbox: true,
+        cultural_profile: { race, religion, state, language }
+      }
+    };
+  }
+
+  /**
+   * Generate Malaysian appointment test data
+   */
+  private generateMalaysianAppointment(state: string, language: string, culturalOptions?: any): any {
+    const appointmentTypes = ['consultation', 'followup', 'procedure', 'emergency', 'telemedicine'];
+    const providers = ['Dr. Ahmad Rahman', 'Dr. Li Wei', 'Dr. Priya Sharma'];
+    
+    return {
+      appointment_id: uuidv4(),
+      patient_id: uuidv4(),
+      provider_id: uuidv4(),
+      appointment_date: this.generateFutureDate(),
+      appointment_time: this.generateAppointmentTime(culturalOptions?.includePrayerTimes),
+      duration_minutes: [15, 30, 45, 60][Math.floor(Math.random() * 4)],
+      appointment_type: appointmentTypes[Math.floor(Math.random() * appointmentTypes.length)],
+      cultural_considerations: {
+        avoid_prayer_times: true,
+        ramadan_friendly: culturalOptions?.includeRamadanAdjustments || false,
+        preferred_language: language,
+        state_context: state
+      },
+      prayer_time_analysis: culturalOptions?.includePrayerTimes ? {
+        conflicts_with_prayer: Math.random() > 0.8,
+        recommended_adjustments: ['Consider scheduling 30 minutes after Dhuhr prayer']
+      } : undefined,
+      test_data_metadata: {
+        generated_for_sandbox: true,
+        cultural_context: { state, language }
+      }
+    };
+  }
+
+  /**
+   * Generate Halal medication test data
+   */
+  private generateHalalMedication(isMuslim: boolean): any {
+    const medications = [
+      { name: 'Paracetamol 500mg', halal: true, manufacturer: 'Duopharma Biotech' },
+      { name: 'Ibuprofen 200mg', halal: true, manufacturer: 'CCM Pharmaceuticals' },
+      { name: 'Amoxicillin 250mg', halal: true, manufacturer: 'Pharmaniaga' },
+      { name: 'Metformin 500mg', halal: true, manufacturer: 'Hovid' }
+    ];
+
+    const med = medications[Math.floor(Math.random() * medications.length)];
+    
+    return {
+      medication_id: uuidv4(),
+      name: med.name,
+      generic_name: med.name.split(' ')[0],
+      manufacturer: med.manufacturer,
+      halal_status: med.halal ? 'halal' : 'mushbooh',
+      halal_certification: med.halal ? {
+        certified: true,
+        authority: 'JAKIM',
+        certificate_number: `MY-${Math.floor(100000 + Math.random() * 900000)}`,
+        expiry_date: this.generateFutureDate()
+      } : null,
+      moh_approved: true,
+      active_ingredients: [med.name.split(' ')[0].toLowerCase()],
+      available_forms: ['tablet', 'capsule'],
+      test_data_metadata: {
+        generated_for_sandbox: true,
+        patient_preference: { requires_halal: isMuslim }
+      }
+    };
+  }
+
+  /**
+   * Generate cultural event test data
+   */
+  private generateCulturalEvent(state: string, religion: string): any {
+    const events = {
+      Islam: ['Eid al-Fitr', 'Eid al-Adha', 'Ramadan', 'Maulud Nabi'],
+      Buddhism: ['Vesak Day', 'Chinese New Year'],
+      Christianity: ['Christmas', 'Easter'],
+      Hinduism: ['Deepavali', 'Thaipusam']
+    };
+
+    const religionEvents = (events as any)[religion] || events.Islam;
+    const event = religionEvents[Math.floor(Math.random() * religionEvents.length)];
+
+    return {
+      event_id: uuidv4(),
+      name: event,
+      religion,
+      date: this.generateFutureDate(),
+      state,
+      healthcare_considerations: {
+        fasting_involved: event === 'Ramadan',
+        special_dietary_requirements: event.includes('Eid') || event === 'Deepavali',
+        recommended_schedule_adjustments: ['Avoid early morning appointments', 'Consider cultural sensitivities']
+      },
+      test_data_metadata: {
+        generated_for_sandbox: true,
+        cultural_context: { state, religion }
+      }
+    };
+  }
+
+  /**
+   * Generate prayer time test data
+   */
+  private generatePrayerTimeData(state: string): any {
+    const today = new Date();
+    return {
+      state_code: state,
+      state_name: this.getStateName(state),
+      date: today.toISOString().split('T')[0],
+      prayer_times: {
+        fajr: '05:45',
+        sunrise: '07:15',
+        dhuhr: '13:15',
+        asr: '16:30',
+        maghrib: '19:25',
+        isha: '20:35'
+      },
+      healthcare_considerations: {
+        avoid_times: [
+          { prayer: 'Dhuhr', time_range: { start: '13:10', end: '13:30' } },
+          { prayer: 'Asr', time_range: { start: '16:25', end: '16:45' } }
+        ],
+        optimal_appointment_windows: [
+          { start: '08:00', end: '12:00', description: 'Morning - after Fajr' },
+          { start: '14:00', end: '16:00', description: 'Afternoon - between Dhuhr and Asr' }
+        ]
+      },
+      test_data_metadata: {
+        generated_for_sandbox: true,
+        state_context: state
+      }
+    };
+  }
+
+  // Helper methods for data generation
+  private generateMyKadNumber(): string {
+    const year = Math.floor(Math.random() * 50) + 60; // 60-110 (representing years 1960-2010)
+    const month = Math.floor(Math.random() * 12) + 1;
+    const day = Math.floor(Math.random() * 28) + 1;
+    const location = Math.floor(Math.random() * 99) + 1;
+    const serial = Math.floor(Math.random() * 9999) + 1000;
+    
+    return `${year.toString().padStart(2, '0')}${month.toString().padStart(2, '0')}${day.toString().padStart(2, '0')}-${location.toString().padStart(2, '0')}-${serial}`;
+  }
+
+  private generateRandomDate(start: Date, end: Date): string {
+    const date = new Date(start.getTime() + Math.random() * (end.getTime() - start.getTime()));
+    return date.toISOString().split('T')[0];
+  }
+
+  private generateFutureDate(): string {
+    const today = new Date();
+    const futureDate = new Date(today.getTime() + Math.random() * 365 * 24 * 60 * 60 * 1000);
+    return futureDate.toISOString().split('T')[0];
+  }
+
+  private generateAppointmentTime(avoidPrayer?: boolean): string {
+    const hours = [8, 9, 10, 11, 14, 15, 16, 17]; // Avoiding prayer times
+    const hour = hours[Math.floor(Math.random() * hours.length)];
+    const minutes = ['00', '15', '30', '45'][Math.floor(Math.random() * 4)];
+    return `${hour.toString().padStart(2, '0')}:${minutes}`;
+  }
+
+  private getStateCapital(stateCode: string): string {
+    const capitals: Record<string, string> = {
+      'KUL': 'Kuala Lumpur', 'SGR': 'Shah Alam', 'JHR': 'Johor Bahru',
+      'PNG': 'George Town', 'PRK': 'Ipoh', 'PHG': 'Kuantan',
+      'TRG': 'Kuala Terengganu', 'KTN': 'Kota Bharu', 'PLS': 'Kangar',
+      'KDH': 'Alor Setar', 'MLK': 'Malacca City', 'NSN': 'Seremban', 'SWK': 'Kuching'
+    };
+    return capitals[stateCode] || 'Kuala Lumpur';
+  }
+
+  private getStateName(stateCode: string): string {
+    const states: Record<string, string> = {
+      'KUL': 'Kuala Lumpur', 'SGR': 'Selangor', 'JHR': 'Johor',
+      'PNG': 'Penang', 'PRK': 'Perak', 'PHG': 'Pahang',
+      'TRG': 'Terengganu', 'KTN': 'Kelantan', 'PLS': 'Perlis',
+      'KDH': 'Kedah', 'MLK': 'Melaka', 'NSN': 'Negeri Sembilan', 'SWK': 'Sarawak'
+    };
+    return states[stateCode] || 'Kuala Lumpur';
+  }
+
+  /**
    * Get service health status
    */
   public getServiceStatus(): {
@@ -506,10 +861,15 @@ export class ApiKeyService {
       activeApiKeys: number;
       totalRequests: number;
       requestsLastHour: number;
+      sandboxDataGenerated: number;
+      culturalApiUsage: number;
     };
   } {
     const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
     const recentRequests = this.usageLog.filter(usage => usage.timestamp > oneHourAgo);
+    const culturalRequests = this.usageLog.filter(usage => 
+      usage.endpoint.includes('/cultural/') || usage.culturalFeature
+    );
 
     return {
       status: 'healthy',
@@ -518,7 +878,9 @@ export class ApiKeyService {
         totalApiKeys: this.apiKeys.size,
         activeApiKeys: Array.from(this.apiKeys.values()).filter(key => key.isActive).length,
         totalRequests: this.usageLog.length,
-        requestsLastHour: recentRequests.length
+        requestsLastHour: recentRequests.length,
+        sandboxDataGenerated: 0, // Would track from database
+        culturalApiUsage: culturalRequests.length
       }
     };
   }
