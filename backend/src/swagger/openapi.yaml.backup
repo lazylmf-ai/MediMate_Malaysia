@@ -1,0 +1,1682 @@
+openapi: 3.0.3
+info:
+  title: MediMate Malaysia Healthcare API
+  version: 1.0.0
+  description: |
+    Comprehensive healthcare API for Malaysian healthcare providers with cultural intelligence,
+    PDPA compliance, and Islamic healthcare considerations.
+    
+    ## Features
+    - Malaysian cultural intelligence integration
+    - PDPA 2010 compliant data handling
+    - Islamic prayer time considerations
+    - Halal medication validation
+    - Multi-language support (English, Bahasa Malaysia, Chinese, Tamil)
+    - Real-time healthcare notifications
+    - HL7 FHIR R4 compatibility
+    
+    ## Authentication
+    All protected endpoints require Bearer token authentication with appropriate healthcare role-based access control (RBAC).
+    
+    ## Rate Limiting
+    - 100 requests per 15-minute window (production)
+    - 1000 requests per 15-minute window (development)
+    
+    ## Malaysian Healthcare Context
+    This API is specifically designed for the Malaysian healthcare ecosystem, incorporating:
+    - MyKad integration for patient identification
+    - Malaysian state-specific prayer times
+    - Cultural and religious considerations
+    - Local healthcare provider networks
+    - Ministry of Health Malaysia guidelines
+  
+  contact:
+    name: MediMate Malaysia API Support
+    url: https://api.medimate.my/support
+    email: api-support@medimate.my
+  
+  license:
+    name: Healthcare API License
+    url: https://api.medimate.my/license
+  
+  termsOfService: https://api.medimate.my/terms
+
+servers:
+  - url: https://api.medimate.my/v1
+    description: Production server
+  - url: https://staging-api.medimate.my/v1
+    description: Staging server
+  - url: http://localhost:3000/api/v1
+    description: Development server
+
+security:
+  - bearerAuth: []
+  - apiKey: []
+
+paths:
+  # Health Check Endpoints
+  /health:
+    get:
+      tags:
+        - System Health
+      summary: System health check
+      description: Check the overall health status of the MediMate Malaysia API
+      security: []
+      responses:
+        '200':
+          description: System is healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthStatus'
+              examples:
+                healthy:
+                  value:
+                    status: "healthy"
+                    timestamp: "2024-03-15T10:30:00Z"
+                    services:
+                      database: "connected"
+                      redis: "connected"
+                      cultural_services: "operational"
+                    cultural_context: "Malaysian Healthcare"
+                    supported_languages: ["ms", "en", "zh", "ta"]
+
+  # Malaysian Context
+  /context:
+    get:
+      tags:
+        - System Information
+      summary: Get Malaysian healthcare context
+      description: Retrieve cultural and system context information for Malaysian healthcare
+      security: []
+      responses:
+        '200':
+          description: Malaysian healthcare context information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MalaysianContext'
+
+  # Cultural Intelligence APIs
+  /cultural/prayer-times/{stateCode}:
+    get:
+      tags:
+        - Cultural Intelligence
+      summary: Get prayer times for Malaysian state
+      description: Retrieve Islamic prayer times for specific Malaysian state
+      parameters:
+        - name: stateCode
+          in: path
+          required: true
+          description: Malaysian state code (3 characters)
+          schema:
+            type: string
+            pattern: '^[A-Z]{3}$'
+            example: "KUL"
+        - name: date
+          in: query
+          required: false
+          description: Date for prayer times (ISO 8601 format)
+          schema:
+            type: string
+            format: date
+            example: "2024-03-15"
+      responses:
+        '200':
+          description: Prayer times retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PrayerTimesResponse'
+        '400':
+          description: Invalid state code or date format
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /cultural/prayer-times/{stateCode}/current:
+    get:
+      tags:
+        - Cultural Intelligence
+      summary: Get current prayer status
+      description: Get current prayer time status for healthcare scheduling
+      parameters:
+        - name: stateCode
+          in: path
+          required: true
+          schema:
+            type: string
+            pattern: '^[A-Z]{3}$'
+      responses:
+        '200':
+          description: Current prayer status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CurrentPrayerStatus'
+
+  /cultural/translate:
+    post:
+      tags:
+        - Cultural Intelligence
+      summary: Translate healthcare text
+      description: Translate medical text with cultural context for Malaysian healthcare
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TranslationRequest'
+            examples:
+              medical_translation:
+                value:
+                  text: "Take this medication twice daily after meals"
+                  target_language: "ms"
+                  source_language: "en"
+                  context:
+                    domain: "prescription"
+                    urgency: "medium"
+      responses:
+        '200':
+          description: Translation completed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TranslationResponse'
+
+  /cultural/halal/validate-medication:
+    post:
+      tags:
+        - Halal Validation
+      summary: Validate medication halal status
+      description: Check if medication is halal according to Islamic guidelines
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/HalalMedicationRequest'
+            examples:
+              medication_validation:
+                value:
+                  medication_name: "Paracetamol 500mg"
+                  manufacturer: "Duopharma Biotech"
+                  active_ingredients: ["paracetamol"]
+      responses:
+        '200':
+          description: Halal validation completed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HalalValidationResponse'
+
+  /cultural/calendar/ramadan/{year}:
+    get:
+      tags:
+        - Cultural Calendar
+      summary: Get Ramadan information
+      description: Retrieve Ramadan dates and healthcare scheduling considerations
+      parameters:
+        - name: year
+          in: path
+          required: true
+          schema:
+            type: integer
+            minimum: 2020
+            maximum: 2030
+            example: 2024
+      responses:
+        '200':
+          description: Ramadan information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RamadanInfo'
+
+  # Patient Management
+  /patients:
+    get:
+      tags:
+        - Patient Management
+      summary: List patients
+      description: Retrieve list of patients with PDPA compliance
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: search
+          in: query
+          description: Search by name or MyKad number
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of patients
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PatientsResponse'
+        '401':
+          description: Unauthorized - Invalid or missing authentication
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden - Insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    post:
+      tags:
+        - Patient Management
+      summary: Create new patient
+      description: Create new patient record with Malaysian healthcare context
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatientCreateRequest'
+            examples:
+              malaysian_patient:
+                value:
+                  personal_info:
+                    name: "Ahmad bin Abdullah"
+                    mykad_number: "800101-01-1234"
+                    date_of_birth: "1980-01-01"
+                    gender: "male"
+                    race: "Malay"
+                    religion: "Islam"
+                    nationality: "Malaysian"
+                  contact_info:
+                    phone: "+60123456789"
+                    email: "ahmad.abdullah@email.com"
+                    address:
+                      street: "123 Jalan Merdeka"
+                      city: "Kuala Lumpur"
+                      state: "Kuala Lumpur"
+                      postcode: "50000"
+                      country: "Malaysia"
+                  cultural_preferences:
+                    primary_language: "ms"
+                    secondary_languages: ["en"]
+                    prayer_time_notifications: true
+                    halal_medication_only: true
+                    preferred_gender_provider: "same"
+                  pdpa_consent:
+                    data_processing: true
+                    marketing: false
+                    third_party_sharing: false
+                    consent_date: "2024-03-15T10:30:00Z"
+      responses:
+        '201':
+          description: Patient created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PatientResponse'
+        '400':
+          description: Invalid patient data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /patients/{patientId}:
+    get:
+      tags:
+        - Patient Management
+      summary: Get patient by ID
+      description: Retrieve patient information with cultural context
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: patientId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Patient information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PatientResponse'
+        '404':
+          description: Patient not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    put:
+      tags:
+        - Patient Management
+      summary: Update patient information
+      description: Update patient record with audit trail for PDPA compliance
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: patientId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatientUpdateRequest'
+      responses:
+        '200':
+          description: Patient updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PatientResponse'
+
+  # Appointments
+  /appointments:
+    get:
+      tags:
+        - Appointment Management
+      summary: List appointments
+      description: Retrieve appointments with cultural considerations
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: date_from
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: date_to
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: patient_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: provider_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: include_prayer_conflicts
+          in: query
+          description: Include prayer time conflict information
+          schema:
+            type: boolean
+            default: true
+      responses:
+        '200':
+          description: List of appointments
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AppointmentsResponse'
+
+    post:
+      tags:
+        - Appointment Management
+      summary: Create new appointment
+      description: Schedule appointment with Malaysian cultural considerations
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AppointmentCreateRequest'
+            examples:
+              ramadan_appointment:
+                value:
+                  patient_id: "123e4567-e89b-12d3-a456-426614174000"
+                  provider_id: "987fcdeb-51a2-43d7-8fed-123456789abc"
+                  appointment_date: "2024-04-15"
+                  appointment_time: "14:00"
+                  duration_minutes: 30
+                  appointment_type: "consultation"
+                  cultural_considerations:
+                    avoid_prayer_times: true
+                    ramadan_friendly: true
+                    preferred_language: "ms"
+                  notes: "Regular checkup - patient fasting during Ramadan"
+      responses:
+        '201':
+          description: Appointment created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AppointmentResponse'
+
+  # Medications
+  /medications:
+    get:
+      tags:
+        - Medication Management
+      summary: List medications
+      description: Retrieve medication database with halal validation
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: search
+          in: query
+          description: Search medication by name or active ingredient
+          schema:
+            type: string
+        - name: halal_only
+          in: query
+          description: Filter for halal medications only
+          schema:
+            type: boolean
+            default: false
+        - name: category
+          in: query
+          schema:
+            type: string
+            enum: [analgesic, antibiotic, antiviral, vaccine, supplement]
+      responses:
+        '200':
+          description: List of medications
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MedicationsResponse'
+
+  # Real-time Services
+  /realtime/notifications/subscribe:
+    post:
+      tags:
+        - Real-time Services
+      summary: Subscribe to real-time notifications
+      description: Subscribe to healthcare notifications with cultural preferences
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NotificationSubscriptionRequest'
+      responses:
+        '201':
+          description: Subscription created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubscriptionResponse'
+
+  /realtime/dashboard/connect:
+    get:
+      tags:
+        - Real-time Services
+      summary: Connect to dashboard WebSocket
+      description: Establish WebSocket connection for real-time dashboard updates
+      security:
+        - bearerAuth: []
+      responses:
+        '101':
+          description: WebSocket connection established
+        '401':
+          description: Unauthorized - Invalid token
+
+  # FHIR Integration
+  /fhir/Patient:
+    get:
+      tags:
+        - FHIR Integration
+      summary: Search FHIR patients
+      description: Search patients using FHIR R4 specification with Malaysian profiles
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: identifier
+          in: query
+          description: Patient identifier (MyKad number)
+          schema:
+            type: string
+        - name: name
+          in: query
+          description: Patient name
+          schema:
+            type: string
+        - name: birthdate
+          in: query
+          description: Patient birth date
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: FHIR Bundle with patient resources
+          content:
+            application/fhir+json:
+              schema:
+                $ref: '#/components/schemas/FHIRBundle'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token for healthcare provider authentication
+    
+    apiKey:
+      type: apiKey
+      in: header
+      name: X-API-Key
+      description: API key for third-party integrations
+
+  schemas:
+    # System Schemas
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [healthy, degraded, unhealthy]
+        timestamp:
+          type: string
+          format: date-time
+        services:
+          type: object
+          properties:
+            database:
+              type: string
+              enum: [connected, disconnected, error]
+            redis:
+              type: string
+              enum: [connected, disconnected, error]
+            cultural_services:
+              type: string
+              enum: [operational, degraded, error]
+        cultural_context:
+          type: string
+          example: "Malaysian Healthcare"
+        supported_languages:
+          type: array
+          items:
+            type: string
+            enum: [ms, en, zh, ta]
+
+    MalaysianContext:
+      type: object
+      properties:
+        system:
+          type: string
+          example: "MediMate Malaysia"
+        cultural_context:
+          type: string
+          example: "Malaysian Healthcare"
+        supported_languages:
+          type: array
+          items:
+            type: string
+        timezone:
+          type: string
+          example: "Asia/Kuala_Lumpur"
+        healthcare_standards:
+          type: array
+          items:
+            type: string
+          example: ["MOH Malaysia", "PDPA 2010"]
+        islamic_features:
+          type: boolean
+          example: true
+        multi_cultural_support:
+          type: boolean
+          example: true
+        version:
+          type: string
+          example: "1.0.0"
+
+    # Cultural Intelligence Schemas
+    PrayerTimesResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            date:
+              type: string
+              format: date
+            state:
+              type: string
+            state_code:
+              type: string
+            prayer_times:
+              type: object
+              properties:
+                fajr:
+                  type: string
+                  format: time
+                  example: "05:45"
+                sunrise:
+                  type: string
+                  format: time
+                  example: "07:02"
+                dhuhr:
+                  type: string
+                  format: time
+                  example: "13:15"
+                asr:
+                  type: string
+                  format: time
+                  example: "16:30"
+                maghrib:
+                  type: string
+                  format: time
+                  example: "19:25"
+                isha:
+                  type: string
+                  format: time
+                  example: "20:35"
+            healthcare_considerations:
+              type: object
+              properties:
+                avoid_times:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      prayer:
+                        type: string
+                      time_range:
+                        type: object
+                        properties:
+                          start:
+                            type: string
+                            format: time
+                          end:
+                            type: string
+                            format: time
+                optimal_appointment_windows:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      start:
+                        type: string
+                        format: time
+                      end:
+                        type: string
+                        format: time
+                      description:
+                        type: string
+        meta:
+          type: object
+          properties:
+            cultural_context:
+              type: string
+            malaysian_state:
+              type: string
+
+    CurrentPrayerStatus:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            current_time:
+              type: string
+              format: date-time
+            current_prayer:
+              type: string
+              enum: [fajr, sunrise, dhuhr, asr, maghrib, isha, night]
+            next_prayer:
+              type: object
+              properties:
+                name:
+                  type: string
+                time:
+                  type: string
+                  format: time
+                minutes_until:
+                  type: integer
+            is_prayer_time:
+              type: boolean
+            healthcare_scheduling_status:
+              type: string
+              enum: [optimal, caution, avoid]
+              description: Scheduling recommendation based on prayer times
+
+    TranslationRequest:
+      type: object
+      required:
+        - text
+        - target_language
+      properties:
+        text:
+          type: string
+          description: Text to translate
+          example: "Take this medication twice daily after meals"
+        target_language:
+          type: string
+          enum: [ms, en, zh, ta]
+          description: Target language code
+        source_language:
+          type: string
+          enum: [ms, en, zh, ta]
+          default: "en"
+          description: Source language code
+        context:
+          type: object
+          properties:
+            domain:
+              type: string
+              enum: [general, medical, emergency, appointment, prescription, diagnosis]
+              default: "general"
+            urgency:
+              type: string
+              enum: [low, medium, high, critical]
+              default: "medium"
+            cultural_sensitivity:
+              type: boolean
+              default: true
+
+    TranslationResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            original_text:
+              type: string
+            translated_text:
+              type: string
+            source_language:
+              type: string
+            target_language:
+              type: string
+            confidence_score:
+              type: number
+              minimum: 0
+              maximum: 1
+            cultural_notes:
+              type: array
+              items:
+                type: string
+            medical_accuracy_validated:
+              type: boolean
+
+    HalalMedicationRequest:
+      type: object
+      required:
+        - medication_name
+      properties:
+        medication_name:
+          type: string
+          example: "Paracetamol 500mg"
+        manufacturer:
+          type: string
+          example: "Duopharma Biotech"
+        active_ingredients:
+          type: array
+          items:
+            type: string
+          example: ["paracetamol"]
+        batch_number:
+          type: string
+        expiry_date:
+          type: string
+          format: date
+
+    HalalValidationResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            medication_name:
+              type: string
+            halal_status:
+              type: string
+              enum: [halal, haram, mushbooh, unknown]
+            confidence:
+              type: string
+              enum: [high, medium, low]
+            certification:
+              type: object
+              properties:
+                certified:
+                  type: boolean
+                authority:
+                  type: string
+                  example: "JAKIM"
+                certificate_number:
+                  type: string
+                expiry_date:
+                  type: string
+                  format: date
+            ingredients_analysis:
+              type: array
+              items:
+                type: object
+                properties:
+                  ingredient:
+                    type: string
+                  status:
+                    type: string
+                    enum: [halal, haram, mushbooh]
+                  notes:
+                    type: string
+            alternatives:
+              type: array
+              items:
+                type: object
+                properties:
+                  name:
+                    type: string
+                  manufacturer:
+                    type: string
+                  halal_certified:
+                    type: boolean
+            religious_guidance:
+              type: string
+
+    RamadanInfo:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            year:
+              type: integer
+            hijri_year:
+              type: integer
+            start_date:
+              type: string
+              format: date
+            end_date:
+              type: string
+              format: date
+            predicted:
+              type: boolean
+              description: Whether dates are predicted or confirmed
+            healthcare_considerations:
+              type: object
+              properties:
+                fasting_hours:
+                  type: object
+                  properties:
+                    average_duration:
+                      type: string
+                      example: "13 hours 45 minutes"
+                    longest_day:
+                      type: object
+                      properties:
+                        date:
+                          type: string
+                          format: date
+                        duration:
+                          type: string
+                medication_timing:
+                  type: object
+                  properties:
+                    suhur_window:
+                      type: object
+                      properties:
+                        start:
+                          type: string
+                          format: time
+                        end:
+                          type: string
+                          format: time
+                    iftar_window:
+                      type: object
+                      properties:
+                        start:
+                          type: string
+                          format: time
+                        end:
+                          type: string
+                          format: time
+                appointment_scheduling:
+                  type: object
+                  properties:
+                    recommended_times:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          period:
+                            type: string
+                          time_range:
+                            type: string
+                          description:
+                            type: string
+
+    # Patient Management Schemas
+    PatientCreateRequest:
+      type: object
+      required:
+        - personal_info
+        - contact_info
+        - pdpa_consent
+      properties:
+        personal_info:
+          $ref: '#/components/schemas/PersonalInfo'
+        contact_info:
+          $ref: '#/components/schemas/ContactInfo'
+        cultural_preferences:
+          $ref: '#/components/schemas/CulturalPreferences'
+        pdpa_consent:
+          $ref: '#/components/schemas/PDPAConsent'
+        emergency_contact:
+          $ref: '#/components/schemas/EmergencyContact'
+
+    PatientUpdateRequest:
+      type: object
+      properties:
+        personal_info:
+          $ref: '#/components/schemas/PersonalInfo'
+        contact_info:
+          $ref: '#/components/schemas/ContactInfo'
+        cultural_preferences:
+          $ref: '#/components/schemas/CulturalPreferences'
+        emergency_contact:
+          $ref: '#/components/schemas/EmergencyContact'
+        update_reason:
+          type: string
+          description: Reason for update (required for PDPA audit)
+
+    PatientResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            patient_id:
+              type: string
+              format: uuid
+            personal_info:
+              $ref: '#/components/schemas/PersonalInfo'
+            contact_info:
+              $ref: '#/components/schemas/ContactInfo'
+            cultural_preferences:
+              $ref: '#/components/schemas/CulturalPreferences'
+            emergency_contact:
+              $ref: '#/components/schemas/EmergencyContact'
+            created_at:
+              type: string
+              format: date-time
+            updated_at:
+              type: string
+              format: date-time
+            pdpa_status:
+              type: object
+              properties:
+                consent_given:
+                  type: boolean
+                consent_date:
+                  type: string
+                  format: date-time
+                data_retention_period:
+                  type: string
+                next_consent_review:
+                  type: string
+                  format: date
+
+    PersonalInfo:
+      type: object
+      required:
+        - name
+        - date_of_birth
+        - gender
+        - nationality
+      properties:
+        name:
+          type: string
+          example: "Ahmad bin Abdullah"
+        mykad_number:
+          type: string
+          pattern: '^\d{6}-\d{2}-\d{4}$'
+          example: "800101-01-1234"
+        passport_number:
+          type: string
+          description: For non-Malaysian citizens
+        date_of_birth:
+          type: string
+          format: date
+        gender:
+          type: string
+          enum: [male, female, other]
+        race:
+          type: string
+          enum: [Malay, Chinese, Indian, Other]
+        religion:
+          type: string
+          enum: [Islam, Buddhism, Hinduism, Christianity, Other]
+        nationality:
+          type: string
+          example: "Malaysian"
+        marital_status:
+          type: string
+          enum: [single, married, divorced, widowed]
+
+    ContactInfo:
+      type: object
+      required:
+        - phone
+        - address
+      properties:
+        phone:
+          type: string
+          pattern: '^\+60\d{9,10}$'
+          example: "+60123456789"
+        email:
+          type: string
+          format: email
+        address:
+          $ref: '#/components/schemas/Address'
+
+    Address:
+      type: object
+      required:
+        - street
+        - city
+        - state
+        - postcode
+        - country
+      properties:
+        street:
+          type: string
+          example: "123 Jalan Merdeka"
+        unit:
+          type: string
+          example: "Unit 5-7"
+        city:
+          type: string
+          example: "Kuala Lumpur"
+        state:
+          type: string
+          enum: [Johor, Kedah, Kelantan, Melaka, "Negeri Sembilan", Pahang, Penang, Perak, Perlis, Sabah, Sarawak, Selangor, Terengganu, "Kuala Lumpur", Labuan, Putrajaya]
+          example: "Kuala Lumpur"
+        postcode:
+          type: string
+          pattern: '^\d{5}$'
+          example: "50000"
+        country:
+          type: string
+          default: "Malaysia"
+
+    CulturalPreferences:
+      type: object
+      properties:
+        primary_language:
+          type: string
+          enum: [ms, en, zh, ta]
+          default: "ms"
+        secondary_languages:
+          type: array
+          items:
+            type: string
+            enum: [ms, en, zh, ta]
+        prayer_time_notifications:
+          type: boolean
+          default: false
+        halal_medication_only:
+          type: boolean
+          default: false
+        preferred_gender_provider:
+          type: string
+          enum: [same, opposite, no_preference]
+          default: "no_preference"
+        ramadan_considerations:
+          type: boolean
+          default: false
+        dietary_restrictions:
+          type: array
+          items:
+            type: string
+            enum: [halal, vegetarian, vegan, no_pork, no_beef, diabetic, low_sodium]
+
+    PDPAConsent:
+      type: object
+      required:
+        - data_processing
+        - consent_date
+      properties:
+        data_processing:
+          type: boolean
+          description: Consent for processing personal health data
+        marketing:
+          type: boolean
+          default: false
+          description: Consent for marketing communications
+        third_party_sharing:
+          type: boolean
+          default: false
+          description: Consent for sharing data with third parties
+        research:
+          type: boolean
+          default: false
+          description: Consent for using anonymized data in research
+        consent_date:
+          type: string
+          format: date-time
+        consent_method:
+          type: string
+          enum: [online, paper, verbal]
+          default: "online"
+        consent_version:
+          type: string
+          example: "1.0"
+
+    EmergencyContact:
+      type: object
+      properties:
+        name:
+          type: string
+        relationship:
+          type: string
+          enum: [spouse, parent, child, sibling, friend, other]
+        phone:
+          type: string
+          pattern: '^\+60\d{9,10}$'
+        alternative_phone:
+          type: string
+          pattern: '^\+60\d{9,10}$'
+
+    PatientsResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: array
+          items:
+            type: object
+            properties:
+              patient_id:
+                type: string
+                format: uuid
+              name:
+                type: string
+              mykad_number:
+                type: string
+              age:
+                type: integer
+              gender:
+                type: string
+              primary_language:
+                type: string
+              last_visit:
+                type: string
+                format: date-time
+        pagination:
+          $ref: '#/components/schemas/PaginationInfo'
+
+    # Appointment Management Schemas
+    AppointmentCreateRequest:
+      type: object
+      required:
+        - patient_id
+        - provider_id
+        - appointment_date
+        - appointment_time
+        - appointment_type
+      properties:
+        patient_id:
+          type: string
+          format: uuid
+        provider_id:
+          type: string
+          format: uuid
+        appointment_date:
+          type: string
+          format: date
+        appointment_time:
+          type: string
+          format: time
+        duration_minutes:
+          type: integer
+          minimum: 15
+          maximum: 240
+          default: 30
+        appointment_type:
+          type: string
+          enum: [consultation, followup, procedure, emergency, telemedicine]
+        cultural_considerations:
+          type: object
+          properties:
+            avoid_prayer_times:
+              type: boolean
+              default: true
+            ramadan_friendly:
+              type: boolean
+              default: false
+            preferred_language:
+              type: string
+              enum: [ms, en, zh, ta]
+            gender_preference_provider:
+              type: string
+              enum: [same, opposite, no_preference]
+        notes:
+          type: string
+        priority:
+          type: string
+          enum: [routine, urgent, emergency]
+          default: "routine"
+
+    AppointmentResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            appointment_id:
+              type: string
+              format: uuid
+            patient:
+              type: object
+              properties:
+                patient_id:
+                  type: string
+                  format: uuid
+                name:
+                  type: string
+                mykad_number:
+                  type: string
+            provider:
+              type: object
+              properties:
+                provider_id:
+                  type: string
+                  format: uuid
+                name:
+                  type: string
+                specialty:
+                  type: string
+            appointment_datetime:
+              type: string
+              format: date-time
+            duration_minutes:
+              type: integer
+            status:
+              type: string
+              enum: [scheduled, confirmed, in_progress, completed, cancelled, no_show]
+            cultural_considerations:
+              type: object
+            prayer_time_analysis:
+              type: object
+              properties:
+                conflicts_with_prayer:
+                  type: boolean
+                recommended_adjustments:
+                  type: array
+                  items:
+                    type: string
+            created_at:
+              type: string
+              format: date-time
+
+    AppointmentsResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/AppointmentResponse/properties/data'
+        pagination:
+          $ref: '#/components/schemas/PaginationInfo'
+        cultural_summary:
+          type: object
+          properties:
+            prayer_time_conflicts:
+              type: integer
+            ramadan_appointments:
+              type: integer
+            language_distribution:
+              type: object
+
+    # Medication Schemas
+    MedicationsResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: array
+          items:
+            type: object
+            properties:
+              medication_id:
+                type: string
+                format: uuid
+              name:
+                type: string
+              generic_name:
+                type: string
+              brand_names:
+                type: array
+                items:
+                  type: string
+              active_ingredients:
+                type: array
+                items:
+                  type: string
+              category:
+                type: string
+              halal_status:
+                type: string
+                enum: [halal, haram, mushbooh, unknown]
+              halal_certification:
+                type: object
+                properties:
+                  certified:
+                    type: boolean
+                  authority:
+                    type: string
+              available_forms:
+                type: array
+                items:
+                  type: string
+                  enum: [tablet, capsule, syrup, injection, cream, ointment]
+              manufacturer:
+                type: string
+              moh_approved:
+                type: boolean
+        pagination:
+          $ref: '#/components/schemas/PaginationInfo'
+        halal_summary:
+          type: object
+          properties:
+            total_halal:
+              type: integer
+            total_certified:
+              type: integer
+            total_mushbooh:
+              type: integer
+
+    # Real-time Service Schemas
+    NotificationSubscriptionRequest:
+      type: object
+      required:
+        - notification_types
+        - delivery_preferences
+      properties:
+        notification_types:
+          type: array
+          items:
+            type: string
+            enum: [medication_reminder, prayer_time, appointment_reminder, emergency_alert, health_screening]
+        delivery_preferences:
+          type: object
+          properties:
+            push_notification:
+              type: boolean
+              default: true
+            sms:
+              type: boolean
+              default: false
+            email:
+              type: boolean
+              default: false
+            webhook:
+              type: object
+              properties:
+                enabled:
+                  type: boolean
+                  default: false
+                url:
+                  type: string
+                  format: uri
+                secret:
+                  type: string
+        cultural_preferences:
+          type: object
+          properties:
+            prayer_time_notifications:
+              type: boolean
+            ramadan_adjustments:
+              type: boolean
+            preferred_language:
+              type: string
+              enum: [ms, en, zh, ta]
+        scheduling:
+          type: object
+          properties:
+            active_hours:
+              type: object
+              properties:
+                start:
+                  type: string
+                  format: time
+                end:
+                  type: string
+                  format: time
+            timezone:
+              type: string
+              default: "Asia/Kuala_Lumpur"
+            respect_prayer_times:
+              type: boolean
+              default: true
+
+    SubscriptionResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            subscription_id:
+              type: string
+              format: uuid
+            status:
+              type: string
+              enum: [active, inactive, pending]
+            created_at:
+              type: string
+              format: date-time
+            notification_types:
+              type: array
+              items:
+                type: string
+            cultural_settings:
+              type: object
+            next_notification_times:
+              type: object
+              properties:
+                prayer_time:
+                  type: string
+                  format: date-time
+                medication_reminder:
+                  type: string
+                  format: date-time
+
+    # FHIR Schemas
+    FHIRBundle:
+      type: object
+      properties:
+        resourceType:
+          type: string
+          example: "Bundle"
+        id:
+          type: string
+        meta:
+          type: object
+          properties:
+            lastUpdated:
+              type: string
+              format: date-time
+            profile:
+              type: array
+              items:
+                type: string
+                example: "https://fhir.moh.gov.my/StructureDefinition/MyPatient"
+        type:
+          type: string
+          enum: [document, message, transaction, batch, collection, searchset, history]
+          example: "searchset"
+        total:
+          type: integer
+        entry:
+          type: array
+          items:
+            type: object
+            properties:
+              fullUrl:
+                type: string
+                format: uri
+              resource:
+                type: object
+                description: "FHIR resource with Malaysian profile extensions"
+
+    # Common Schemas
+    ErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          default: false
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              example: "VALIDATION_ERROR"
+            message:
+              type: string
+              example: "Invalid request parameters"
+            details:
+              type: array
+              items:
+                type: object
+            cultural_message:
+              type: object
+              properties:
+                en:
+                  type: string
+                ms:
+                  type: string
+                zh:
+                  type: string
+                ta:
+                  type: string
+        request_id:
+          type: string
+          description: "Request ID for tracking and support"
+
+    PaginationInfo:
+      type: object
+      properties:
+        page:
+          type: integer
+          minimum: 1
+        limit:
+          type: integer
+          minimum: 1
+          maximum: 100
+        total:
+          type: integer
+        total_pages:
+          type: integer
+        has_next:
+          type: boolean
+        has_prev:
+          type: boolean
+
+  examples:
+    MalaysianPatientExample:
+      value:
+        personal_info:
+          name: "Siti Nurhaliza binti Mohammad"
+          mykad_number: "850315-08-2468"
+          date_of_birth: "1985-03-15"
+          gender: "female"
+          race: "Malay"
+          religion: "Islam"
+          nationality: "Malaysian"
+        contact_info:
+          phone: "+60198765432"
+          email: "siti.nurhaliza@email.com"
+          address:
+            street: "456 Jalan Ampang"
+            city: "Kuala Lumpur"
+            state: "Kuala Lumpur"
+            postcode: "50450"
+            country: "Malaysia"
+        cultural_preferences:
+          primary_language: "ms"
+          secondary_languages: ["en"]
+          prayer_time_notifications: true
+          halal_medication_only: true
+          preferred_gender_provider: "same"
+          ramadan_considerations: true
+        pdpa_consent:
+          data_processing: true
+          marketing: false
+          third_party_sharing: false
+          consent_date: "2024-03-15T10:30:00Z"
+
+tags:
+  - name: System Health
+    description: System health and status endpoints
+  - name: System Information
+    description: Malaysian healthcare context and system information
+  - name: Cultural Intelligence
+    description: Malaysian cultural services including prayer times, translations, and cultural preferences
+  - name: Halal Validation
+    description: Islamic halal validation services for medications and treatments
+  - name: Cultural Calendar
+    description: Malaysian cultural calendar events and scheduling considerations
+  - name: Patient Management
+    description: PDPA-compliant patient data management with cultural context
+  - name: Appointment Management
+    description: Culturally-aware appointment scheduling and management
+  - name: Medication Management
+    description: Medication database with halal validation and cultural considerations
+  - name: Real-time Services
+    description: WebSocket connections, notifications, and real-time updates
+  - name: FHIR Integration
+    description: HL7 FHIR R4 integration with Malaysian healthcare profiles
+
+externalDocs:
+  description: MediMate Malaysia Healthcare API Documentation
+  url: https://docs.medimate.my

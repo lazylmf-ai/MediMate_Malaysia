@@ -21,16 +21,36 @@ import { healthcareLoggingMiddleware } from './middleware/logging';
 import { errorHandlingMiddleware } from './middleware/error-handling';
 
 // Import Malaysian healthcare services
-import { CulturalDataService } from './services/cultural-data.service';
 import { HealthcareSecurityService } from './services/healthcare-security.service';
 import { PDPAComplianceService } from './services/pdpa-compliance.service';
+
+// Import Malaysian cultural services
+import { CulturalPreferenceService } from './services/cultural/culturalPreferenceService';
+import { PrayerTimeService } from './services/cultural/prayerTimeService';
+import { LanguageService } from './services/cultural/languageService';
+import { HalalValidationService } from './services/cultural/halalValidationService';
+
+// Import real-time services
+import { WebSocketService } from './services/realtime/webSocketService';
+import { RedisService } from './services/cache/redisService';
+import { NotificationService } from './services/realtime/notificationService';
+import { MonitoringService } from './services/realtime/monitoringService';
+import { WebhookService } from './services/realtime/webhookService';
+import { DashboardService } from './services/realtime/dashboardService';
 
 // Import routes
 import healthRoutes from './routes/health';
 import culturalRoutes from './routes/cultural';
+import culturalIntelligenceRoutes from './routes/cultural/culturalRoutes';
 import medicationRoutes from './routes/medication';
 import prayerTimesRoutes from './routes/prayer-times';
 import holidaysRoutes from './routes/holidays';
+import patientsRoutes from './routes/patients';
+import providersRoutes from './routes/providers';
+import appointmentsRoutes from './routes/appointments';
+import medicalRecordsRoutes from './routes/medical-records';
+import emergencyAccessRoutes from './routes/emergency-access';
+import realtimeRoutes from './routes/realtime';
 
 // Load environment configuration
 config({ path: path.resolve(__dirname, '../.env') });
@@ -44,6 +64,14 @@ class MediMateBackendApplication {
   public server: ReturnType<typeof createServer>;
   private readonly port: number;
   private readonly environment: string;
+  
+  // Real-time services
+  private webSocketService!: WebSocketService;
+  private redisService!: RedisService;
+  private notificationService!: NotificationService;
+  private monitoringService!: MonitoringService;
+  private webhookService!: WebhookService;
+  private dashboardService!: DashboardService;
 
   constructor() {
     this.app = express();
@@ -56,6 +84,7 @@ class MediMateBackendApplication {
     this.initializeRoutes();
     this.initializeErrorHandling();
     this.initializeHealthcareServices();
+    this.initializeRealTimeServices();
   }
 
   /**
@@ -139,8 +168,8 @@ class MediMateBackendApplication {
       limit: '10mb',
       verify: (req, res, buf) => {
         // Log healthcare data handling for PDPA compliance
-        if (req.path.includes('/patient') || req.path.includes('/medication')) {
-          console.log(`🏥 Healthcare data received: ${req.method} ${req.path}`);
+        if (req.url?.includes('/patient') || req.url?.includes('/medication')) {
+          console.log(`🏥 Healthcare data received: ${req.method} ${req.url}`);
         }
       }
     }));
@@ -184,11 +213,20 @@ class MediMateBackendApplication {
 
     // Malaysian cultural intelligence routes
     this.app.use('/api/v1/cultural', culturalRoutes);
+    this.app.use('/api/cultural', culturalIntelligenceRoutes); // New comprehensive cultural services
     this.app.use('/api/v1/prayer-times', prayerTimesRoutes);
     this.app.use('/api/v1/holidays', holidaysRoutes);
 
     // Healthcare data routes (requires authentication)
     this.app.use('/api/v1/medications', medicationRoutes);
+    this.app.use('/api/v1/patients', patientsRoutes);
+    this.app.use('/api/v1/providers', providersRoutes);
+    this.app.use('/api/v1/appointments', appointmentsRoutes);
+    this.app.use('/api/v1/medical-records', medicalRecordsRoutes);
+    this.app.use('/api/v1/emergency-access', emergencyAccessRoutes);
+
+    // Real-time services routes
+    this.app.use('/api/v1/realtime', realtimeRoutes);
 
     // Malaysian cultural context endpoint
     this.app.get('/api/v1/context', (req: Request, res: Response) => {
@@ -236,9 +274,17 @@ class MediMateBackendApplication {
     console.log('🏥 Initializing Malaysian healthcare services...');
 
     try {
-      // Initialize cultural data service
-      const culturalService = new CulturalDataService();
-      await culturalService.initialize();
+      // Initialize cultural services
+      const prayerTimeService = new PrayerTimeService();
+      const languageService = new LanguageService();
+      const halalValidationService = new HalalValidationService();
+      const culturalPreferenceService = new CulturalPreferenceService();
+      
+      await Promise.all([
+        languageService.initialize(),
+        halalValidationService.initialize(),
+        culturalPreferenceService.initialize()
+      ]);
 
       // Initialize healthcare security service
       const securityService = new HealthcareSecurityService();
@@ -249,13 +295,57 @@ class MediMateBackendApplication {
       await pdpaService.initialize();
 
       // Store services in app context for middleware access
-      this.app.locals.culturalService = culturalService;
+      this.app.locals.culturalPreferenceService = culturalPreferenceService;
+      this.app.locals.prayerTimeService = prayerTimeService;
+      this.app.locals.languageService = languageService;
+      this.app.locals.halalValidationService = halalValidationService;
       this.app.locals.securityService = securityService;
       this.app.locals.pdpaService = pdpaService;
 
       console.log('✅ Malaysian healthcare services initialized');
     } catch (error) {
       console.error('❌ Failed to initialize healthcare services:', error);
+      process.exit(1);
+    }
+  }
+
+  /**
+   * Initialize real-time services
+   */
+  private async initializeRealTimeServices(): Promise<void> {
+    console.log('⚡ Initializing real-time healthcare services...');
+
+    try {
+      // Initialize Redis service first
+      this.redisService = RedisService.getInstance();
+      await this.redisService.connect();
+
+      // Initialize WebSocket service
+      this.webSocketService = WebSocketService.getInstance(this.server);
+
+      // Initialize notification service
+      this.notificationService = NotificationService.getInstance();
+
+      // Initialize monitoring service
+      this.monitoringService = MonitoringService.getInstance();
+
+      // Initialize webhook service
+      this.webhookService = WebhookService.getInstance();
+
+      // Initialize dashboard service
+      this.dashboardService = DashboardService.getInstance();
+
+      // Store services in app context for route access
+      this.app.locals.webSocketService = this.webSocketService;
+      this.app.locals.redisService = this.redisService;
+      this.app.locals.notificationService = this.notificationService;
+      this.app.locals.monitoringService = this.monitoringService;
+      this.app.locals.webhookService = this.webhookService;
+      this.app.locals.dashboardService = this.dashboardService;
+
+      console.log('✅ Real-time healthcare services initialized');
+    } catch (error) {
+      console.error('❌ Failed to initialize real-time services:', error);
       process.exit(1);
     }
   }
@@ -290,9 +380,11 @@ class MediMateBackendApplication {
     // Development - allow all localhost ports
     return [
       ...baseOrigins,
-      /^http:\/\/localhost:\d+$/,
-      /^http:\/\/127\.0\.0\.1:\d+$/,
-      /^http:\/\/10\.0\.2\.2:\d+$/ // Android emulator
+      'http://localhost:3001',
+      'http://localhost:3002',
+      'http://localhost:8080',
+      'http://127.0.0.1:3000',
+      'http://10.0.2.2:8081'
     ];
   }
 
@@ -314,6 +406,12 @@ class MediMateBackendApplication {
       console.log('📋 PDPA Compliance: Active');
       console.log('🕌 Islamic Features: Integrated');
       console.log('🌍 Multi-Cultural: Supported');
+      console.log('⚡ Real-time Services: Active');
+      console.log(`🔌 WebSocket Connections: ${this.webSocketService?.getActiveConnectionsCount() || 0}`);
+      console.log('📊 Dashboard Streaming: Ready');
+      console.log('🚨 Emergency Alerts: Monitoring');
+      console.log('💊 Medication Reminders: Active');
+      console.log('🔗 Webhook Integrations: Ready');
       console.log('=====================================\n');
     });
 
@@ -330,10 +428,26 @@ class MediMateBackendApplication {
   private gracefulShutdown(signal: string): void {
     console.log(`\n🛑 Received ${signal}, starting graceful shutdown...`);
     
-    this.server.close(() => {
+    this.server.close(async () => {
       console.log('✅ HTTP server closed');
+      
+      // Close real-time services
+      try {
+        if (this.redisService) {
+          await this.redisService.disconnect();
+          console.log('✅ Redis connections closed');
+        }
+        
+        // WebSocket service will be closed when HTTP server closes
+        console.log('✅ WebSocket connections closed');
+        console.log('✅ Real-time services shutdown complete');
+      } catch (error) {
+        console.error('❌ Error closing real-time services:', error);
+      }
+      
       console.log('🏥 Healthcare data integrity maintained');
       console.log('📋 PDPA compliance logs saved');
+      console.log('⚡ Real-time services gracefully closed');
       console.log('👋 MediMate Malaysia Backend shutdown complete\n');
       process.exit(0);
     });
