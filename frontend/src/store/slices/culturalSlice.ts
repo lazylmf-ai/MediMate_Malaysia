@@ -258,4 +258,39 @@ export const selectUserLocation = (state: any) =>
 export const selectUserLanguage = (state: any) => 
   state.cultural.profile?.language ?? 'en';
 
+// Enhanced selectors for i18n integration
+export const selectLanguagePreferences = (state: any) => ({
+  language: state.cultural.profile?.language ?? 'en',
+  fallbackLanguage: 'en',
+  culturalContext: {
+    religion: state.cultural.profile?.religion,
+    primaryCulture: state.cultural.profile?.primaryCulture,
+    region: state.cultural.profile?.location?.state,
+  },
+});
+
+export const selectAccessibilitySettings = (state: any) => ({
+  elderlyMode: state.cultural.profile?.accessibility?.elderlyOptimizations?.largeButtons ?? false,
+  highContrast: state.cultural.profile?.accessibility?.highContrast ?? false,
+  textScaling: state.cultural.profile?.accessibility?.textSize === 'large' ? 1.2 : 1.0,
+  voiceGuidance: state.cultural.profile?.accessibility?.voiceGuidance ?? false,
+});
+
+export const selectCulturalThemePreferences = (state: any) => ({
+  language: state.cultural.profile?.language ?? 'en',
+  primaryCulture: state.cultural.profile?.primaryCulture ?? 'mixed',
+  elderlyMode: state.cultural.profile?.accessibility?.elderlyOptimizations?.largeButtons ?? false,
+  highContrast: state.cultural.profile?.accessibility?.highContrast ?? false,
+});
+
+export const selectMedicationCulturalContext = (state: any) => ({
+  language: state.cultural.profile?.language ?? 'en',
+  religion: state.cultural.profile?.religion,
+  prayerTimesEnabled: state.cultural.profile?.prayerTimes?.enabled ?? false,
+  madhab: state.cultural.profile?.prayerTimes?.madhab ?? 'shafi',
+  halalValidationEnabled: state.cultural.profile?.dietary?.halal ?? false,
+  elderlyMode: state.cultural.profile?.accessibility?.elderlyOptimizations?.largeButtons ?? false,
+  familyStructure: state.cultural.profile?.familyStructure,
+});
+
 export default culturalSlice.reducer;
