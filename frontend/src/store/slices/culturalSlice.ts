@@ -236,4 +236,26 @@ export const {
   clearCulturalData,
 } = culturalSlice.actions;
 
+// Selectors
+export const selectCulturalPreferences = (state: any) => state.cultural.profile;
+export const selectPrayerTimes = (state: any) => state.cultural.prayerTimes;
+export const selectFestivals = (state: any) => state.cultural.festivals;
+export const selectCulturalLoading = (state: any) => state.cultural.isLoading;
+export const selectCulturalError = (state: any) => state.cultural.error;
+export const selectLastUpdated = (state: any) => state.cultural.lastUpdated;
+
+// Prayer time specific selectors
+export const selectPrayerTimeEnabled = (state: any) => 
+  state.cultural.profile?.prayerTimes?.enabled ?? false;
+export const selectPrayerTimeMadhab = (state: any) => 
+  state.cultural.profile?.prayerTimes?.madhab ?? 'shafi';
+export const selectPrayerTimeAdjustments = (state: any) => 
+  state.cultural.profile?.prayerTimes?.adjustments;
+
+// Location selectors
+export const selectUserLocation = (state: any) => 
+  state.cultural.profile?.location;
+export const selectUserLanguage = (state: any) => 
+  state.cultural.profile?.language ?? 'en';
+
 export default culturalSlice.reducer;

@@ -17,6 +17,11 @@ import {
   updateCulturalPreferences,
 } from '../../store/slices/medicationSlice';
 import {
+  selectPrayerTimeEnabled,
+  selectPrayerTimeMadhab,
+  selectUserLocation
+} from '../../store/slices/culturalSlice';
+import {
   Medication,
   MedicationSchedule,
   CulturalAdjustments,
@@ -27,6 +32,8 @@ import {
   CulturalCalendarEvent,
   MALAYSIAN_STATES_DATA,
 } from '../../types/cultural';
+import { usePrayerScheduling } from '../prayer';
+import { PrayerSchedulingService } from '../../services/prayer-scheduling';
 
 // Prayer time utilities (would normally import from cultural service)
 interface PrayerTimes {
@@ -70,6 +77,26 @@ export const useMedicationScheduling = () => {
   const dispatch = useAppDispatch();
   const culturalPreferences = useAppSelector(selectCulturalPreferences);
   const currentMedication = useAppSelector(selectCurrentMedication);
+  const prayerTimeEnabled = useAppSelector(selectPrayerTimeEnabled);
+  const prayerTimeMadhab = useAppSelector(selectPrayerTimeMadhab);
+  const userLocation = useAppSelector(selectUserLocation);
+
+  // Use the new prayer scheduling hook
+  const {
+    optimizeSchedule: optimizePrayerSchedule,
+    generateCulturalSchedule: generatePrayerAwareSchedule,
+    validateSchedule: validatePrayerSchedule,
+    isCurrentlyAvoidableTime,
+    config: prayerConfig
+  } = usePrayerScheduling({
+    enabled: prayerTimeEnabled,
+    madhab: prayerTimeMadhab,
+    bufferMinutes: culturalPreferences?.prayerTimeBuffer || 30,
+    location: userLocation ? {
+      state: userLocation.state,
+      coordinates: userLocation.coordinates
+    } : undefined
+  });
 
   const [state, setState] = useState<MedicationSchedulingState>({
     currentMedication: null,
@@ -81,11 +108,11 @@ export const useMedicationScheduling = () => {
   });
 
   const [schedulingOptions, setSchedulingOptions] = useState<SchedulingOptions>({
-    considerPrayerTimes: culturalPreferences.observesPrayerTimes,
+    considerPrayerTimes: prayerTimeEnabled,
     avoidMealTimes: true,
-    adaptForRamadan: culturalPreferences.observesRamadan,
+    adaptForRamadan: culturalPreferences?.observesRamadan ?? false,
     includeWeekends: true,
-    bufferMinutes: 30,
+    bufferMinutes: culturalPreferences?.prayerTimeBuffer || 30,
   });
 
   // Generate default prayer times based on location
@@ -209,33 +236,82 @@ export const useMedicationScheduling = () => {
     };
   }, [culturalPreferences, generatePrayerTimes]);
 
-  // Create a new medication schedule
-  const createSchedule = useCallback((
+  // Create a new medication schedule with prayer time integration
+  const createSchedule = useCallback(async (
     medicationId: string,
     frequency: MedicationSchedule['frequency'],
-    customTimes?: string[]
-  ): MedicationSchedule => {
-    const recommendation = calculateOptimalTimes(frequency, schedulingOptions);
-    
-    const schedule: MedicationSchedule = {
-      frequency,
-      times: customTimes || recommendation.recommendedTimes,
-      culturalAdjustments: {
-        takeWithFood: false,
-        avoidDuringFasting: culturalPreferences.observesRamadan,
-        prayerTimeConsiderations: recommendation.culturalNotes,
-        prayerTimeBuffer: schedulingOptions.bufferMinutes,
-        mealTimingPreference: 'with_meal',
-        ramadanSchedule: culturalPreferences.observesRamadan ? 
-          ['05:30', '19:45'] : // Pre-suhoor and post-iftar times
-          undefined,
-      },
-      reminders: true,
-      nextDue: calculateNextDue(customTimes || recommendation.recommendedTimes),
-    };
+    customTimes?: string[],
+    culturalAdjustments?: CulturalAdjustments
+  ): Promise<MedicationSchedule> => {
+    setState(prev => ({ ...prev, isLoading: true, error: null }));
 
-    return schedule;
-  }, [culturalPreferences, schedulingOptions, calculateOptimalTimes]);
+    try {
+      let scheduleResult;
+      
+      if (prayerTimeEnabled && culturalAdjustments) {
+        // Use prayer-aware scheduling
+        scheduleResult = await generatePrayerAwareSchedule(frequency, culturalAdjustments);
+      } else {
+        // Use basic scheduling
+        const recommendation = calculateOptimalTimes(frequency, schedulingOptions);
+        scheduleResult = {
+          schedule: recommendation.recommendedTimes.map(time => 
+            new Date(`1970-01-01T${time}:00`)
+          ),
+          culturalNotes: recommendation.culturalNotes
+        };
+      }
+
+      const timeStrings = scheduleResult.schedule.map(date => 
+        `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`
+      );
+
+      const schedule: MedicationSchedule = {
+        frequency,
+        times: customTimes || timeStrings,
+        culturalAdjustments: {
+          takeWithFood: false,
+          avoidDuringFasting: culturalPreferences?.observesRamadan ?? false,
+          prayerTimeConsiderations: scheduleResult.culturalNotes,
+          prayerTimeBuffer: schedulingOptions.bufferMinutes,
+          mealTimingPreference: culturalAdjustments?.mealTimingPreference || 'with_meal',
+          ramadanSchedule: culturalPreferences?.observesRamadan ? 
+            ['05:30', '19:45'] : // Pre-suhoor and post-iftar times
+            undefined,
+        },
+        reminders: true,
+        nextDue: calculateNextDue(customTimes || timeStrings),
+      };
+
+      setState(prev => ({ ...prev, schedule, isLoading: false }));
+      return schedule;
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to create schedule';
+      setState(prev => ({ ...prev, error: errorMessage, isLoading: false }));
+      
+      // Return fallback schedule
+      const recommendation = calculateOptimalTimes(frequency, schedulingOptions);
+      return {
+        frequency,
+        times: customTimes || recommendation.recommendedTimes,
+        culturalAdjustments: {
+          takeWithFood: false,
+          avoidDuringFasting: false,
+          prayerTimeConsiderations: ['Basic schedule due to calculation error'],
+          prayerTimeBuffer: 30,
+          mealTimingPreference: 'with_meal'
+        },
+        reminders: true,
+        nextDue: calculateNextDue(customTimes || recommendation.recommendedTimes),
+      };
+    }
+  }, [
+    culturalPreferences, 
+    schedulingOptions, 
+    calculateOptimalTimes, 
+    prayerTimeEnabled, 
+    generatePrayerAwareSchedule
+  ]);
 
   // Update existing medication schedule
   const updateSchedule = useCallback((
@@ -299,46 +375,92 @@ export const useMedicationScheduling = () => {
     return calculateOptimalTimes(frequency, options);
   }, [schedulingOptions, calculateOptimalTimes]);
 
-  // Validate schedule against cultural constraints
-  const validateSchedule = useCallback((
+  // Validate schedule against cultural constraints with prayer time integration
+  const validateSchedule = useCallback(async (
     schedule: MedicationSchedule
-  ): { valid: boolean; warnings: string[]; errors: string[] } => {
+  ): Promise<{ valid: boolean; warnings: string[]; errors: string[]; suggestions?: string[] }> => {
     const warnings: string[] = [];
     const errors: string[] = [];
+    const suggestions: string[] = [];
 
-    // Check for prayer time conflicts
-    if (culturalPreferences.observesPrayerTimes) {
-      const prayerTimes = generatePrayerTimes();
-      schedule.times.forEach(time => {
-        Object.entries(prayerTimes).forEach(([prayer, prayerTime]) => {
-          const timeDiff = Math.abs(timeToMinutes(time) - timeToMinutes(prayerTime));
-          
-          if (timeDiff < 15) {
-            errors.push(`Medication time ${time} conflicts with ${prayer} prayer`);
-          } else if (timeDiff < 30) {
-            warnings.push(`Medication time ${time} is close to ${prayer} prayer`);
+    try {
+      if (prayerTimeEnabled) {
+        // Use prayer-aware validation
+        const medicationTimes = schedule.times.map(time => {
+          const [hours, minutes] = time.split(':').map(Number);
+          const date = new Date();
+          date.setHours(hours, minutes, 0, 0);
+          return date;
+        });
+
+        const validationResult = await validatePrayerSchedule(medicationTimes);
+        
+        if (!validationResult.isValid) {
+          errors.push(...validationResult.suggestions);
+        }
+        
+        warnings.push(...validationResult.suggestions.filter(s => 
+          s.includes('conflict') || s.includes('close')
+        ));
+        
+        suggestions.push(...validationResult.suggestions);
+      } else {
+        // Basic validation without prayer times
+        if (culturalPreferences?.observesPrayerTimes) {
+          const prayerTimes = generatePrayerTimes();
+          schedule.times.forEach(time => {
+            Object.entries(prayerTimes).forEach(([prayer, prayerTime]) => {
+              const timeDiff = Math.abs(timeToMinutes(time) - timeToMinutes(prayerTime));
+              
+              if (timeDiff < 15) {
+                errors.push(`Medication time ${time} conflicts with ${prayer} prayer`);
+              } else if (timeDiff < 30) {
+                warnings.push(`Medication time ${time} is close to ${prayer} prayer`);
+              }
+            });
+          });
+        }
+      }
+
+      // Check for Ramadan considerations
+      if (culturalPreferences?.observesRamadan && schedule.culturalAdjustments.avoidDuringFasting) {
+        // During fasting hours (roughly 6 AM to 7 PM), medications should be avoided
+        schedule.times.forEach(time => {
+          const timeMinutes = timeToMinutes(time);
+          if (timeMinutes > timeToMinutes('06:00') && timeMinutes < timeToMinutes('19:00')) {
+            warnings.push(`Medication time ${time} falls during typical fasting hours`);
+            suggestions.push(`Consider moving ${time} to pre-suhoor or post-iftar time`);
           }
         });
-      });
-    }
+      }
 
-    // Check for Ramadan considerations
-    if (culturalPreferences.observesRamadan && schedule.culturalAdjustments.avoidDuringFasting) {
-      // During fasting hours (roughly 6 AM to 7 PM), medications should be avoided
-      schedule.times.forEach(time => {
-        const timeMinutes = timeToMinutes(time);
-        if (timeMinutes > timeToMinutes('06:00') && timeMinutes < timeToMinutes('19:00')) {
-          warnings.push(`Medication time ${time} falls during typical fasting hours`);
-        }
-      });
-    }
+      // Additional cultural checks
+      if (isCurrentlyAvoidableTime && isCurrentlyAvoidableTime()) {
+        warnings.push('Current time should be avoided for taking medication');
+      }
 
-    return {
-      valid: errors.length === 0,
-      warnings,
-      errors,
-    };
-  }, [culturalPreferences, generatePrayerTimes]);
+      return {
+        valid: errors.length === 0,
+        warnings,
+        errors,
+        suggestions: suggestions.length > 0 ? suggestions : undefined
+      };
+    } catch (error) {
+      console.error('Schedule validation failed:', error);
+      return {
+        valid: true, // Assume valid if validation fails
+        warnings: ['Unable to perform complete validation'],
+        errors: [],
+        suggestions: ['Please manually check for prayer time conflicts']
+      };
+    }
+  }, [
+    culturalPreferences, 
+    generatePrayerTimes, 
+    prayerTimeEnabled, 
+    validatePrayerSchedule, 
+    isCurrentlyAvoidableTime
+  ]);
 
   // Update scheduling options
   const updateSchedulingOptions = useCallback((
@@ -388,6 +510,15 @@ export const useMedicationScheduling = () => {
 
     // Prayer time utilities
     generatePrayerTimes,
+
+    // New prayer integration functions
+    optimizePrayerSchedule,
+    isCurrentlyAvoidableTime,
+    prayerConfig,
+    prayerTimeEnabled,
+    
+    // Enhanced validation with prayer times
+    validateScheduleAsync: validateSchedule,
   };
 };
 
