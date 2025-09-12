@@ -33,6 +33,7 @@ import {
   MALAYSIAN_STATES_DATA,
 } from '../../types/cultural';
 import { usePrayerScheduling } from '../prayer';
+import { useFestivalCalendar, useRamadanScheduling } from '../cultural';
 import { PrayerSchedulingService } from '../../services/prayer-scheduling';
 
 // Prayer time utilities (would normally import from cultural service)
@@ -48,6 +49,7 @@ interface SchedulingOptions {
   considerPrayerTimes: boolean;
   avoidMealTimes: boolean;
   adaptForRamadan: boolean;
+  considerFestivals: boolean;
   includeWeekends: boolean;
   bufferMinutes: number;
 }
@@ -62,6 +64,12 @@ interface SchedulingRecommendation {
     suggestion?: string;
   }>;
   alternativeTimes?: string[];
+  festivalImpacts?: Array<{
+    festivalName: string;
+    date: Date;
+    impact: 'none' | 'low' | 'medium' | 'high';
+    adjustments: string[];
+  }>;
 }
 
 interface MedicationSchedulingState {
@@ -97,6 +105,23 @@ export const useMedicationScheduling = () => {
       coordinates: userLocation.coordinates
     } : undefined
   });
+
+  // Use festival calendar hooks
+  const {
+    upcomingFestivals,
+    checkFestivalConflict,
+    getFestivalMedicationGuidance
+  } = useFestivalCalendar({
+    daysAhead: 60 // Check festivals up to 2 months ahead
+  });
+
+  // Use Ramadan-specific scheduling
+  const {
+    isRamadan,
+    adjustScheduleForRamadan,
+    checkRamadanConflicts,
+    getMedicationGuidance: getRamadanGuidance
+  } = useRamadanScheduling();
 
   const [state, setState] = useState<MedicationSchedulingState>({
     currentMedication: null,
