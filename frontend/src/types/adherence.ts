@@ -1,43 +1,13 @@
 /**
- * Adherence Tracking Types and Interfaces
- * Comprehensive medication adherence tracking with cultural intelligence
+ * Adherence Tracking Types
+ *
+ * Comprehensive adherence tracking system with cultural intelligence
+ * for Malaysian healthcare context.
  */
 
 import { Medication } from './medication';
 
-/**
- * Adherence status for medication intake
- */
-export type AdherenceStatus = 'taken' | 'missed' | 'late' | 'skipped' | 'pending';
-
-/**
- * Time period for adherence calculations
- */
-export type AdherencePeriod = 'daily' | 'weekly' | 'monthly' | 'quarterly' | 'yearly';
-
-/**
- * Milestone types for achievement tracking
- */
-export type MilestoneType = 'streak' | 'adherence' | 'consistency' | 'improvement' | 'perfect_timing';
-
-/**
- * Cultural themes for Malaysian context
- */
-export type CulturalTheme =
-  | 'hari_raya'
-  | 'chinese_new_year'
-  | 'deepavali'
-  | 'merdeka'
-  | 'malaysia_day'
-  | 'traditional'
-  | 'modern'
-  | 'islamic'
-  | 'buddhist'
-  | 'hindu';
-
-/**
- * Individual adherence record for a medication dose
- */
+// Core Adherence Types
 export interface AdherenceRecord {
   id: string;
   medicationId: string;
@@ -45,292 +15,317 @@ export interface AdherenceRecord {
   scheduledTime: Date;
   takenTime?: Date;
   status: AdherenceStatus;
-  adherenceScore: number; // 0-100 score based on timing accuracy
+  adherenceScore: number; // 0-100
+  method: AdherenceMethod;
+  delayMinutes?: number;
+  culturalContext?: CulturalAdherenceContext;
   notes?: string;
-  reminderSent: boolean;
-  reminderResponseTime?: number; // milliseconds from reminder to action
-  location?: {
-    latitude: number;
-    longitude: number;
-  };
-  culturalContext?: {
-    isDuringPrayer: boolean;
-    isDuringFasting: boolean;
-    festival?: CulturalTheme;
-  };
   createdAt: Date;
   updatedAt: Date;
 }
 
-/**
- * Progress metrics for adherence tracking
- */
+export type AdherenceStatus =
+  | 'taken_on_time'    // Within 30 min window
+  | 'taken_late'       // After 30 min window
+  | 'taken_early'      // Before scheduled time
+  | 'missed'           // Not taken at all
+  | 'skipped'          // Intentionally skipped
+  | 'pending'          // Not yet due
+  | 'adjusted';        // Cultural/prayer time adjustment
+
+export type AdherenceMethod =
+  | 'automatic'        // System detected
+  | 'manual'          // User logged
+  | 'reminder_response' // Via reminder
+  | 'family_reported'  // Family member reported
+  | 'voice_confirmed'  // Voice assistant
+  | 'nfc_scan';       // NFC tag scan
+
+// Progress Metrics
 export interface ProgressMetrics {
   patientId: string;
-  period: AdherencePeriod;
+  period: MetricPeriod;
   startDate: Date;
   endDate: Date;
-  adherenceRate: number; // 0-100 percentage
-  streakCount: number;
-  longestStreak: number;
+  overallAdherence: number; // 0-100
+  medications: MedicationAdherenceMetric[];
+  streaks: StreakData;
+  patterns: AdherencePattern[];
+  predictions: AdherencePrediction[];
+  culturalInsights: CulturalInsight[];
+}
+
+export interface MedicationAdherenceMetric {
+  medicationId: string;
+  medicationName: string;
+  adherenceRate: number; // 0-100
   totalDoses: number;
   takenDoses: number;
   missedDoses: number;
   lateDoses: number;
-  skippedDoses: number;
-  averageTimingAccuracy: number; // minutes deviation from scheduled time
-  consistency: {
-    morning?: number;
-    afternoon?: number;
-    evening?: number;
-    night?: number;
-  };
-  medicationBreakdown: {
-    [medicationId: string]: {
-      name: string;
-      adherenceRate: number;
-      totalDoses: number;
-      takenDoses: number;
-    };
-  };
+  earlyDoses: number;
+  averageDelayMinutes: number;
+  bestTimeAdherence: TimeSlot;
+  worstTimeAdherence: TimeSlot;
+  trends: AdherenceTrend[];
 }
 
-/**
- * Streak information for gamification
- */
-export interface StreakInfo {
-  patientId: string;
+export type MetricPeriod =
+  | 'daily'
+  | 'weekly'
+  | 'monthly'
+  | 'quarterly'
+  | 'yearly'
+  | 'custom';
+
+// Streak Management
+export interface StreakData {
   currentStreak: number;
   longestStreak: number;
   streakStartDate?: Date;
-  lastMissedDate?: Date;
-  streakHistory: {
-    startDate: Date;
-    endDate: Date;
-    length: number;
-    endReason?: 'missed' | 'skipped' | 'late' | 'ongoing';
-  }[];
-  recoveryEligible: boolean; // Can recover streak with next dose
-  recoveryDeadline?: Date;
+  longestStreakDates?: {
+    start: Date;
+    end: Date;
+  };
+  weeklyStreaks: number[];
+  monthlyStreaks: number[];
+  recoverable: boolean; // Can recover from missed dose
+  recoveryWindow?: number; // Hours to recover
 }
 
-/**
- * Milestone achievement for cultural celebrations
- */
-export interface Milestone {
+export interface StreakMilestone {
   id: string;
-  patientId: string;
+  type: 'days' | 'weeks' | 'months';
+  value: number;
+  achievedAt?: Date;
+  celebrationShown: boolean;
+  culturalTheme?: string;
+  rewardType?: 'badge' | 'celebration' | 'achievement';
+}
+
+// Adherence Patterns & Analytics
+export interface AdherencePattern {
+  id: string;
+  type: PatternType;
+  confidence: number; // 0-1
+  description: string;
+  occurrences: number;
+  lastOccurred: Date;
+  affectedMedications: string[];
+  recommendations: string[];
+  culturalFactors?: string[];
+}
+
+export type PatternType =
+  | 'morning_consistency'
+  | 'evening_missed'
+  | 'weekend_decline'
+  | 'prayer_time_conflict'
+  | 'fasting_adjustment'
+  | 'meal_timing_issue'
+  | 'work_schedule_conflict'
+  | 'travel_disruption'
+  | 'festival_period_change'
+  | 'improvement_trend'
+  | 'declining_trend';
+
+export interface AdherenceTrend {
+  date: Date;
+  adherenceRate: number;
+  dosesScheduled: number;
+  dosesTaken: number;
+  confidence: number;
+  predictedRate?: number;
+}
+
+// Predictive Analytics
+export interface AdherencePrediction {
+  medicationId?: string;
+  timeframe: PredictionTimeframe;
+  predictedRate: number;
+  confidence: number;
+  riskLevel: RiskLevel;
+  factors: PredictionFactor[];
+  recommendations: PredictionRecommendation[];
+}
+
+export type PredictionTimeframe =
+  | 'next_dose'
+  | 'next_24h'
+  | 'next_week'
+  | 'next_month';
+
+export type RiskLevel =
+  | 'low'      // >80% predicted adherence
+  | 'medium'   // 60-80% predicted adherence
+  | 'high'     // 40-60% predicted adherence
+  | 'critical'; // <40% predicted adherence
+
+export interface PredictionFactor {
+  type: string;
+  impact: number; // -1 to 1
+  description: string;
+}
+
+export interface PredictionRecommendation {
+  priority: 'high' | 'medium' | 'low';
+  action: string;
+  expectedImprovement: number;
+  culturallyAppropriate: boolean;
+}
+
+// Cultural Intelligence
+export interface CulturalAdherenceContext {
+  prayerTime?: string;
+  fastingPeriod?: boolean;
+  festivalName?: string;
+  familyInvolvement?: boolean;
+  mealTiming?: 'before_meal' | 'after_meal' | 'with_meal';
+  traditionalMedicineInteraction?: boolean;
+}
+
+export interface CulturalInsight {
+  type: CulturalInsightType;
+  description: string;
+  adherenceImpact: number; // -100 to 100
+  occurrences: number;
+  recommendations: string[];
+  culturalSensitivity: 'high' | 'medium' | 'low';
+}
+
+export type CulturalInsightType =
+  | 'prayer_time_optimization'
+  | 'ramadan_adjustment'
+  | 'festival_period_pattern'
+  | 'family_support_benefit'
+  | 'traditional_medicine_conflict'
+  | 'meal_timing_preference'
+  | 'cultural_celebration_impact';
+
+// Time-based Analysis
+export interface TimeSlot {
+  hour: number; // 0-23
+  minute: number; // 0-59
+  adherenceRate: number;
+  totalDoses: number;
+  culturalSignificance?: string;
+}
+
+export interface DayOfWeekAnalysis {
+  dayOfWeek: number; // 0-6 (Sunday-Saturday)
+  adherenceRate: number;
+  patterns: string[];
+  culturalEvents?: string[];
+}
+
+// Milestone & Achievement
+export interface AdherenceMilestone {
+  id: string;
   type: MilestoneType;
   threshold: number;
+  name: string;
+  description: string;
   culturalTheme: CulturalTheme;
   achievedDate?: Date;
   celebrationShown: boolean;
-  title: string;
-  description: string;
-  badgeUrl?: string;
-  shareableCardUrl?: string;
-  familyNotified: boolean;
-  metadata?: Record<string, any>;
+  shareable: boolean;
+  rewardPoints?: number;
 }
 
-/**
- * Cultural pattern analysis for adherence
- */
-export interface CulturalPattern {
-  patientId: string;
-  pattern: string;
-  confidence: number; // 0-1 confidence score
-  observations: {
-    prayerTimeAdherence: {
-      fajr: number;
-      zuhr: number;
-      asr: number;
-      maghrib: number;
-      isya: number;
-    };
-    festivalAdherence: {
-      [festival: string]: number;
-    };
-    fastingPeriodAdherence: number;
-    familyInfluence: number; // Adherence when family members are involved
+export type MilestoneType =
+  | 'streak_days'
+  | 'adherence_rate'
+  | 'consistency'
+  | 'improvement'
+  | 'perfect_week'
+  | 'perfect_month'
+  | 'recovery'
+  | 'family_support';
+
+export interface CulturalTheme {
+  name: string;
+  primaryColor: string;
+  secondaryColor: string;
+  icon: string;
+  animation?: string;
+  soundEffect?: string;
+  message: {
+    en: string;
+    ms: string;
+    zh?: string;
+    ta?: string;
   };
-  recommendations: string[];
-  culturalConsiderations: string[];
 }
 
-/**
- * Predictive adherence model output
- */
-export interface AdherencePrediction {
-  patientId: string;
-  medicationId?: string;
-  predictionDate: Date;
-  predictedAdherence: number; // 0-100 predicted adherence rate
-  confidence: number; // 0-1 confidence score
-  riskFactors: {
-    factor: string;
-    impact: number; // -100 to 100 (negative = risk, positive = protective)
-    description: string;
-  }[];
-  recommendations: {
-    action: string;
-    priority: 'high' | 'medium' | 'low';
-    expectedImprovement: number; // percentage improvement expected
-  }[];
-  basedOnDays: number; // Number of days of historical data used
-}
-
-/**
- * Adherence improvement suggestion
- */
-export interface AdherenceImprovement {
-  id: string;
-  patientId: string;
-  medicationId?: string;
-  suggestion: string;
-  category: 'timing' | 'reminder' | 'cultural' | 'family' | 'routine';
-  priority: 'high' | 'medium' | 'low';
-  expectedImprovement: number; // percentage
-  culturallyRelevant: boolean;
-  implementation: {
-    automatic: boolean;
-    requiresConsent: boolean;
-    steps: string[];
-  };
-  createdAt: Date;
-  appliedAt?: Date;
-  effectiveness?: number; // measured improvement after application
-}
-
-/**
- * Provider report data structure
- */
+// Provider Reporting
 export interface AdherenceReport {
   id: string;
   patientId: string;
-  providerId: string;
-  reportType: 'weekly' | 'monthly' | 'quarterly' | 'custom';
-  startDate: Date;
-  endDate: Date;
+  generatedAt: Date;
+  periodStart: Date;
+  periodEnd: Date;
   overallAdherence: number;
-  medications: {
-    medication: Medication;
-    adherence: number;
-    doses: {
-      total: number;
-      taken: number;
-      missed: number;
-      late: number;
-    };
-    patterns: string[];
-    concerns: string[];
-  }[];
-  trends: {
-    improving: boolean;
-    weekOverWeek: number; // percentage change
-    monthOverMonth: number;
-  };
+  medications: MedicationAdherenceReport[];
+  insights: string[];
+  recommendations: string[];
+  culturalConsiderations: string[];
+  providerNotes?: string;
+  fhirResource?: any; // FHIR MedicationStatement
+}
+
+export interface MedicationAdherenceReport {
+  medication: Medication;
+  adherenceRate: number;
+  trends: 'improving' | 'stable' | 'declining';
+  missedDosePatterns: string[];
   culturalFactors: string[];
   recommendations: string[];
-  generatedAt: Date;
-  sentAt?: Date;
-  viewedAt?: Date;
 }
 
-/**
- * Family involvement tracking
- */
-export interface FamilyInvolvement {
-  patientId: string;
-  familyMemberId: string;
-  relationshipType: 'spouse' | 'parent' | 'child' | 'sibling' | 'caregiver' | 'other';
-  involvementLevel: 'view_only' | 'remind' | 'manage' | 'emergency';
-  notificationPreferences: {
-    achievements: boolean;
-    missedDoses: boolean;
-    reports: boolean;
-    emergencies: boolean;
-  };
-  lastActiveDate: Date;
-  supportActions: {
-    date: Date;
-    action: 'reminded' | 'helped' | 'celebrated' | 'reported';
-    medicationId?: string;
-    notes?: string;
-  }[];
+// Calculation Configuration
+export interface AdherenceCalculationConfig {
+  onTimeWindowMinutes: number; // Default: 30
+  lateWindowHours: number; // Default: 2
+  streakRecoveryHours: number; // Default: 24
+  minimumAdherenceThreshold: number; // Default: 80
+  culturalAdjustmentEnabled: boolean;
+  prayerTimeBufferMinutes: number; // Default: 15
+  familyReportingEnabled: boolean;
+  predictiveAnalyticsEnabled: boolean;
 }
 
-/**
- * Adherence analytics event for tracking
- */
-export interface AdherenceAnalyticsEvent {
-  eventType: 'dose_taken' | 'dose_missed' | 'streak_achieved' | 'milestone_reached' |
-             'improvement_applied' | 'report_generated' | 'family_action';
+// Cache & Performance
+export interface AdherenceCache {
   patientId: string;
-  medicationId?: string;
+  lastCalculated: Date;
+  metrics: ProgressMetrics;
+  ttl: number; // seconds
+  invalidateOn: string[]; // Events that invalidate cache
+}
+
+// Export aggregated types for convenience
+export interface AdherenceState {
+  records: Record<string, AdherenceRecord>;
+  metrics: Record<string, ProgressMetrics>;
+  streaks: Record<string, StreakData>;
+  patterns: AdherencePattern[];
+  predictions: AdherencePrediction[];
+  milestones: AdherenceMilestone[];
+  reports: AdherenceReport[];
+  config: AdherenceCalculationConfig;
+  cache: Record<string, AdherenceCache>;
+}
+
+// Utility types for API responses
+export interface AdherenceApiResponse<T> {
+  success: boolean;
+  data?: T;
+  error?: string;
   timestamp: Date;
-  metadata: Record<string, any>;
-  culturalContext?: {
-    isDuringPrayer: boolean;
-    isDuringFasting: boolean;
-    festival?: CulturalTheme;
-  };
-  deviceInfo?: {
-    platform: string;
-    version: string;
-    timezone: string;
-  };
 }
 
-/**
- * Configuration for adherence tracking
- */
-export interface AdherenceConfig {
-  patientId: string;
-  enableStreaks: boolean;
-  enableMilestones: boolean;
-  enablePredictions: boolean;
-  enableFamilySharing: boolean;
-  culturalPreferences: {
-    celebrationThemes: CulturalTheme[];
-    languagePreference: 'en' | 'ms' | 'zh' | 'ta';
-    respectPrayerTimes: boolean;
-    respectFasting: boolean;
-  };
-  privacySettings: {
-    shareWithProvider: boolean;
-    shareWithFamily: boolean;
-    anonymizeReports: boolean;
-  };
-  gamificationLevel: 'none' | 'basic' | 'full';
-  reminderIntegration: boolean;
-}
-
-/**
- * Batch adherence update for offline sync
- */
 export interface AdherenceBatchUpdate {
-  id: string;
-  patientId: string;
-  records: AdherenceRecord[];
-  events: AdherenceAnalyticsEvent[];
-  syncedAt?: Date;
-  offlineDuration: number; // milliseconds
-  conflicts: {
-    recordId: string;
-    conflictType: 'duplicate' | 'timing' | 'status';
-    resolution: 'local' | 'remote' | 'merged';
-  }[];
-}
-
-/**
- * Adherence cache entry for offline support
- */
-export interface AdherenceCacheEntry {
-  key: string;
-  type: 'record' | 'metrics' | 'streak' | 'milestone' | 'prediction';
-  data: any;
+  records: Partial<AdherenceRecord>[];
+  source: 'sync' | 'manual' | 'import';
   timestamp: Date;
-  expiresAt: Date;
-  syncStatus: 'synced' | 'pending' | 'conflict';
 }
