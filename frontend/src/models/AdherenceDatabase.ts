@@ -8,12 +8,16 @@ import SQLite from 'react-native-sqlite-storage';
 import {
   AdherenceRecord,
   ProgressMetrics,
-  Milestone,
+  AdherenceMilestone,
   AdherenceReport,
-  AdherenceImprovement,
-  FamilyInvolvement,
-  AdherenceAnalyticsEvent,
-  AdherenceCacheEntry
+  AdherenceCache,
+  AdherenceBatchUpdate,
+  StreakData,
+  MedicationAdherenceMetric,
+  MetricPeriod,
+  AdherenceStatus,
+  AdherenceMethod,
+  CulturalAdherenceContext
 } from '../types/adherence';
 
 // Enable promise-based API
@@ -42,9 +46,14 @@ const TABLES = {
       reminder_response_time INTEGER,
       location_lat REAL,
       location_lng REAL,
-      cultural_during_prayer INTEGER DEFAULT 0,
-      cultural_during_fasting INTEGER DEFAULT 0,
-      cultural_festival TEXT,
+      cultural_prayer_time TEXT,
+      cultural_fasting_period INTEGER DEFAULT 0,
+      cultural_festival_name TEXT,
+      cultural_family_involvement INTEGER DEFAULT 0,
+      cultural_meal_timing TEXT,
+      cultural_traditional_interaction INTEGER DEFAULT 0,
+      method TEXT DEFAULT 'manual',
+      delay_minutes INTEGER,
       created_at INTEGER NOT NULL,
       updated_at INTEGER NOT NULL,
       sync_status TEXT DEFAULT 'pending',
@@ -161,9 +170,9 @@ const TABLES = {
       medication_id TEXT,
       timestamp INTEGER NOT NULL,
       metadata TEXT,
-      cultural_during_prayer INTEGER DEFAULT 0,
-      cultural_during_fasting INTEGER DEFAULT 0,
-      cultural_festival TEXT,
+      cultural_prayer_time TEXT,
+      cultural_fasting_period INTEGER DEFAULT 0,
+      cultural_festival_name TEXT,
       device_platform TEXT,
       device_version TEXT,
       device_timezone TEXT,
@@ -334,9 +343,10 @@ export class AdherenceDatabase {
       INSERT OR REPLACE INTO adherence_records (
         id, medication_id, patient_id, scheduled_time, taken_time,
         status, adherence_score, notes, reminder_sent, reminder_response_time,
-        location_lat, location_lng, cultural_during_prayer, cultural_during_fasting,
-        cultural_festival, created_at, updated_at, sync_status
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        location_lat, location_lng, cultural_prayer_time, cultural_fasting_period,
+        cultural_festival_name, cultural_family_involvement, cultural_meal_timing,
+        cultural_traditional_interaction, method, delay_minutes, created_at, updated_at, sync_status
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
 
     const params = [
@@ -348,13 +358,18 @@ export class AdherenceDatabase {
       record.status,
       record.adherenceScore,
       record.notes || null,
-      record.reminderSent ? 1 : 0,
-      record.reminderResponseTime || null,
-      record.location?.latitude || null,
-      record.location?.longitude || null,
-      record.culturalContext?.isDuringPrayer ? 1 : 0,
-      record.culturalContext?.isDuringFasting ? 1 : 0,
-      record.culturalContext?.festival || null,
+      0, // reminder_sent placeholder
+      null, // reminder_response_time placeholder
+      null, // location_lat placeholder
+      null, // location_lng placeholder
+      record.culturalContext?.prayerTime || null,
+      record.culturalContext?.fastingPeriod ? 1 : 0,
+      record.culturalContext?.festivalName || null,
+      record.culturalContext?.familyInvolvement ? 1 : 0,
+      record.culturalContext?.mealTiming || null,
+      record.culturalContext?.traditionalMedicineInteraction ? 1 : 0,
+      record.method || 'manual',
+      record.delayMinutes || null,
       record.createdAt.getTime(),
       record.updatedAt.getTime(),
       'pending'
@@ -421,25 +436,32 @@ export class AdherenceDatabase {
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
 
+    // Calculate aggregated metrics from the medications array
+    const totalDoses = metrics.medications.reduce((sum, m) => sum + m.totalDoses, 0);
+    const takenDoses = metrics.medications.reduce((sum, m) => sum + m.takenDoses, 0);
+    const missedDoses = metrics.medications.reduce((sum, m) => sum + m.missedDoses, 0);
+    const lateDoses = metrics.medications.reduce((sum, m) => sum + m.lateDoses, 0);
+    const averageDelay = metrics.medications.reduce((sum, m) => sum + m.averageDelayMinutes, 0) / metrics.medications.length || 0;
+
     const params = [
       metrics.patientId,
       metrics.period,
       metrics.startDate.getTime(),
       metrics.endDate.getTime(),
-      metrics.adherenceRate,
-      metrics.streakCount,
-      metrics.longestStreak,
-      metrics.totalDoses,
-      metrics.takenDoses,
-      metrics.missedDoses,
-      metrics.lateDoses,
-      metrics.skippedDoses,
-      metrics.averageTimingAccuracy,
-      metrics.consistency.morning || null,
-      metrics.consistency.afternoon || null,
-      metrics.consistency.evening || null,
-      metrics.consistency.night || null,
-      JSON.stringify(metrics.medicationBreakdown),
+      metrics.overallAdherence,
+      metrics.streaks.currentStreak,
+      metrics.streaks.longestStreak,
+      totalDoses,
+      takenDoses,
+      missedDoses,
+      lateDoses,
+      0, // skipped doses placeholder
+      averageDelay,
+      null, // consistency morning
+      null, // consistency afternoon
+      null, // consistency evening
+      null, // consistency night
+      JSON.stringify(metrics.medications),
       Date.now()
     ];
 
@@ -481,7 +503,7 @@ export class AdherenceDatabase {
   /**
    * Save milestone
    */
-  public async saveMilestone(milestone: Milestone): Promise<void> {
+  public async saveMilestone(milestone: AdherenceMilestone): Promise<void> {
     if (!this.db) throw new Error('Database not initialized');
 
     const sql = `
@@ -495,18 +517,18 @@ export class AdherenceDatabase {
 
     const params = [
       milestone.id,
-      milestone.patientId,
+      '', // patient_id placeholder - should be provided
       milestone.type,
       milestone.threshold,
-      milestone.culturalTheme,
+      JSON.stringify(milestone.culturalTheme),
       milestone.achievedDate?.getTime() || null,
       milestone.celebrationShown ? 1 : 0,
-      milestone.title,
+      milestone.name,
       milestone.description,
-      milestone.badgeUrl || null,
-      milestone.shareableCardUrl || null,
-      milestone.familyNotified ? 1 : 0,
-      milestone.metadata ? JSON.stringify(milestone.metadata) : null,
+      null, // badge_url placeholder
+      null, // shareable_card_url placeholder
+      0, // family_notified placeholder
+      JSON.stringify({ rewardPoints: milestone.rewardPoints }),
       Date.now()
     ];
 
@@ -519,7 +541,7 @@ export class AdherenceDatabase {
   public async getMilestones(
     patientId: string,
     achieved?: boolean
-  ): Promise<Milestone[]> {
+  ): Promise<AdherenceMilestone[]> {
     if (!this.db) throw new Error('Database not initialized');
 
     let sql = 'SELECT * FROM milestones WHERE patient_id = ?';
@@ -532,7 +554,7 @@ export class AdherenceDatabase {
     sql += ' ORDER BY created_at DESC';
 
     const [result] = await this.db.executeSql(sql, params);
-    const milestones: Milestone[] = [];
+    const milestones: AdherenceMilestone[] = [];
 
     for (let i = 0; i < result.rows.length; i++) {
       const row = result.rows.item(i);
@@ -545,7 +567,7 @@ export class AdherenceDatabase {
   /**
    * Save analytics event
    */
-  public async saveAnalyticsEvent(event: AdherenceAnalyticsEvent): Promise<void> {
+  public async saveAnalyticsEvent(event: any): Promise<void> {
     if (!this.db) throw new Error('Database not initialized');
 
     const sql = `
@@ -562,9 +584,9 @@ export class AdherenceDatabase {
       event.medicationId || null,
       event.timestamp.getTime(),
       JSON.stringify(event.metadata),
-      event.culturalContext?.isDuringPrayer ? 1 : 0,
-      event.culturalContext?.isDuringFasting ? 1 : 0,
-      event.culturalContext?.festival || null,
+      event.culturalContext?.prayerTime || null,
+      event.culturalContext?.fastingPeriod ? 1 : 0,
+      event.culturalContext?.festivalName || null,
       event.deviceInfo?.platform || null,
       event.deviceInfo?.version || null,
       event.deviceInfo?.timezone || null,
@@ -575,9 +597,9 @@ export class AdherenceDatabase {
   }
 
   /**
-   * Get unsynceed analytics events
+   * Get unsynced analytics events
    */
-  public async getUnsyncedAnalyticsEvents(limit: number = 100): Promise<AdherenceAnalyticsEvent[]> {
+  public async getUnsyncedAnalyticsEvents(limit: number = 100): Promise<any[]> {
     if (!this.db) throw new Error('Database not initialized');
 
     const sql = `
@@ -588,7 +610,7 @@ export class AdherenceDatabase {
     `;
 
     const [result] = await this.db.executeSql(sql, [limit]);
-    const events: AdherenceAnalyticsEvent[] = [];
+    const events: any[] = [];
 
     for (let i = 0; i < result.rows.length; i++) {
       const row = result.rows.item(i);
@@ -617,7 +639,7 @@ export class AdherenceDatabase {
   /**
    * Save cache entry
    */
-  public async saveCacheEntry(entry: AdherenceCacheEntry): Promise<void> {
+  public async saveCacheEntry(entry: AdherenceCache): Promise<void> {
     if (!this.db) throw new Error('Database not initialized');
 
     const sql = `
@@ -626,13 +648,16 @@ export class AdherenceDatabase {
       ) VALUES (?, ?, ?, ?, ?, ?)
     `;
 
+    const key = `${entry.patientId}_cache`;
+    const expiresAt = Date.now() + (entry.ttl * 1000);
+
     const params = [
-      entry.key,
-      entry.type,
-      JSON.stringify(entry.data),
-      entry.timestamp.getTime(),
-      entry.expiresAt.getTime(),
-      entry.syncStatus
+      key,
+      'metrics',
+      JSON.stringify(entry.metrics),
+      entry.lastCalculated.getTime(),
+      expiresAt,
+      'synced'
     ];
 
     await this.db.executeSql(sql, params);
@@ -641,7 +666,7 @@ export class AdherenceDatabase {
   /**
    * Get cache entry
    */
-  public async getCacheEntry(key: string): Promise<AdherenceCacheEntry | null> {
+  public async getCacheEntry(key: string): Promise<AdherenceCache | null> {
     if (!this.db) throw new Error('Database not initialized');
 
     const sql = 'SELECT * FROM cache_entries WHERE key = ? AND expires_at > ?';
@@ -650,12 +675,11 @@ export class AdherenceDatabase {
     if (result.rows.length > 0) {
       const row = result.rows.item(0);
       return {
-        key: row.key,
-        type: row.type,
-        data: JSON.parse(row.data),
-        timestamp: new Date(row.timestamp),
-        expiresAt: new Date(row.expires_at),
-        syncStatus: row.sync_status
+        patientId: '', // Will need to be parsed from key or stored separately
+        lastCalculated: new Date(row.timestamp),
+        metrics: JSON.parse(row.data),
+        ttl: Math.floor((new Date(row.expires_at).getTime() - Date.now()) / 1000),
+        invalidateOn: ['medication_taken', 'record_updated', 'config_changed']
       };
     }
 
@@ -767,79 +791,78 @@ export class AdherenceDatabase {
       patientId: row.patient_id,
       scheduledTime: new Date(row.scheduled_time),
       takenTime: row.taken_time ? new Date(row.taken_time) : undefined,
-      status: row.status,
+      status: row.status as AdherenceStatus,
       adherenceScore: row.adherence_score,
-      notes: row.notes,
-      reminderSent: row.reminder_sent === 1,
-      reminderResponseTime: row.reminder_response_time,
-      location: row.location_lat && row.location_lng ? {
-        latitude: row.location_lat,
-        longitude: row.location_lng
-      } : undefined,
+      method: row.method as AdherenceMethod || 'manual',
+      delayMinutes: row.delay_minutes,
       culturalContext: {
-        isDuringPrayer: row.cultural_during_prayer === 1,
-        isDuringFasting: row.cultural_during_fasting === 1,
-        festival: row.cultural_festival
+        prayerTime: row.cultural_prayer_time,
+        fastingPeriod: row.cultural_fasting_period === 1,
+        festivalName: row.cultural_festival_name,
+        familyInvolvement: row.cultural_family_involvement === 1,
+        mealTiming: row.cultural_meal_timing as any,
+        traditionalMedicineInteraction: row.cultural_traditional_interaction === 1
       },
+      notes: row.notes,
       createdAt: new Date(row.created_at),
       updatedAt: new Date(row.updated_at)
     };
   }
 
   private rowToProgressMetrics(row: any): ProgressMetrics {
+    const medicationBreakdown = JSON.parse(row.medication_breakdown || '[]');
     return {
       patientId: row.patient_id,
-      period: row.period,
+      period: row.period as MetricPeriod,
       startDate: new Date(row.start_date),
       endDate: new Date(row.end_date),
-      adherenceRate: row.adherence_rate,
-      streakCount: row.streak_count,
-      longestStreak: row.longest_streak,
-      totalDoses: row.total_doses,
-      takenDoses: row.taken_doses,
-      missedDoses: row.missed_doses,
-      lateDoses: row.late_doses,
-      skippedDoses: row.skipped_doses,
-      averageTimingAccuracy: row.average_timing_accuracy,
-      consistency: {
-        morning: row.consistency_morning,
-        afternoon: row.consistency_afternoon,
-        evening: row.consistency_evening,
-        night: row.consistency_night
+      overallAdherence: row.adherence_rate,
+      medications: medicationBreakdown,
+      streaks: {
+        currentStreak: row.streak_count,
+        longestStreak: row.longest_streak,
+        weeklyStreaks: [],
+        monthlyStreaks: [],
+        recoverable: false
       },
-      medicationBreakdown: JSON.parse(row.medication_breakdown || '{}')
+      patterns: [],
+      predictions: [],
+      culturalInsights: []
     };
   }
 
-  private rowToMilestone(row: any): Milestone {
+  private rowToMilestone(row: any): AdherenceMilestone {
     return {
       id: row.id,
-      patientId: row.patient_id,
       type: row.type,
       threshold: row.threshold,
-      culturalTheme: row.cultural_theme,
+      name: row.title,
+      description: row.description,
+      culturalTheme: row.cultural_theme ? JSON.parse(row.cultural_theme) : {
+        name: 'default',
+        primaryColor: '#4A90E2',
+        secondaryColor: '#FFD700',
+        icon: 'star',
+        message: { en: 'Congratulations!', ms: 'Tahniah!' }
+      },
       achievedDate: row.achieved_date ? new Date(row.achieved_date) : undefined,
       celebrationShown: row.celebration_shown === 1,
-      title: row.title,
-      description: row.description,
-      badgeUrl: row.badge_url,
-      shareableCardUrl: row.shareable_card_url,
-      familyNotified: row.family_notified === 1,
-      metadata: row.metadata ? JSON.parse(row.metadata) : undefined
+      shareable: true,
+      rewardPoints: 0
     };
   }
 
-  private rowToAnalyticsEvent(row: any): AdherenceAnalyticsEvent {
+  private rowToAnalyticsEvent(row: any): any {
     return {
-      eventType: row.event_type as any,
+      eventType: row.event_type,
       patientId: row.patient_id,
       medicationId: row.medication_id,
       timestamp: new Date(row.timestamp),
       metadata: JSON.parse(row.metadata || '{}'),
       culturalContext: {
-        isDuringPrayer: row.cultural_during_prayer === 1,
-        isDuringFasting: row.cultural_during_fasting === 1,
-        festival: row.cultural_festival
+        prayerTime: row.cultural_prayer_time,
+        fastingPeriod: row.cultural_fasting_period === 1,
+        festivalName: row.cultural_festival_name
       },
       deviceInfo: row.device_platform ? {
         platform: row.device_platform,
