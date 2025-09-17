@@ -25,6 +25,21 @@ export const en = {
     ok: 'OK',
     yes: 'Yes',
     no: 'No',
+    great: 'Great!',
+    days: 'days',
+  },
+
+  // Common terms
+  common: {
+    ok: 'OK',
+    cancel: 'Cancel',
+    days: 'days',
+    great: 'Great!',
+  },
+
+  // Error handling
+  error: {
+    title: 'Error',
   },
 
   // Navigation
@@ -297,6 +312,306 @@ export const en = {
     locationPermissionDenied: 'Location permission required',
     cameraPermissionDenied: 'Camera permission required',
     unknown: 'Unknown error occurred',
+  },
+
+  // Progress Tracking & Adherence
+  progress: {
+    title: 'Progress',
+    subtitle: 'Track your medication adherence',
+    loading: 'Loading progress data...',
+
+    // Overview
+    overview: {
+      title: 'Overview',
+      toggle: 'Toggle overview section',
+    },
+
+    // Period Selection
+    period: {
+      title: 'Time Period',
+      daily: 'Daily',
+      weekly: 'Weekly',
+      monthly: 'Monthly',
+      quarterly: 'Quarterly',
+    },
+
+    // Adherence Metrics
+    adherence: {
+      overall: 'Overall',
+      rate: 'Adherence Rate',
+      excellent: 'Excellent',
+      good: 'Good',
+      needsAttention: 'Needs Attention',
+    },
+
+    // Streaks
+    streak: {
+      current: 'Current Streak',
+      longest: 'Best Streak',
+      days: '{{days}} days',
+    },
+
+    // Medications
+    medications: {
+      count: 'Medications',
+      active: 'Active',
+    },
+
+    // Charts
+    chart: {
+      title: 'Adherence Trends',
+      toggle: 'Toggle chart section',
+      adherence: 'Adherence',
+      doses: 'Doses',
+      noData: 'No data available',
+      allMedications: 'All Medications',
+      type: {
+        line: 'Line',
+        bar: 'Bar',
+        heatmap: 'Heat Map',
+        calendar: 'Calendar',
+      },
+    },
+
+    // Milestones
+    milestones: {
+      title: 'Achievements',
+      toggle: 'Toggle achievements section',
+      achieved: 'Recent Achievements',
+      nextGoals: 'Next Goals',
+      nextStreak: 'Next streak milestone: {{days}} days',
+      nextAdherence: 'Next adherence goal: {{rate}}%',
+      points: 'Points',
+      share: 'Share',
+      shareButton: 'Share achievement',
+      shareDescription: 'Share your achievement with family and friends',
+      shareConfirm: 'Share Now',
+      congratulations: 'Congratulations!',
+      achievedOn: 'Achieved on',
+    },
+
+    // Actions
+    actions: {
+      viewDetails: 'View Details',
+      share: 'Share Progress',
+    },
+
+    // Share Options
+    share: {
+      title: 'Share Progress',
+      description: 'How would you like to share your progress?',
+      toFamily: 'Share with Family',
+      toProvider: 'Send to Healthcare Provider',
+      export: 'Export Data',
+
+      provider: {
+        success: {
+          title: 'Report Sent',
+          message: 'Your progress report has been sent to your healthcare provider.',
+        },
+        error: 'Failed to send report to healthcare provider.',
+      },
+    },
+
+    // Export Options
+    export: {
+      title: 'Export Progress',
+      description: 'Choose export format:',
+      pdf: 'PDF Report',
+      csv: 'CSV Data',
+    },
+
+    // Family Section
+    family: {
+      title: 'Family View',
+      toggle: 'Toggle family section',
+    },
+
+    // Empty State
+    empty: {
+      title: 'No Progress Data',
+      message: 'Start taking your medications to see progress tracking.',
+      addMedication: 'Add Medication',
+    },
+
+    // Error State
+    error: {
+      title: 'Unable to Load Progress',
+      message: 'There was an error loading your progress data.',
+      retry: 'Retry',
+    },
+
+    // Quick Stats
+    quickStats: {
+      title: 'Quick Stats',
+      activeMedications: 'Active Medications',
+      weeklyDoses: 'Weekly Doses',
+      upcomingDoses: 'Upcoming Doses',
+    },
+
+    // Settings
+    familySettings: 'Family Settings',
+    settings: 'Progress Settings',
+
+    // Errors
+    errors: {
+      loadFailed: 'Failed to load progress data. Please try again.',
+    },
+  },
+
+  // Milestones
+  milestones: {
+    // Streak Milestones
+    streak: {
+      starter: 'Consistency Starter',
+      warrior: 'Weekly Warrior',
+      champion: 'Monthly Champion',
+      legendary: 'Legendary Streak',
+      description: 'Maintained medication streak for {{days}} days',
+    },
+
+    // Adherence Milestones
+    adherence: {
+      good: 'Good Adherence',
+      excellent: 'Excellent Adherence',
+      perfect: 'Perfect Adherence',
+      description: 'Achieved {{rate}}% medication adherence',
+    },
+
+    // Perfect Week
+    perfectWeek: {
+      title: 'Perfect Week',
+      description: 'Took all medications on time for a full week',
+    },
+
+    // Default
+    default: {
+      title: 'Achievement Unlocked',
+      description: 'Great progress on your medication journey!',
+    },
+  },
+
+  // Family Progress
+  family: {
+    // Progress Summary
+    progressSummary: 'Progress Summary',
+
+    summary: {
+      excellent: 'Excellent progress! {{adherence}}% adherence with {{streak}} day streak.',
+      good: 'Good progress with {{adherence}}% adherence. Current streak: {{streak}} days.',
+      needs_attention: 'Adherence needs attention. Current rate: {{adherence}}%, streak: {{streak}} days.',
+    },
+
+    // Metrics
+    metrics: {
+      adherence: 'Adherence',
+      streak: 'Current Streak',
+      medications: 'Medications',
+    },
+
+    // Improvements
+    improvements: {
+      title: 'Recent Improvements',
+      streak: 'Maintaining {{days}}-day streak',
+      adherence: 'Excellent adherence rate',
+    },
+
+    // Concerns
+    concerns: {
+      title: 'Areas for Support',
+      adherence: 'Adherence below target',
+      missedDoses: 'Multiple missed doses recently',
+    },
+
+    // Members
+    members: {
+      title: 'Family Members',
+      description: 'Select family members to share progress with',
+    },
+
+    // Relationships
+    relationships: {
+      spouse: 'Spouse',
+      child: 'Child',
+      parent: 'Parent',
+      sibling: 'Sibling',
+      caregiver: 'Caregiver',
+      other: 'Other',
+    },
+
+    // Roles
+    roles: {
+      primary_caregiver: 'Primary Caregiver',
+      secondary_caregiver: 'Secondary Caregiver',
+      emergency_contact: 'Emergency Contact',
+      viewer: 'Viewer',
+    },
+
+    // Respect Levels
+    respectLevels: {
+      elder: 'Elder',
+      peer: 'Peer',
+      younger: 'Younger',
+    },
+
+    // Communication Styles
+    communicationStyles: {
+      direct: 'Direct',
+      respectful: 'Respectful',
+      formal: 'Formal',
+    },
+
+    // Permissions
+    permissions: {
+      alerts: 'Receives Alerts',
+      reminders: 'Manages Reminders',
+      emergency: 'Emergency Access',
+    },
+
+    noViewPermission: 'No view permission',
+    selectMember: 'Select member',
+
+    // Privacy
+    privacy: {
+      title: 'Privacy Settings',
+      includeRecommendations: 'Include Recommendations',
+      autoShare: 'Auto-share Weekly Updates',
+
+      levels: {
+        basic: {
+          title: 'Basic',
+          description: 'Overall adherence and streak only',
+        },
+        detailed: {
+          title: 'Detailed',
+          description: 'Include medication breakdown and trends',
+        },
+        full: {
+          title: 'Full',
+          description: 'Complete progress report with insights',
+        },
+      },
+    },
+
+    // Share
+    share: {
+      button: 'Share Progress',
+      confirmTitle: 'Confirm Share',
+      confirmDescription: 'Review the information that will be shared:',
+      preview: 'Preview',
+      recipients: 'Recipients',
+      confirm: 'Share Now',
+
+      noRecipients: {
+        title: 'No Recipients Selected',
+        message: 'Please select at least one family member to share with.',
+      },
+
+      success: {
+        title: 'Progress Shared',
+        message: 'Progress shared with {{count}} family member(s).',
+      },
+    },
   },
 
   // Success messages
