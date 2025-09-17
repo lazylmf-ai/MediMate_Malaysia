@@ -59,7 +59,9 @@ export class CulturalPatternAnalyzer {
       recommendations: [
         'Prepare medication supplies before festival',
         'Set family reminders for medication during celebrations',
-        'Consider pre-festival medication review'
+        'Consider pre-festival medication review',
+        'Use Raya visits schedule as medication reminder anchor',
+        'Pack portable medication kit for balik kampung'
       ]
     },
     {
@@ -71,7 +73,9 @@ export class CulturalPatternAnalyzer {
       recommendations: [
         'Maintain medication routine during reunion dinners',
         'Use red packet reminders for medication',
-        'Involve family in medication reminders'
+        'Involve family in medication reminders',
+        'Set alarms before lou sang gatherings',
+        'Keep medications visible during house visits'
       ]
     },
     {
@@ -82,7 +86,67 @@ export class CulturalPatternAnalyzer {
       expectedImpact: 'neutral',
       recommendations: [
         'Coordinate medication with festival preparations',
-        'Use festival lights as medication reminders'
+        'Use festival lights as medication reminders',
+        'Take medications before temple visits',
+        'Align doses with kolam drawing times'
+      ]
+    },
+    {
+      name: 'Hari Raya Haji',
+      startDate: new Date('2025-06-06'),
+      endDate: new Date('2025-06-07'),
+      culturalGroup: ['Malay', 'Muslim'],
+      expectedImpact: 'neutral',
+      recommendations: [
+        'Schedule medications around Qurban activities',
+        'Take morning dose after Subuh prayers',
+        'Coordinate with mosque visit schedule'
+      ]
+    },
+    {
+      name: 'Thaipusam',
+      startDate: new Date('2025-02-11'),
+      endDate: new Date('2025-02-11'),
+      culturalGroup: ['Indian', 'Hindu', 'Tamil'],
+      expectedImpact: 'negative',
+      recommendations: [
+        'Prepare medications before kavadi procession',
+        'Ensure hydration with medication intake',
+        'Schedule doses around temple activities'
+      ]
+    },
+    {
+      name: 'Wesak Day',
+      startDate: new Date('2025-05-12'),
+      endDate: new Date('2025-05-12'),
+      culturalGroup: ['Buddhist'],
+      expectedImpact: 'neutral',
+      recommendations: [
+        'Take medications before temple visits',
+        'Align with vegetarian meal times',
+        'Use meditation sessions as reminder cues'
+      ]
+    },
+    {
+      name: 'Maulidur Rasul',
+      startDate: new Date('2025-09-05'),
+      endDate: new Date('2025-09-05'),
+      culturalGroup: ['Malay', 'Muslim'],
+      expectedImpact: 'neutral',
+      recommendations: [
+        'Schedule around religious processions',
+        'Take medications after ceramah sessions'
+      ]
+    },
+    {
+      name: 'Hungry Ghost Festival',
+      startDate: new Date('2025-08-12'),
+      endDate: new Date('2025-09-09'),
+      culturalGroup: ['Chinese', 'Taoist'],
+      expectedImpact: 'neutral',
+      recommendations: [
+        'Maintain routine despite evening prayers',
+        'Set reminders for medications during offerings'
       ]
     }
   ];
@@ -123,6 +187,14 @@ export class CulturalPatternAnalyzer {
     // Cultural celebration impact
     const celebrationInsight = this.analyzeCelebrationImpact(records);
     if (celebrationInsight) insights.push(celebrationInsight);
+
+    // Malaysian work patterns
+    const workInsight = this.analyzeMalaysianWorkPatterns(records);
+    if (workInsight) insights.push(workInsight);
+
+    // Malaysian food culture
+    const foodInsight = this.analyzeMalaysianFoodCultureImpact(records);
+    if (foodInsight) insights.push(foodInsight);
 
     return insights;
   }
@@ -584,6 +656,95 @@ export class CulturalPatternAnalyzer {
       if (daysUntil <= 30) {
         return upcoming[0];
       }
+    }
+
+    return null;
+  }
+
+  /**
+   * Analyze Malaysian work culture impact on adherence
+   */
+  private analyzeMalaysianWorkPatterns(records: AdherenceRecord[]): CulturalInsight | null {
+    // Typical Malaysian working hours: 9 AM - 6 PM
+    const workHourRecords = records.filter(r => {
+      const hour = new Date(r.scheduledTime).getHours();
+      const dayOfWeek = new Date(r.scheduledTime).getDay();
+      return hour >= 9 && hour <= 18 && dayOfWeek >= 1 && dayOfWeek <= 5;
+    });
+
+    if (workHourRecords.length < 20) return null;
+
+    const workAdherence = this.calculateAdherenceRate(workHourRecords);
+    const overallAdherence = this.calculateOverallAdherence(records);
+
+    if (overallAdherence - workAdherence > 15) {
+      return {
+        type: 'cultural_celebration_impact',
+        description: 'Work hours significantly impact medication adherence',
+        adherenceImpact: -(overallAdherence - workAdherence),
+        occurrences: workHourRecords.filter(r => r.status === 'missed').length,
+        recommendations: [
+          'Keep medications at workplace desk or locker',
+          'Set phone reminders for lunch break medication',
+          'Use office pantry visits as medication cues',
+          'Schedule doses before leaving for work (7-8 AM)',
+          'Take evening dose immediately after reaching home',
+          'Consider using medication apps with work mode'
+        ],
+        culturalSensitivity: 'medium'
+      };
+    }
+
+    return null;
+  }
+
+  /**
+   * Analyze Malaysian food culture impact
+   */
+  private analyzeMalaysianFoodCultureImpact(records: AdherenceRecord[]): CulturalInsight | null {
+    // Common Malaysian meal times
+    const mealTimeWindows = [
+      { name: 'Breakfast/Sarapan', start: 6, end: 9 },
+      { name: 'Lunch/Makan Tengahari', start: 12, end: 14 },
+      { name: 'Tea/Minum Petang', start: 15, end: 17 },
+      { name: 'Dinner/Makan Malam', start: 19, end: 21 },
+      { name: 'Supper/Makan Lewat Malam', start: 22, end: 24 }
+    ];
+
+    let bestMealAlignment = '';
+    let bestAdherence = 0;
+
+    mealTimeWindows.forEach(window => {
+      const mealRecords = records.filter(r => {
+        const hour = new Date(r.scheduledTime).getHours();
+        return hour >= window.start && hour < window.end;
+      });
+
+      if (mealRecords.length > 10) {
+        const adherence = this.calculateAdherenceRate(mealRecords);
+        if (adherence > bestAdherence) {
+          bestAdherence = adherence;
+          bestMealAlignment = window.name;
+        }
+      }
+    });
+
+    if (bestMealAlignment && bestAdherence > 75) {
+      return {
+        type: 'meal_timing_preference',
+        description: `Best adherence during ${bestMealAlignment} time`,
+        adherenceImpact: Math.round(bestAdherence - 70),
+        occurrences: records.filter(r => r.culturalContext?.mealTiming).length,
+        recommendations: [
+          `Schedule primary doses during ${bestMealAlignment}`,
+          'Link medications to popular Malaysian meals',
+          'Use mamak/kopitiam visits as reminder cues',
+          'Take medications with teh tarik routine',
+          'Coordinate with buka puasa during Ramadan',
+          'Set reminders for medications during yum cha sessions'
+        ],
+        culturalSensitivity: 'high'
+      };
     }
 
     return null;
