@@ -2,15 +2,16 @@
  * CulturalPatternAnalyzer Test Suite
  *
  * Tests for Malaysian healthcare-specific pattern analysis
- * and cultural adherence insights.
+ * and culturally-appropriate adherence insights.
  */
 
 import { CulturalPatternAnalyzer } from '../../services/adherence/CulturalPatternAnalyzer';
 import {
   AdherenceRecord,
   CulturalInsight,
-  CulturalAdherenceContext,
-  AdherencePattern
+  AdherencePattern,
+  AdherenceStatus,
+  CulturalAdherenceContext
 } from '../../types/adherence';
 import { Medication } from '../../types/medication';
 
@@ -22,7 +23,6 @@ describe('CulturalPatternAnalyzer', () => {
   beforeEach(() => {
     analyzer = new CulturalPatternAnalyzer();
 
-    // Create mock medications with cultural considerations
     mockMedications = [
       {
         id: 'med1',
@@ -39,7 +39,7 @@ describe('CulturalPatternAnalyzer', () => {
           culturalAdjustments: {
             takeWithFood: true,
             avoidDuringFasting: false,
-            prayerTimeConsiderations: ['take_after_prayer'],
+            prayerTimeConsiderations: [],
             prayerTimeBuffer: 15,
           },
           reminders: true
@@ -47,31 +47,31 @@ describe('CulturalPatternAnalyzer', () => {
         cultural: {
           takeWithFood: true,
           avoidDuringFasting: false,
-          prayerTimeConsiderations: ['take_after_prayer']
+          prayerTimeConsiderations: [],
+          traditionalAlternatives: [],
         },
         images: [],
         category: 'prescription',
         status: 'active',
-        createdAt: '2024-01-01',
-        updatedAt: '2024-01-01'
+        createdAt: '2025-01-01T00:00:00Z',
+        updatedAt: '2025-01-01T00:00:00Z'
       },
       {
         id: 'med2',
         userId: 'user1',
-        name: 'Hypertension Medicine',
+        name: 'Traditional Herbal Medicine',
         dosage: {
-          amount: 10,
-          unit: 'mg',
+          amount: 1,
+          unit: 'tablet',
           form: 'tablet'
         },
         schedule: {
           frequency: 'daily',
-          times: ['06:00'],
+          times: ['09:00'],
           culturalAdjustments: {
             takeWithFood: false,
             avoidDuringFasting: true,
-            prayerTimeConsiderations: ['avoid_during_subuh'],
-            ramadanSchedule: ['19:30'], // After iftar
+            prayerTimeConsiderations: ['avoid_during_prayer'],
             prayerTimeBuffer: 30,
           },
           reminders: true
@@ -79,458 +79,668 @@ describe('CulturalPatternAnalyzer', () => {
         cultural: {
           takeWithFood: false,
           avoidDuringFasting: true,
-          prayerTimeConsiderations: ['avoid_during_subuh'],
-          traditionalAlternatives: ['Misai Kucing']
+          prayerTimeConsiderations: ['avoid_during_prayer'],
+          traditionalAlternatives: ['Jamu', 'Tongkat Ali'],
         },
         images: [],
-        category: 'prescription',
+        category: 'traditional',
         status: 'active',
-        createdAt: '2024-01-01',
-        updatedAt: '2024-01-01'
+        createdAt: '2025-01-01T00:00:00Z',
+        updatedAt: '2025-01-01T00:00:00Z'
       }
     ];
 
-    // Create mock records with cultural contexts
     mockRecords = [];
-    const now = new Date();
-
-    // Generate records with various cultural contexts
-    for (let day = 29; day >= 0; day--) {
-      const scheduled = new Date(now);
-      scheduled.setDate(scheduled.getDate() - day);
-
-      // Morning dose during Subuh prayer time
-      const morningScheduled = new Date(scheduled);
-      morningScheduled.setHours(6, 0, 0, 0);
-
-      const morningContext: CulturalAdherenceContext = {
-        prayerTime: day % 3 === 0 ? 'Subuh' : undefined,
-        fastingPeriod: day >= 10 && day <= 20, // Simulate Ramadan period
-        familyInvolvement: day % 5 === 0
-      };
-
-      mockRecords.push({
-        id: `rec_morning_${day}`,
-        medicationId: 'med1',
-        patientId: 'user1',
-        scheduledTime: morningScheduled,
-        takenTime: morningContext.prayerTime
-          ? new Date(morningScheduled.getTime() + 30 * 60000) // Delayed for prayer
-          : morningScheduled,
-        status: morningContext.prayerTime ? 'adjusted' : 'taken_on_time',
-        adherenceScore: 90,
-        method: morningContext.familyInvolvement ? 'family_reported' : 'manual',
-        culturalContext: morningContext,
-        createdAt: morningScheduled,
-        updatedAt: morningScheduled
-      });
-
-      // Evening dose
-      const eveningScheduled = new Date(scheduled);
-      eveningScheduled.setHours(19, 30, 0, 0);
-
-      const eveningContext: CulturalAdherenceContext = {
-        prayerTime: day % 4 === 0 ? 'Maghrib' : undefined,
-        fastingPeriod: day >= 10 && day <= 20,
-        mealTiming: 'after_meal',
-        festivalName: day === 20 ? 'Hari Raya Aidilfitri' : undefined
-      };
-
-      mockRecords.push({
-        id: `rec_evening_${day}`,
-        medicationId: 'med1',
-        patientId: 'user1',
-        scheduledTime: eveningScheduled,
-        takenTime: eveningScheduled,
-        status: eveningContext.festivalName ? 'missed' : 'taken_on_time',
-        adherenceScore: eveningContext.festivalName ? 0 : 100,
-        method: 'manual',
-        culturalContext: eveningContext,
-        createdAt: eveningScheduled,
-        updatedAt: eveningScheduled
-      });
-    }
   });
 
-  describe('Cultural Pattern Analysis', () => {
-    test('should identify cultural patterns in adherence records', () => {
-      const insights = analyzer.analyzeCulturalPatterns(mockRecords, mockMedications);
+  describe('analyzeCulturalPatterns', () => {
+    it('should identify prayer time impact on adherence', () => {
+      // Create records during prayer times with misses
+      mockRecords = createPrayerTimeRecords();
 
-      expect(insights).toBeInstanceOf(Array);
-      expect(insights.length).toBeGreaterThan(0);
-
-      // Should have various types of insights
-      const insightTypes = insights.map(i => i.type);
-      expect(insightTypes).toContain('prayer_time_optimization');
-    });
-
-    test('should detect prayer time impact on adherence', () => {
       const insights = analyzer.analyzeCulturalPatterns(mockRecords, mockMedications);
       const prayerInsight = insights.find(i => i.type === 'prayer_time_optimization');
 
-      if (prayerInsight) {
-        expect(prayerInsight.description).toContain('Prayer times');
-        expect(prayerInsight.recommendations).toBeInstanceOf(Array);
-        expect(prayerInsight.recommendations.length).toBeGreaterThan(0);
-        expect(prayerInsight.culturalSensitivity).toBe('high');
-      }
+      expect(prayerInsight).toBeDefined();
+      expect(prayerInsight?.adherenceImpact).toBeLessThan(0);
+      expect(prayerInsight?.culturalSensitivity).toBe('high');
+      expect(prayerInsight?.recommendations).toContain('Schedule medications 30 minutes after prayer times');
     });
 
-    test('should analyze Ramadan fasting impact', () => {
-      // Create records specifically during Ramadan
-      const ramadanRecords = mockRecords.filter(r =>
-        r.culturalContext?.fastingPeriod === true
-      );
+    it('should detect Ramadan fasting impact', () => {
+      // Create records during fasting period
+      mockRecords = createRamadanRecords();
 
-      const insights = analyzer.analyzeCulturalPatterns(ramadanRecords, mockMedications);
+      const insights = analyzer.analyzeCulturalPatterns(mockRecords, mockMedications);
       const ramadanInsight = insights.find(i => i.type === 'ramadan_adjustment');
 
-      if (ramadanInsight) {
-        expect(ramadanInsight.description).toContain('fasting');
-        expect(ramadanInsight.recommendations).toContain(
-          'Take medications during Sahur (pre-dawn meal) at 4:30-5:00 AM'
-        );
-        expect(ramadanInsight.culturalSensitivity).toBe('high');
-      }
+      expect(ramadanInsight).toBeDefined();
+      expect(ramadanInsight?.recommendations).toContain('Take medications during Sahur (pre-dawn meal) at 4:30-5:00 AM');
+      expect(ramadanInsight?.culturalSensitivity).toBe('high');
     });
 
-    test('should detect festival period impact', () => {
+    it('should analyze festival period impact', () => {
+      // Create records during Hari Raya
+      const festivalDate = new Date('2025-03-30'); // Hari Raya period
+      mockRecords = createFestivalRecords(festivalDate);
+
       const insights = analyzer.analyzeCulturalPatterns(mockRecords, mockMedications);
-      const festivalInsights = insights.filter(i => i.type === 'festival_period_pattern');
+      const festivalInsight = insights.find(i => i.type === 'festival_period_pattern');
 
-      festivalInsights.forEach(insight => {
-        expect(insight.description).toMatch(/Hari Raya|Chinese New Year|Deepavali/);
-        expect(insight.recommendations).toContain('Set festival-themed medication reminders');
-      });
+      expect(festivalInsight).toBeDefined();
+      expect(festivalInsight?.description).toContain('Hari Raya');
+      expect(festivalInsight?.recommendations).toContain('Set festival-themed medication reminders');
     });
 
-    test('should analyze family involvement benefits', () => {
-      const familyRecords = mockRecords.filter(r =>
-        r.method === 'family_reported' || r.culturalContext?.familyInvolvement
-      );
+    it('should identify family involvement benefits', () => {
+      // Create records with family reporting
+      mockRecords = createFamilyInvolvementRecords();
 
-      if (familyRecords.length >= 10) {
-        const insights = analyzer.analyzeCulturalPatterns(mockRecords, mockMedications);
-        const familyInsight = insights.find(i => i.type === 'family_support_benefit');
+      const insights = analyzer.analyzeCulturalPatterns(mockRecords, mockMedications);
+      const familyInsight = insights.find(i => i.type === 'family_support_benefit');
 
-        if (familyInsight) {
-          expect(familyInsight.adherenceImpact).toBeGreaterThan(0);
-          expect(familyInsight.recommendations).toContain('Encourage family medication champions');
-        }
-      }
+      expect(familyInsight).toBeDefined();
+      expect(familyInsight?.adherenceImpact).toBeGreaterThan(0);
+      expect(familyInsight?.recommendations).toContain('Use family WhatsApp groups for medication reminders');
     });
 
-    test('should detect traditional medicine interactions', () => {
+    it('should detect traditional medicine interactions', () => {
+      // Create records with traditional medicine
+      mockRecords = createTraditionalMedicineRecords();
+
       const insights = analyzer.analyzeCulturalPatterns(mockRecords, mockMedications);
       const traditionalInsight = insights.find(i => i.type === 'traditional_medicine_conflict');
 
-      if (traditionalInsight) {
-        expect(traditionalInsight.recommendations).toContain(
-          'Discuss traditional remedies with healthcare provider'
-        );
-        expect(traditionalInsight.culturalSensitivity).toBe('high');
-      }
+      expect(traditionalInsight).toBeDefined();
+      expect(traditionalInsight?.recommendations).toContain('Discuss traditional remedies with healthcare provider');
+      expect(traditionalInsight?.culturalSensitivity).toBe('high');
     });
 
-    test('should analyze meal timing preferences', () => {
-      const mealRecords = mockRecords.filter(r => r.culturalContext?.mealTiming);
+    it('should analyze meal timing preferences', () => {
+      // Create records with meal timing data
+      mockRecords = createMealTimingRecords();
 
-      if (mealRecords.length >= 15) {
-        const insights = analyzer.analyzeCulturalPatterns(mealRecords, mockMedications);
-        const mealInsight = insights.find(i => i.type === 'meal_timing_preference');
+      const insights = analyzer.analyzeCulturalPatterns(mockRecords, mockMedications);
+      const mealInsight = insights.find(i => i.type === 'meal_timing_preference');
 
-        if (mealInsight) {
-          expect(mealInsight.description).toContain('Best adherence when medication taken');
-          expect(mealInsight.recommendations.some(r =>
-            r.includes('Malaysian meal times')
-          )).toBe(true);
-        }
-      }
+      expect(mealInsight).toBeDefined();
+      expect(mealInsight?.description).toContain('Best adherence when medication taken');
+      expect(mealInsight?.recommendations).toContain('Use Malaysian meal times');
+    });
+
+    it('should detect cultural celebration impact', () => {
+      // Create records near celebrations
+      mockRecords = createCelebrationRecords();
+
+      const insights = analyzer.analyzeCulturalPatterns(mockRecords, mockMedications);
+      const celebrationInsight = insights.find(i => i.type === 'cultural_celebration_impact');
+
+      expect(celebrationInsight).toBeDefined();
+      expect(celebrationInsight?.recommendations).toContain('Create celebration-specific medication schedules');
     });
   });
 
-  describe('Cultural Recommendations', () => {
-    test('should generate culturally-appropriate recommendations', () => {
+  describe('generateCulturalRecommendations', () => {
+    it('should generate prayer time recommendations', () => {
       const patterns: AdherencePattern[] = [
         {
           id: 'p1',
           type: 'prayer_time_conflict',
           confidence: 0.8,
-          description: 'Prayer time conflicts detected',
-          occurrences: 10,
+          description: 'Prayer time conflicts',
+          occurrences: 20,
           lastOccurred: new Date(),
           affectedMedications: ['med1'],
-          recommendations: []
-        },
-        {
-          id: 'p2',
-          type: 'fasting_adjustment',
-          confidence: 0.9,
-          description: 'Fasting adjustments needed',
-          occurrences: 15,
-          lastOccurred: new Date(),
-          affectedMedications: ['med2'],
           recommendations: []
         }
       ];
 
-      const recommendations = analyzer.generateCulturalRecommendations(
-        patterns,
-        mockMedications
-      );
+      const recommendations = analyzer.generateCulturalRecommendations(patterns, mockMedications);
 
-      expect(recommendations).toBeInstanceOf(Array);
-      expect(recommendations.length).toBeGreaterThan(0);
-
-      // Should include prayer-specific recommendations
-      expect(recommendations.some(r =>
-        r.includes('Islamic prayer apps') || r.includes('prayer mat')
-      )).toBe(true);
-
-      // Should include fasting-specific recommendations
-      expect(recommendations.some(r =>
-        r.includes('Ramadan') || r.includes('fasting')
-      )).toBe(true);
+      expect(recommendations).toContain('Consider using Islamic prayer apps with medication reminder features');
+      expect(recommendations).toContain('Place medications near prayer mat for post-prayer dosing');
     });
 
-    test('should provide weekend-specific recommendations', () => {
+    it('should generate fasting-specific recommendations', () => {
+      const patterns: AdherencePattern[] = [
+        {
+          id: 'p2',
+          type: 'fasting_adjustment',
+          confidence: 0.9,
+          description: 'Fasting period adjustments',
+          occurrences: 30,
+          lastOccurred: new Date(),
+          affectedMedications: ['med1'],
+          recommendations: []
+        }
+      ];
+
+      const recommendations = analyzer.generateCulturalRecommendations(patterns, mockMedications);
+
+      expect(recommendations).toContain('Consult with Islamic medical ethics advisor for fasting guidelines');
+      expect(recommendations).toContain('Use Ramadan-specific medication timing apps');
+    });
+
+    it('should generate weekend pattern recommendations', () => {
       const patterns: AdherencePattern[] = [
         {
           id: 'p3',
           type: 'weekend_decline',
           confidence: 0.7,
           description: 'Weekend adherence decline',
-          occurrences: 8,
+          occurrences: 15,
           lastOccurred: new Date(),
           affectedMedications: ['med1'],
           recommendations: []
         }
       ];
 
-      const recommendations = analyzer.generateCulturalRecommendations(
-        patterns,
-        mockMedications
-      );
+      const recommendations = analyzer.generateCulturalRecommendations(patterns, mockMedications);
 
-      expect(recommendations.some(r =>
-        r.includes('pasar malam') || r.includes('weekend')
-      )).toBe(true);
+      expect(recommendations).toContain('Set family activity reminders (e.g., before pasar malam visits)');
+      expect(recommendations).toContain('Link medication to weekend family meals');
     });
 
-    test('should consider traditional medicine in recommendations', () => {
-      const medicationsWithTraditional = [
-        ...mockMedications,
-        {
-          ...mockMedications[0],
-          id: 'med3',
-          category: 'traditional' as const
-        }
-      ];
+    it('should include traditional medicine considerations', () => {
+      const patterns: AdherencePattern[] = [];
+      const recommendations = analyzer.generateCulturalRecommendations(patterns, mockMedications);
 
-      const recommendations = analyzer.generateCulturalRecommendations(
-        [],
-        medicationsWithTraditional
-      );
-
-      expect(recommendations.some(r =>
-        r.includes('traditional') && r.includes('modern')
-      )).toBe(true);
+      expect(recommendations).toContain('Maintain separation between traditional and modern medicine timings');
+      expect(recommendations).toContain('Document all traditional remedies for healthcare provider review');
     });
   });
 
-  describe('Optimization Opportunities', () => {
-    test('should identify cultural optimization opportunities', () => {
+  describe('identifyOptimizationOpportunities', () => {
+    it('should identify prayer time optimization opportunities', () => {
+      mockRecords = createPrayerTimeRecords();
+      const currentAdherence = 75;
+
+      const opportunities = analyzer.identifyOptimizationOpportunities(mockRecords, currentAdherence);
+      const prayerOptimization = opportunities.find(o =>
+        o.opportunity.includes('prayer schedules')
+      );
+
+      expect(prayerOptimization).toBeDefined();
+      expect(prayerOptimization?.potentialImprovement).toBeGreaterThan(0);
+      expect(prayerOptimization?.implementation).toContain('Reschedule doses to 30 minutes after prayer times');
+    });
+
+    it('should identify family involvement opportunities', () => {
+      mockRecords = createLowFamilyInvolvementRecords();
+      const currentAdherence = 65;
+
+      const opportunities = analyzer.identifyOptimizationOpportunities(mockRecords, currentAdherence);
+      const familyOpportunity = opportunities.find(o =>
+        o.opportunity.includes('family involvement')
+      );
+
+      expect(familyOpportunity).toBeDefined();
+      expect(familyOpportunity?.potentialImprovement).toBe(10);
+      expect(familyOpportunity?.implementation).toContain('Designate family medication champion');
+    });
+
+    it('should identify meal timing alignment opportunities', () => {
+      mockRecords = createPoorMealTimingRecords();
       const currentAdherence = 70;
-      const opportunities = analyzer.identifyOptimizationOpportunities(
-        mockRecords,
-        currentAdherence
+
+      const opportunities = analyzer.identifyOptimizationOpportunities(mockRecords, currentAdherence);
+      const mealOpportunity = opportunities.find(o =>
+        o.opportunity.includes('Malaysian meal times')
       );
 
-      expect(opportunities).toBeInstanceOf(Array);
-      expect(opportunities.length).toBeGreaterThan(0);
-
-      opportunities.forEach(opp => {
-        expect(opp.opportunity).toBeDefined();
-        expect(opp.potentialImprovement).toBeGreaterThan(0);
-        expect(opp.implementation).toBeInstanceOf(Array);
-        expect(opp.implementation.length).toBeGreaterThan(0);
-      });
-    });
-
-    test('should suggest prayer time optimization', () => {
-      const opportunities = analyzer.identifyOptimizationOpportunities(
-        mockRecords,
-        70
-      );
-
-      const prayerOpp = opportunities.find(o =>
-        o.opportunity.includes('prayer')
-      );
-
-      if (prayerOpp) {
-        expect(prayerOpp.implementation.some(i =>
-          i.includes('azan') || i.includes('prayer call')
-        )).toBe(true);
-      }
-    });
-
-    test('should suggest family involvement improvements', () => {
-      const opportunities = analyzer.identifyOptimizationOpportunities(
-        mockRecords,
-        70
-      );
-
-      const familyOpp = opportunities.find(o =>
-        o.opportunity.includes('family')
-      );
-
-      if (familyOpp) {
-        expect(familyOpp.potentialImprovement).toBeGreaterThan(5);
-        expect(familyOpp.implementation.some(i =>
-          i.includes('WhatsApp') || i.includes('family champion')
-        )).toBe(true);
-      }
-    });
-
-    test('should prepare for upcoming festivals', () => {
-      const opportunities = analyzer.identifyOptimizationOpportunities(
-        mockRecords,
-        70
-      );
-
-      const festivalOpp = opportunities.find(o =>
-        o.opportunity.includes('festival')
-      );
-
-      if (festivalOpp) {
-        expect(festivalOpp.implementation.some(i =>
-          i.includes('Stock up') || i.includes('festival-specific')
-        )).toBe(true);
-      }
-    });
-
-    test('should suggest meal timing alignment', () => {
-      const recordsWithoutMealTiming = mockRecords.map(r => ({
-        ...r,
-        culturalContext: {
-          ...r.culturalContext,
-          mealTiming: undefined
-        }
-      }));
-
-      const opportunities = analyzer.identifyOptimizationOpportunities(
-        recordsWithoutMealTiming,
-        70
-      );
-
-      const mealOpp = opportunities.find(o =>
-        o.opportunity.includes('meal')
-      );
-
-      if (mealOpp) {
-        expect(mealOpp.potentialImprovement).toBeGreaterThan(10);
-        expect(mealOpp.implementation.some(i =>
-          i.includes('breakfast') || i.includes('lunch') || i.includes('dinner')
-        )).toBe(true);
-      }
+      expect(mealOpportunity).toBeDefined();
+      expect(mealOpportunity?.potentialImprovement).toBe(12);
+      expect(mealOpportunity?.implementation).toContain('Link morning dose to breakfast (7-8 AM)');
     });
   });
 
-  describe('Medication Cultural Factors', () => {
-    test('should analyze cultural factors for specific medication', () => {
-      const analysis = analyzer.analyzeMedicationCulturalFactors(
-        mockMedications[1], // Hypertension medicine with fasting conflicts
-        mockRecords.filter(r => r.medicationId === 'med2')
-      );
+  describe('analyzeMedicationCulturalFactors', () => {
+    it('should identify fasting conflicts', () => {
+      const medication = mockMedications[1]; // Traditional medicine with fasting avoidance
+      mockRecords = createMedicationSpecificRecords(medication.id);
 
-      expect(analysis.culturalChallenges).toBeInstanceOf(Array);
-      expect(analysis.culturalOpportunities).toBeInstanceOf(Array);
-      expect(analysis.adaptations).toBeInstanceOf(Array);
+      const factors = analyzer.analyzeMedicationCulturalFactors(medication, mockRecords);
 
-      // Should identify fasting conflicts
-      if (mockMedications[1].cultural.avoidDuringFasting) {
-        expect(analysis.culturalChallenges).toContain(
-          'Medication should be avoided during fasting'
-        );
-        expect(analysis.adaptations.some(a =>
-          a.includes('non-fasting hours')
-        )).toBe(true);
-      }
+      expect(factors.culturalChallenges).toContain('Medication should be avoided during fasting');
+      expect(factors.adaptations).toContain('Schedule all doses during non-fasting hours');
     });
 
-    test('should identify food requirement opportunities', () => {
-      const analysis = analyzer.analyzeMedicationCulturalFactors(
-        mockMedications[0], // Metformin with food requirement
-        mockRecords.filter(r => r.medicationId === 'med1')
-      );
+    it('should identify food requirement opportunities', () => {
+      const medication = mockMedications[0]; // Metformin with food requirement
+      mockRecords = createMedicationSpecificRecords(medication.id);
 
-      if (mockMedications[0].cultural.takeWithFood) {
-        expect(analysis.culturalOpportunities).toContain(
-          'Can align with Malaysian meal times'
-        );
-        expect(analysis.adaptations.some(a =>
-          a.includes('nasi lemak') || a.includes('meal')
-        )).toBe(true);
-      }
+      const factors = analyzer.analyzeMedicationCulturalFactors(medication, mockRecords);
+
+      expect(factors.culturalOpportunities).toContain('Can align with Malaysian meal times');
+      expect(factors.adaptations).toContain('Link to specific meals (nasi lemak breakfast, lunch, dinner)');
     });
 
-    test('should detect prayer time conflicts for medication', () => {
-      const prayerRecords = mockRecords.filter(r =>
-        r.medicationId === 'med1' && r.culturalContext?.prayerTime
-      );
+    it('should identify prayer time conflicts', () => {
+      const medication = mockMedications[0];
+      mockRecords = createPrayerConflictRecords(medication.id);
 
-      const analysis = analyzer.analyzeMedicationCulturalFactors(
-        mockMedications[0],
-        prayerRecords
-      );
+      const factors = analyzer.analyzeMedicationCulturalFactors(medication, mockRecords);
 
-      if (prayerRecords.length > prayerRecords.length * 0.2) {
-        expect(analysis.culturalChallenges).toContain(
-          'Frequent conflicts with prayer times'
-        );
-        expect(analysis.adaptations).toContain(
-          'Reschedule to post-prayer windows'
-        );
-      }
+      expect(factors.culturalChallenges).toContain('Frequent conflicts with prayer times');
+      expect(factors.adaptations).toContain('Reschedule to post-prayer windows');
     });
 
-    test('should consider traditional alternatives', () => {
-      const analysis = analyzer.analyzeMedicationCulturalFactors(
-        mockMedications[1], // Has traditional alternatives
-        mockRecords.filter(r => r.medicationId === 'med2')
-      );
+    it('should identify traditional alternatives', () => {
+      const medication = mockMedications[1];
+      mockRecords = createMedicationSpecificRecords(medication.id);
 
-      if (mockMedications[1].cultural.traditionalAlternatives?.length) {
-        expect(analysis.culturalOpportunities).toContain(
-          'Traditional alternatives available for cultural preference'
-        );
-        expect(analysis.adaptations.some(a =>
-          a.includes('traditional') && a.includes('modern')
-        )).toBe(true);
-      }
+      const factors = analyzer.analyzeMedicationCulturalFactors(medication, mockRecords);
+
+      expect(factors.culturalOpportunities).toContain('Traditional alternatives available for cultural preference');
+      expect(factors.adaptations).toContain('Discuss integration of traditional and modern approaches');
     });
 
-    test('should evaluate schedule flexibility', () => {
-      const onceDaily: Medication = {
+    it('should analyze dosing frequency challenges', () => {
+      const frequentMedication: Medication = {
         ...mockMedications[0],
         schedule: {
           ...mockMedications[0].schedule,
-          frequency: 'daily',
-          times: ['08:00']
+          frequency: 'four_times',
+          times: ['06:00', '12:00', '18:00', '22:00']
         }
       };
+      mockRecords = createMedicationSpecificRecords(frequentMedication.id);
 
-      const analysis = analyzer.analyzeMedicationCulturalFactors(
-        onceDaily,
-        []
-      );
+      const factors = analyzer.analyzeMedicationCulturalFactors(frequentMedication, mockRecords);
 
-      expect(analysis.culturalOpportunities).toContain(
-        'Once-daily dosing allows flexible timing'
-      );
-      expect(analysis.adaptations.some(a =>
-        a.includes('Subuh') || a.includes('culturally convenient')
-      )).toBe(true);
+      expect(factors.culturalChallenges).toContain('Frequent dosing may conflict with daily activities');
+      expect(factors.adaptations).toContain('Consider extended-release formulations');
     });
   });
 });
+
+// Helper functions to create test data
+
+function createPrayerTimeRecords(): AdherenceRecord[] {
+  const records: AdherenceRecord[] = [];
+  const prayerTimes = [
+    { hour: 6, name: 'Subuh' },
+    { hour: 13, name: 'Zohor' },
+    { hour: 16, name: 'Asar' },
+    { hour: 19, name: 'Maghrib' },
+    { hour: 20, name: 'Isyak' }
+  ];
+
+  prayerTimes.forEach((prayer, index) => {
+    for (let day = 0; day < 10; day++) {
+      const date = new Date('2025-01-15');
+      date.setDate(date.getDate() - day);
+      date.setHours(prayer.hour, 0, 0, 0);
+
+      records.push({
+        id: `prayer_${index}_${day}`,
+        medicationId: 'med1',
+        patientId: 'user1',
+        scheduledTime: date,
+        takenTime: day % 3 === 0 ? undefined : new Date(date.getTime() + 30 * 60 * 1000),
+        status: day % 3 === 0 ? 'missed' : 'adjusted',
+        adherenceScore: day % 3 === 0 ? 0 : 85,
+        method: 'manual',
+        culturalContext: {
+          prayerTime: prayer.name
+        },
+        createdAt: date,
+        updatedAt: date
+      });
+    }
+  });
+
+  return records;
+}
+
+function createRamadanRecords(): AdherenceRecord[] {
+  const records: AdherenceRecord[] = [];
+
+  for (let i = 0; i < 30; i++) {
+    const date = new Date('2025-03-01'); // Ramadan period
+    date.setDate(date.getDate() + i);
+    date.setHours(14, 0, 0, 0); // Afternoon during fasting
+
+    // Some adherent, some not
+    const isAdherent = i % 4 !== 0;
+
+    records.push({
+      id: `ramadan_${i}`,
+      medicationId: 'med1',
+      patientId: 'user1',
+      scheduledTime: date,
+      takenTime: isAdherent ? new Date(date.getTime() + 6 * 60 * 60 * 1000) : undefined, // Taken after Iftar
+      status: isAdherent ? 'adjusted' : 'missed',
+      adherenceScore: isAdherent ? 80 : 0,
+      method: 'manual',
+      culturalContext: {
+        fastingPeriod: true
+      },
+      createdAt: date,
+      updatedAt: date
+    });
+  }
+
+  return records;
+}
+
+function createFestivalRecords(festivalDate: Date): AdherenceRecord[] {
+  const records: AdherenceRecord[] = [];
+
+  for (let i = -2; i <= 2; i++) {
+    const date = new Date(festivalDate);
+    date.setDate(date.getDate() + i);
+
+    // Morning dose
+    const morningTime = new Date(date);
+    morningTime.setHours(8, 0, 0, 0);
+
+    records.push({
+      id: `festival_morning_${i}`,
+      medicationId: 'med1',
+      patientId: 'user1',
+      scheduledTime: morningTime,
+      takenTime: i === 0 ? undefined : morningTime, // Missed on festival day
+      status: i === 0 ? 'missed' : 'taken_on_time',
+      adherenceScore: i === 0 ? 0 : 100,
+      method: 'manual',
+      culturalContext: {
+        festivalName: 'Hari Raya Aidilfitri'
+      },
+      createdAt: morningTime,
+      updatedAt: morningTime
+    });
+
+    // Evening dose
+    const eveningTime = new Date(date);
+    eveningTime.setHours(20, 0, 0, 0);
+
+    records.push({
+      id: `festival_evening_${i}`,
+      medicationId: 'med1',
+      patientId: 'user1',
+      scheduledTime: eveningTime,
+      takenTime: Math.abs(i) <= 1 ? undefined : eveningTime, // Missed around festival
+      status: Math.abs(i) <= 1 ? 'missed' : 'taken_on_time',
+      adherenceScore: Math.abs(i) <= 1 ? 0 : 100,
+      method: 'manual',
+      culturalContext: {
+        festivalName: 'Hari Raya Aidilfitri'
+      },
+      createdAt: eveningTime,
+      updatedAt: eveningTime
+    });
+  }
+
+  return records;
+}
+
+function createFamilyInvolvementRecords(): AdherenceRecord[] {
+  const records: AdherenceRecord[] = [];
+
+  for (let i = 0; i < 30; i++) {
+    const date = new Date('2025-01-15');
+    date.setDate(date.getDate() - i);
+    date.setHours(8, 0, 0, 0);
+
+    const isFamilyReported = i < 15; // First 15 days family reported
+    const adherenceRate = isFamilyReported ? 0.95 : 0.7;
+    const isAdherent = Math.random() < adherenceRate;
+
+    records.push({
+      id: `family_${i}`,
+      medicationId: 'med1',
+      patientId: 'user1',
+      scheduledTime: date,
+      takenTime: isAdherent ? date : undefined,
+      status: isAdherent ? 'taken_on_time' : 'missed',
+      adherenceScore: isAdherent ? 100 : 0,
+      method: isFamilyReported ? 'family_reported' : 'manual',
+      culturalContext: isFamilyReported ? {
+        familyInvolvement: true
+      } : undefined,
+      createdAt: date,
+      updatedAt: date
+    });
+  }
+
+  return records;
+}
+
+function createTraditionalMedicineRecords(): AdherenceRecord[] {
+  const records: AdherenceRecord[] = [];
+
+  // Traditional medicine records
+  for (let i = 0; i < 15; i++) {
+    const date = new Date('2025-01-15');
+    date.setDate(date.getDate() - i);
+    date.setHours(9, 0, 0, 0);
+
+    records.push({
+      id: `traditional_${i}`,
+      medicationId: 'med2',
+      patientId: 'user1',
+      scheduledTime: date,
+      takenTime: date,
+      status: 'taken_on_time',
+      adherenceScore: 100,
+      method: 'manual',
+      culturalContext: {
+        traditionalMedicineInteraction: true
+      },
+      createdAt: date,
+      updatedAt: date
+    });
+  }
+
+  // Modern medicine records
+  for (let i = 0; i < 15; i++) {
+    const date = new Date('2025-01-15');
+    date.setDate(date.getDate() - i);
+    date.setHours(8, 0, 0, 0);
+
+    const isAdherent = Math.random() < 0.6; // Lower adherence for modern medicine
+
+    records.push({
+      id: `modern_${i}`,
+      medicationId: 'med1',
+      patientId: 'user1',
+      scheduledTime: date,
+      takenTime: isAdherent ? date : undefined,
+      status: isAdherent ? 'taken_on_time' : 'missed',
+      adherenceScore: isAdherent ? 100 : 0,
+      method: 'manual',
+      createdAt: date,
+      updatedAt: date
+    });
+  }
+
+  return records;
+}
+
+function createMealTimingRecords(): AdherenceRecord[] {
+  const records: AdherenceRecord[] = [];
+  const mealTimings = ['before_meal', 'after_meal', 'with_meal'];
+
+  mealTimings.forEach((timing, timingIndex) => {
+    for (let i = 0; i < 10; i++) {
+      const date = new Date('2025-01-15');
+      date.setDate(date.getDate() - (timingIndex * 10 + i));
+      date.setHours(8, 0, 0, 0);
+
+      // Best adherence with 'after_meal'
+      const adherenceRate = timing === 'after_meal' ? 0.9 : 0.6;
+      const isAdherent = Math.random() < adherenceRate;
+
+      records.push({
+        id: `meal_${timing}_${i}`,
+        medicationId: 'med1',
+        patientId: 'user1',
+        scheduledTime: date,
+        takenTime: isAdherent ? date : undefined,
+        status: isAdherent ? 'taken_on_time' : 'missed',
+        adherenceScore: isAdherent ? 100 : 0,
+        method: 'manual',
+        culturalContext: {
+          mealTiming: timing as any
+        },
+        createdAt: date,
+        updatedAt: date
+      });
+    }
+  });
+
+  return records;
+}
+
+function createCelebrationRecords(): AdherenceRecord[] {
+  const records: AdherenceRecord[] = [];
+  const celebrations = [
+    { name: 'Chinese New Year', date: new Date('2025-01-29') },
+    { name: 'Deepavali', date: new Date('2024-10-20') },
+    { name: 'Christmas', date: new Date('2024-12-25') }
+  ];
+
+  celebrations.forEach(celebration => {
+    for (let i = -7; i <= 7; i++) {
+      const date = new Date(celebration.date);
+      date.setDate(date.getDate() + i);
+      date.setHours(8, 0, 0, 0);
+
+      // Lower adherence near celebrations
+      const nearCelebration = Math.abs(i) <= 2;
+      const isAdherent = nearCelebration ? Math.random() < 0.5 : Math.random() < 0.8;
+
+      records.push({
+        id: `celebration_${celebration.name}_${i}`,
+        medicationId: 'med1',
+        patientId: 'user1',
+        scheduledTime: date,
+        takenTime: isAdherent ? date : undefined,
+        status: isAdherent ? 'taken_on_time' : 'missed',
+        adherenceScore: isAdherent ? 100 : 0,
+        method: 'manual',
+        culturalContext: nearCelebration ? {
+          festivalName: celebration.name
+        } : undefined,
+        createdAt: date,
+        updatedAt: date
+      });
+    }
+  });
+
+  return records;
+}
+
+function createLowFamilyInvolvementRecords(): AdherenceRecord[] {
+  const records: AdherenceRecord[] = [];
+
+  for (let i = 0; i < 30; i++) {
+    const date = new Date('2025-01-15');
+    date.setDate(date.getDate() - i);
+    date.setHours(8, 0, 0, 0);
+
+    // Only 5% family reported
+    const isFamilyReported = Math.random() < 0.05;
+
+    records.push({
+      id: `low_family_${i}`,
+      medicationId: 'med1',
+      patientId: 'user1',
+      scheduledTime: date,
+      takenTime: date,
+      status: 'taken_on_time',
+      adherenceScore: 100,
+      method: isFamilyReported ? 'family_reported' : 'manual',
+      createdAt: date,
+      updatedAt: date
+    });
+  }
+
+  return records;
+}
+
+function createPoorMealTimingRecords(): AdherenceRecord[] {
+  const records: AdherenceRecord[] = [];
+
+  for (let i = 0; i < 30; i++) {
+    const date = new Date('2025-01-15');
+    date.setDate(date.getDate() - i);
+    date.setHours(8, 0, 0, 0);
+
+    // Only 20% have meal timing data
+    const hasMealTiming = Math.random() < 0.2;
+
+    records.push({
+      id: `poor_meal_${i}`,
+      medicationId: 'med1',
+      patientId: 'user1',
+      scheduledTime: date,
+      takenTime: date,
+      status: 'taken_on_time',
+      adherenceScore: 100,
+      method: 'manual',
+      culturalContext: hasMealTiming ? {
+        mealTiming: 'after_meal'
+      } : undefined,
+      createdAt: date,
+      updatedAt: date
+    });
+  }
+
+  return records;
+}
+
+function createMedicationSpecificRecords(medicationId: string): AdherenceRecord[] {
+  const records: AdherenceRecord[] = [];
+
+  for (let i = 0; i < 20; i++) {
+    const date = new Date('2025-01-15');
+    date.setDate(date.getDate() - i);
+    date.setHours(8, 0, 0, 0);
+
+    records.push({
+      id: `med_specific_${i}`,
+      medicationId,
+      patientId: 'user1',
+      scheduledTime: date,
+      takenTime: date,
+      status: 'taken_on_time',
+      adherenceScore: 100,
+      method: 'manual',
+      createdAt: date,
+      updatedAt: date
+    });
+  }
+
+  return records;
+}
+
+function createPrayerConflictRecords(medicationId: string): AdherenceRecord[] {
+  const records: AdherenceRecord[] = [];
+  const prayerHours = [6, 13, 16, 19, 20];
+
+  for (let i = 0; i < 30; i++) {
+    const date = new Date('2025-01-15');
+    date.setDate(date.getDate() - Math.floor(i / 5));
+    date.setHours(prayerHours[i % 5], 0, 0, 0);
+
+    records.push({
+      id: `prayer_conflict_${i}`,
+      medicationId,
+      patientId: 'user1',
+      scheduledTime: date,
+      takenTime: new Date(date.getTime() + 30 * 60 * 1000),
+      status: 'adjusted',
+      adherenceScore: 85,
+      method: 'manual',
+      culturalContext: {
+        prayerTime: 'Prayer Time'
+      },
+      createdAt: date,
+      updatedAt: date
+    });
+  }
+
+  return records;
+}
