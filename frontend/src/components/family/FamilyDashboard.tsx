@@ -30,11 +30,16 @@ import {
   FAMILY_UI_CONSTANTS,
 } from '@/types/family';
 import { useFamilyUpdates } from '@/hooks/family/useFamilyUpdates';
+import { useEmergencyDetection } from '@/hooks/emergency/useEmergencyDetection';
+import { useFamilyEmergencyCoordination } from '@/hooks/emergency/useFamilyEmergencyCoordination';
 import MemberStatusCard from './MemberStatusCard';
 import MedicationStatusGrid from './MedicationStatusGrid';
 import EmergencyAlerts from './EmergencyAlerts';
 import FamilyActivityFeed from './FamilyActivityFeed';
 import HealthInsights from './HealthInsights';
+import EmergencyConfiguration from '../emergency/EmergencyConfiguration';
+import EscalationRules from '../emergency/EscalationRules';
+import EscalationPanel from '../emergency/EscalationPanel';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
@@ -61,6 +66,8 @@ export const FamilyDashboard: React.FC<FamilyDashboardProps> = ({
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [showEmergencyOnly, setShowEmergencyOnly] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [showEmergencyConfig, setShowEmergencyConfig] = useState(false);
+  const [showEscalationRules, setShowEscalationRules] = useState(false);
 
   // Real-time family data hook
   const {
@@ -81,6 +88,47 @@ export const FamilyDashboard: React.FC<FamilyDashboardProps> = ({
       language: culturalSettings.language,
     },
   });
+
+  // Emergency detection for family patients
+  const [emergencyState, emergencyActions] = useEmergencyDetection(
+    dashboardData?.patientId || '',
+    {
+      enableBackgroundMonitoring: true,
+      autoStart: true,
+      culturalConstraints: culturalSettings.showPrayerTimes,
+      familyIntegration: true,
+      onEmergencyDetected: (emergency) => {
+        console.log('Emergency detected on family dashboard:', emergency.id);
+        // Emergency will be shown in the EmergencyAlerts component
+      },
+      onEmergencyResolved: (emergencyId) => {
+        console.log('Emergency resolved on family dashboard:', emergencyId);
+      },
+      onError: (error) => {
+        console.error('Emergency detection error:', error);
+      }
+    }
+  );
+
+  // Family emergency coordination
+  const [familyEmergencyState, familyEmergencyActions] = useFamilyEmergencyCoordination(
+    familyId,
+    {
+      enableQuickDial: true,
+      enableRealTimeUpdates: true,
+      respectCulturalConstraints: culturalSettings.showPrayerTimes,
+      useFormalLanguage: true,
+      onNotificationReceived: (notification) => {
+        console.log('Family emergency notification received:', notification.id);
+      },
+      onEmergencyResolved: (notificationId) => {
+        console.log('Family emergency resolved:', notificationId);
+      },
+      onError: (error) => {
+        console.error('Family emergency coordination error:', error);
+      }
+    }
+  );
 
   // Accessibility settings based on cultural preferences
   const accessibilityMode = useMemo(() => ({
@@ -106,13 +154,31 @@ export const FamilyDashboard: React.FC<FamilyDashboardProps> = ({
 
   // Emergency notifications requiring immediate attention
   const criticalNotifications = useMemo(() => {
-    if (!dashboardData?.activeNotifications) return [];
+    const dashboardNotifications = dashboardData?.activeNotifications || [];
+    const familyNotifications = familyEmergencyState.activeNotifications || [];
 
-    return dashboardData.activeNotifications.filter(
-      notification => notification.severity === 'critical' ||
-                     notification.severity === 'high'
-    );
-  }, [dashboardData?.activeNotifications]);
+    // Combine dashboard notifications and family emergency notifications
+    const allNotifications = [
+      ...dashboardNotifications.filter(
+        notification => notification.severity === 'critical' ||
+                       notification.severity === 'high'
+      ),
+      // Map family emergency notifications to dashboard format
+      ...familyNotifications
+        .filter(notification => notification.severity === 'critical' || notification.severity === 'high')
+        .map(notification => ({
+          id: notification.id,
+          type: notification.type,
+          severity: notification.severity,
+          message: notification.content.body[culturalSettings.language] || notification.content.body.en,
+          timestamp: notification.tracking.createdAt,
+          patientId: notification.patientId,
+          isEmergency: true
+        }))
+    ];
+
+    return allNotifications;
+  }, [dashboardData?.activeNotifications, familyEmergencyState.activeNotifications, culturalSettings.language]);
 
   // Handle member selection
   const handleMemberSelect = useCallback((member: FamilyMemberWithStatus) => {
@@ -123,6 +189,53 @@ export const FamilyDashboard: React.FC<FamilyDashboardProps> = ({
   const handleEmergencyAlert = useCallback((notification: FamilyNotification) => {
     onEmergencyAlert?.(notification);
   }, [onEmergencyAlert]);
+
+  // Handle emergency response actions
+  const handleEmergencyResponse = useCallback(async (
+    notificationId: string,
+    responseType: 'safe' | 'need_help' | 'acknowledge' | 'false_alarm'
+  ) => {
+    try {
+      await familyEmergencyActions.respondToNotification(
+        notificationId,
+        responseType === 'safe' ? 'patient_safe' :
+        responseType === 'need_help' ? 'need_help' :
+        responseType === 'acknowledge' ? 'acknowledged' :
+        'false_alarm'
+      );
+    } catch (error) {
+      console.error('Failed to respond to emergency:', error);
+      Alert.alert(
+        t('emergency.response.error.title'),
+        t('emergency.response.error.message')
+      );
+    }
+  }, [familyEmergencyActions, t]);
+
+  // Handle quick dial emergency contact
+  const handleQuickDial = useCallback(async (contactId: string) => {
+    try {
+      await familyEmergencyActions.quickDialEmergency(contactId, 'voice');
+    } catch (error) {
+      console.error('Failed to quick dial emergency contact:', error);
+      Alert.alert(
+        t('emergency.dial.error.title'),
+        t('emergency.dial.error.message')
+      );
+    }
+  }, [familyEmergencyActions, t]);
+
+  // Handle emergency configuration
+  const handleEmergencyConfigSaved = useCallback((config: any) => {
+    console.log('Emergency configuration saved:', config);
+    setShowEmergencyConfig(false);
+  }, []);
+
+  // Handle escalation rules saved
+  const handleEscalationRulesSaved = useCallback((rules: any) => {
+    console.log('Escalation rules saved:', rules);
+    setShowEscalationRules(false);
+  }, []);
 
   // Handle refresh
   const handleRefresh = useCallback(async () => {
@@ -305,15 +418,28 @@ export const FamilyDashboard: React.FC<FamilyDashboardProps> = ({
             <EmergencyAlerts
               notifications={criticalNotifications}
               onAlertAction={(notificationId, action) => {
-                // Handle alert actions
-                console.log('Alert action:', notificationId, action);
+                handleEmergencyResponse(notificationId, action);
               }}
               onCallEmergency={(memberId) => {
-                // Handle emergency calls
-                console.log('Emergency call for member:', memberId);
+                handleQuickDial(memberId);
               }}
               culturalEmergencyProtocol={true}
               maxAlertsDisplayed={5}
+            />
+          </View>
+        )}
+
+        {/* Emergency Management Panel */}
+        {(emergencyState.activeEmergencies.length > 0 || familyEmergencyState.unreadCount > 0) && (
+          <View style={styles.section}>
+            <EscalationPanel
+              activeEmergencies={emergencyState.activeEmergencies}
+              familyNotifications={familyEmergencyState.activeNotifications}
+              emergencyContacts={familyEmergencyState.emergencyContacts}
+              onQuickDial={handleQuickDial}
+              onEmergencyResponse={handleEmergencyResponse}
+              onConfigureEmergency={() => setShowEmergencyConfig(true)}
+              culturalSettings={culturalSettings}
             />
           </View>
         )}
@@ -410,6 +536,36 @@ export const FamilyDashboard: React.FC<FamilyDashboardProps> = ({
           </View>
         )}
       </ScrollView>
+
+      {/* Emergency Configuration Modal */}
+      {showEmergencyConfig && (
+        <EmergencyConfiguration
+          patientId={dashboardData?.patientId || ''}
+          onConfigSaved={handleEmergencyConfigSaved}
+          onError={(error) => {
+            console.error('Emergency configuration error:', error);
+            Alert.alert(
+              t('emergency.config.error.title'),
+              t('emergency.config.error.message')
+            );
+          }}
+        />
+      )}
+
+      {/* Escalation Rules Modal */}
+      {showEscalationRules && (
+        <EscalationRules
+          patientId={dashboardData?.patientId || ''}
+          onRulesSaved={handleEscalationRulesSaved}
+          onError={(error) => {
+            console.error('Escalation rules error:', error);
+            Alert.alert(
+              t('emergency.escalation.error.title'),
+              t('emergency.escalation.error.message')
+            );
+          }}
+        />
+      )}
     </SafeAreaView>
   );
 };
