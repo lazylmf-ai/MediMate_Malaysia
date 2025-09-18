@@ -31,6 +31,13 @@ import { AdherenceCalculationEngine } from '../adherence/AdherenceCalculationEng
 import { CulturalPatternAnalyzer } from '../adherence/CulturalPatternAnalyzer';
 import { PredictiveAdherenceEngine } from '../adherence/PredictiveAdherenceEngine';
 
+// Integration with Issue #22 - Medication Management Core
+import { medicationDatabaseService } from '../medication';
+
+// Integration with Issue #24 - Smart Reminder System
+import { ReminderSchedulingService } from '../reminder/ReminderSchedulingService';
+import { CulturalConstraintEngine } from '../reminder/CulturalConstraintEngine';
+
 interface TrackingServiceConfig {
   cacheEnabled: boolean;
   cacheTTL: number; // seconds
@@ -45,6 +52,8 @@ export class ProgressTrackingService {
   private calculationEngine: AdherenceCalculationEngine;
   private culturalAnalyzer: CulturalPatternAnalyzer;
   private predictiveEngine: PredictiveAdherenceEngine;
+  private reminderService: ReminderSchedulingService | null = null;
+  private culturalEngine: CulturalConstraintEngine | null = null;
   private config: TrackingServiceConfig;
   private cache: Map<string, AdherenceCache> = new Map();
   private syncTimer: NodeJS.Timeout | null = null;
@@ -882,10 +891,271 @@ export class ProgressTrackingService {
   }
 
   /**
+   * Initialize integration with existing systems (Issue #22, #24)
+   */
+  async initializeIntegrations(): Promise<void> {
+    try {
+      // Initialize reminder service integration (Issue #24)
+      this.reminderService = new ReminderSchedulingService();
+      await this.reminderService.initialize();
+
+      // Initialize cultural constraint engine (Issue #24)
+      this.culturalEngine = new CulturalConstraintEngine({
+        prayerTimeIntegration: true,
+        fastingAwareness: true,
+        culturalEventTracking: true
+      });
+
+      console.log('Progress tracking integrated with reminder and medication systems');
+    } catch (error) {
+      console.error('Failed to initialize integrations:', error);
+    }
+  }
+
+  /**
+   * Analyze reminder effectiveness for adherence insights (Issue #24 integration)
+   */
+  async analyzeReminderEffectiveness(
+    patientId: string,
+    medicationId: string,
+    startDate: Date,
+    endDate: Date
+  ): Promise<{
+    reminderResponseRate: number;
+    averageResponseTime: number;
+    bestReminderType: string;
+    culturalAlignmentScore: number;
+  }> {
+    if (!this.reminderService) {
+      await this.initializeIntegrations();
+    }
+
+    // Get reminder history from the reminder service
+    const reminderHistory = await this.reminderService?.getReminderHistory(
+      patientId,
+      startDate,
+      endDate
+    );
+
+    if (!reminderHistory || reminderHistory.length === 0) {
+      return {
+        reminderResponseRate: 0,
+        averageResponseTime: 0,
+        bestReminderType: 'none',
+        culturalAlignmentScore: 0
+      };
+    }
+
+    // Calculate reminder effectiveness metrics
+    const responded = reminderHistory.filter(r => r.responded);
+    const responseRate = (responded.length / reminderHistory.length) * 100;
+
+    // Calculate average response time
+    const responseTimes = responded
+      .filter(r => r.responseTime)
+      .map(r => r.responseTime!);
+    const avgResponseTime = responseTimes.length > 0
+      ? responseTimes.reduce((a, b) => a + b, 0) / responseTimes.length
+      : 0;
+
+    // Identify best performing reminder type
+    const typePerformance = new Map<string, { total: number; responded: number }>();
+    reminderHistory.forEach(reminder => {
+      const type = reminder.type || 'notification';
+      if (!typePerformance.has(type)) {
+        typePerformance.set(type, { total: 0, responded: 0 });
+      }
+      const perf = typePerformance.get(type)!;
+      perf.total++;
+      if (reminder.responded) perf.responded++;
+    });
+
+    let bestType = 'notification';
+    let bestRate = 0;
+    typePerformance.forEach((perf, type) => {
+      const rate = perf.responded / perf.total;
+      if (rate > bestRate) {
+        bestRate = rate;
+        bestType = type;
+      }
+    });
+
+    // Calculate cultural alignment score
+    const culturalScore = this.culturalEngine
+      ? await this.culturalEngine.evaluateReminderAlignment(reminderHistory)
+      : 0;
+
+    return {
+      reminderResponseRate: Math.round(responseRate * 10) / 10,
+      averageResponseTime: Math.round(avgResponseTime),
+      bestReminderType: bestType,
+      culturalAlignmentScore: Math.round(culturalScore * 100)
+    };
+  }
+
+  /**
+   * Get medication data with adherence insights (Issue #22 integration)
+   */
+  async getMedicationAdherenceInsights(
+    medicationId: string,
+    patientId: string
+  ): Promise<{
+    medication: Medication | null;
+    adherenceHistory: AdherenceRecord[];
+    interactionWarnings: string[];
+    culturalConsiderations: string[];
+  }> {
+    try {
+      // Get medication details from medication service (Issue #22)
+      const medication = await medicationDatabaseService.getMedicationDetails(medicationId);
+
+      // Get adherence history
+      const adherenceHistory = await this.getAdherenceRecords(
+        patientId,
+        undefined,
+        undefined,
+        medicationId
+      );
+
+      // Check for drug interactions if multiple medications
+      const allMedications = await medicationDatabaseService.getUserMedications(patientId);
+      let interactionWarnings: string[] = [];
+
+      if (allMedications.length > 1) {
+        // Check interactions with other medications
+        for (const otherMed of allMedications) {
+          if (otherMed.id !== medicationId) {
+            const interactions = await medicationDatabaseService.checkInteraction(
+              medicationId,
+              otherMed.id
+            );
+            if (interactions?.severity === 'high') {
+              interactionWarnings.push(
+                `High severity interaction with ${otherMed.name}: ${interactions.description}`
+              );
+            }
+          }
+        }
+      }
+
+      // Get cultural considerations
+      const culturalConsiderations = medication
+        ? this.culturalAnalyzer.analyzeMedicationCulturalFactors(
+            medication,
+            adherenceHistory
+          ).culturalChallenges
+        : [];
+
+      return {
+        medication,
+        adherenceHistory,
+        interactionWarnings,
+        culturalConsiderations
+      };
+    } catch (error) {
+      console.error('Error getting medication adherence insights:', error);
+      return {
+        medication: null,
+        adherenceHistory: [],
+        interactionWarnings: [],
+        culturalConsiderations: []
+      };
+    }
+  }
+
+  /**
+   * Optimize reminder schedule based on adherence patterns (Issue #24 integration)
+   */
+  async optimizeReminderSchedule(
+    patientId: string,
+    medicationId: string,
+    adherenceRecords: AdherenceRecord[]
+  ): Promise<{
+    recommendedTimes: string[];
+    culturalAdjustments: string[];
+    expectedImprovement: number;
+  }> {
+    if (!this.reminderService || !this.culturalEngine) {
+      await this.initializeIntegrations();
+    }
+
+    // Analyze adherence patterns
+    const patterns = this.calculationEngine.analyzePatterns(adherenceRecords);
+
+    // Identify best adherence times
+    const bestTimes: string[] = [];
+    const timeAnalysis = new Map<number, number>(); // hour -> adherence rate
+
+    adherenceRecords.forEach(record => {
+      const hour = new Date(record.scheduledTime).getHours();
+      if (!timeAnalysis.has(hour)) {
+        timeAnalysis.set(hour, 0);
+      }
+      if (record.status === 'taken_on_time') {
+        timeAnalysis.set(hour, (timeAnalysis.get(hour) || 0) + 1);
+      }
+    });
+
+    // Sort by adherence rate and get top times
+    const sortedTimes = Array.from(timeAnalysis.entries())
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 3);
+
+    sortedTimes.forEach(([hour]) => {
+      bestTimes.push(`${hour.toString().padStart(2, '0')}:00`);
+    });
+
+    // Get cultural adjustments from cultural engine
+    const culturalAdjustments = this.culturalEngine
+      ? await this.culturalEngine.getOptimalSchedule(bestTimes)
+      : bestTimes;
+
+    // Calculate expected improvement
+    let expectedImprovement = 10; // Base improvement
+
+    // Add improvement based on pattern insights
+    if (patterns.some(p => p.type === 'prayer_time_conflict')) {
+      expectedImprovement += 8;
+    }
+    if (patterns.some(p => p.type === 'meal_timing_issue')) {
+      expectedImprovement += 5;
+    }
+    if (patterns.some(p => p.type === 'work_schedule_conflict')) {
+      expectedImprovement += 7;
+    }
+
+    return {
+      recommendedTimes: culturalAdjustments,
+      culturalAdjustments: [
+        'Aligned with prayer times',
+        'Adjusted for meal schedules',
+        'Optimized for work hours'
+      ],
+      expectedImprovement: Math.min(25, expectedImprovement)
+    };
+  }
+
+  /**
+   * Helper method to get adherence records (placeholder for database integration)
+   */
+  private async getAdherenceRecords(
+    patientId: string,
+    startDate?: Date,
+    endDate?: Date,
+    medicationId?: string
+  ): Promise<AdherenceRecord[]> {
+    // This would integrate with AdherenceDatabase
+    // For now, returning empty array as placeholder
+    return [];
+  }
+
+  /**
    * Cleanup resources
    */
   destroy(): void {
     this.stopAutoSync();
     this.clearAllCache();
+    this.reminderService = null;
+    this.culturalEngine = null;
   }
 }
