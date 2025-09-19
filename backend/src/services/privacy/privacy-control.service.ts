@@ -242,6 +242,14 @@ export class PrivacyControlService extends EventEmitter {
     this.on('emergency:override', async (data) => {
       await this.handleEmergencyOverride(data);
     });
+
+    this.on('family:member_added', async (data) => {
+      await this.handleFamilyMemberAdded(data);
+    });
+
+    this.on('pdpa:review_required', async (data) => {
+      await this.handlePDPAReview(data);
+    });
   }
 
   /**
@@ -1143,7 +1151,416 @@ export class PrivacyControlService extends EventEmitter {
   private async handleEmergencyOverride(data: any): Promise<void> {
     // Handle emergency override
     this.logger.warn('Emergency override activated', data);
+
+    // Audit the emergency override
+    await this.auditPrivacyAction({
+      userId: data.userId,
+      familyId: data.familyId,
+      action: 'emergency_override',
+      resourceType: data.resourceType,
+      accessorId: data.accessorId,
+      timestamp: new Date(),
+      justification: data.emergencyReason,
+      pdpaCompliant: true // Emergency overrides are compliant under PDPA for critical situations
+    });
   }
+
+  /**
+   * Handle new family member addition - create default privacy settings
+   */
+  private async handleFamilyMemberAdded(data: {
+    userId: string;
+    familyId: string;
+    relationship: MalaysianFamilyRelationship;
+    culturalProfile?: any;
+  }): Promise<void> {
+    try {
+      this.logger.info('Creating privacy settings for new family member', data);
+
+      await this.createDefaultPrivacySettings(
+        data.userId,
+        data.familyId,
+        data.relationship,
+        data.culturalProfile
+      );
+
+      // Notify family administrators about new member privacy settings
+      this.emit('privacy:member_initialized', {
+        userId: data.userId,
+        familyId: data.familyId,
+        timestamp: new Date()
+      });
+    } catch (error) {
+      this.logger.error('Failed to create privacy settings for new member', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Handle PDPA consent review requirements
+   */
+  private async handlePDPAReview(data: {
+    userId: string;
+    familyId: string;
+    reviewType: 'periodic' | 'regulatory_change' | 'user_requested';
+  }): Promise<void> {
+    try {
+      this.logger.info('PDPA review required', data);
+
+      const settings = await this.getPrivacySettings(data.userId, data.familyId);
+      if (!settings) {
+        throw new Error('Privacy settings not found');
+      }
+
+      // Check if review is needed based on dates
+      const nextReviewDate = new Date(settings.pdpaConsent.nextReviewDate);
+      const now = new Date();
+
+      if (now >= nextReviewDate || data.reviewType !== 'periodic') {
+        // Update review dates
+        settings.pdpaConsent.lastReviewDate = now;
+        settings.pdpaConsent.nextReviewDate = new Date(
+          now.getTime() + (90 * 24 * 60 * 60 * 1000) // 90 days
+        );
+
+        await this.updatePrivacySettings(data.userId, data.familyId, settings);
+
+        // Notify user about review requirement
+        this.emit('privacy:review_needed', {
+          userId: data.userId,
+          familyId: data.familyId,
+          reviewType: data.reviewType,
+          deadline: settings.pdpaConsent.nextReviewDate
+        });
+      }
+    } catch (error) {
+      this.logger.error('Failed to handle PDPA review', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Validate family member permissions based on cultural hierarchy
+   */
+  async validateCulturalPermissions(
+    requestorId: string,
+    targetUserId: string,
+    familyId: string,
+    requestedAction: string
+  ): Promise<AccessDecision> {
+    try {
+      // Get family relationships and cultural roles
+      const familyData = await this.db.query(
+        `SELECT fm1.role as requestor_role, fm1.cultural_role as requestor_cultural_role,
+                fm2.role as target_role, fm2.cultural_role as target_cultural_role
+         FROM family_members fm1
+         JOIN family_members fm2 ON fm2.family_id = fm1.family_id
+         WHERE fm1.user_id = ? AND fm2.user_id = ? AND fm1.family_id = ?`,
+        [requestorId, targetUserId, familyId]
+      );
+
+      if (!familyData || familyData.length === 0) {
+        return {
+          allowed: false,
+          reason: 'Family relationship not found'
+        };
+      }
+
+      const relationship = familyData[0];
+
+      // Apply Malaysian cultural hierarchy rules
+      const culturalValidation = await this.cultural.validateFamilyHierarchy(
+        relationship.requestor_cultural_role,
+        relationship.target_cultural_role,
+        requestedAction
+      );
+
+      if (!culturalValidation.allowed) {
+        return {
+          allowed: false,
+          reason: culturalValidation.reason,
+          conditions: culturalValidation.conditions
+        };
+      }
+
+      // Check PDPA compliance
+      const pdpaCheck = await this.pdpa.validateDataAccess(
+        requestorId,
+        targetUserId,
+        requestedAction
+      );
+
+      return {
+        allowed: culturalValidation.allowed && pdpaCheck.compliant,
+        reason: pdpaCheck.compliant ? undefined : 'PDPA compliance check failed',
+        conditions: [...(culturalValidation.conditions || []), ...(pdpaCheck.conditions || [])]
+      };
+    } catch (error) {
+      this.logger.error('Cultural permission validation failed', error);
+      return {
+        allowed: false,
+        reason: 'Validation error occurred'
+      };
+    }
+  }
+
+  /**
+   * Generate PDPA compliance report for family data sharing
+   */
+  async generatePDPAComplianceReport(
+    familyId: string,
+    startDate: Date,
+    endDate: Date
+  ): Promise<PDPAComplianceReport> {
+    const reportId = uuidv4();
+
+    try {
+      // Gather all privacy settings for family
+      const familyPrivacyData = await this.db.query(
+        `SELECT * FROM privacy_settings
+         WHERE family_id = ? AND updated_at BETWEEN ? AND ?`,
+        [familyId, startDate, endDate]
+      );
+
+      // Gather audit entries
+      const auditEntries = await this.db.query(
+        `SELECT * FROM privacy_audit_log
+         WHERE family_id = ? AND timestamp BETWEEN ? AND ?`,
+        [familyId, startDate, endDate]
+      );
+
+      // Analyze compliance
+      const complianceAnalysis = this.analyzePDPACompliance(familyPrivacyData, auditEntries);
+
+      // Generate recommendations
+      const recommendations = this.generateComplianceRecommendations(complianceAnalysis);
+
+      const report: PDPAComplianceReport = {
+        reportId,
+        familyId,
+        period: { startDate, endDate },
+        complianceScore: complianceAnalysis.score,
+        areas: complianceAnalysis.areas,
+        violations: complianceAnalysis.violations,
+        recommendations,
+        generatedAt: new Date(),
+        nextReviewDate: new Date(Date.now() + (30 * 24 * 60 * 60 * 1000)) // 30 days
+      };
+
+      // Store report
+      await this.db.query(
+        `INSERT INTO pdpa_compliance_reports
+         (id, family_id, report_data, generated_at)
+         VALUES (?, ?, ?, ?)`,
+        [reportId, familyId, JSON.stringify(report), new Date()]
+      );
+
+      return report;
+    } catch (error) {
+      this.logger.error('Failed to generate PDPA compliance report', error);
+      throw error;
+    }
+  }
+
+  private analyzePDPACompliance(privacyData: any[], auditData: any[]): ComplianceAnalysis {
+    const analysis: ComplianceAnalysis = {
+      score: 0,
+      areas: [],
+      violations: []
+    };
+
+    // Check consent management
+    const consentCompliance = this.checkConsentCompliance(privacyData);
+    analysis.areas.push(consentCompliance);
+
+    // Check data minimization
+    const dataMinimization = this.checkDataMinimization(auditData);
+    analysis.areas.push(dataMinimization);
+
+    // Check purpose limitation
+    const purposeLimitation = this.checkPurposeLimitation(auditData);
+    analysis.areas.push(purposeLimitation);
+
+    // Check data retention
+    const dataRetention = this.checkDataRetention(privacyData);
+    analysis.areas.push(dataRetention);
+
+    // Calculate overall score
+    analysis.score = analysis.areas.reduce((sum, area) => sum + area.score, 0) / analysis.areas.length;
+
+    // Identify violations
+    analysis.violations = analysis.areas
+      .filter(area => area.score < 70)
+      .map(area => ({
+        area: area.name,
+        severity: area.score < 50 ? 'high' : 'medium',
+        description: area.issues.join('; ')
+      }));
+
+    return analysis;
+  }
+
+  private checkConsentCompliance(privacyData: any[]): ComplianceArea {
+    const area: ComplianceArea = {
+      name: 'Consent Management',
+      score: 100,
+      issues: []
+    };
+
+    privacyData.forEach(setting => {
+      const consent = JSON.parse(setting.pdpa_consent || '{}');
+
+      // Check if consent is up to date
+      if (!consent.consentDate || new Date(consent.consentDate) < new Date(Date.now() - (365 * 24 * 60 * 60 * 1000))) {
+        area.score -= 10;
+        area.issues.push('Consent older than 1 year needs renewal');
+      }
+
+      // Check if all required purposes are consented
+      const purposes = consent.purposes || [];
+      const requiredNotConsented = purposes.filter((p: any) => p.isRequired && !p.consented);
+      if (requiredNotConsented.length > 0) {
+        area.score -= 20;
+        area.issues.push('Required purposes not consented');
+      }
+    });
+
+    return area;
+  }
+
+  private checkDataMinimization(auditData: any[]): ComplianceArea {
+    const area: ComplianceArea = {
+      name: 'Data Minimization',
+      score: 100,
+      issues: []
+    };
+
+    // Check for excessive data access patterns
+    const accessByUser = new Map<string, number>();
+    auditData.forEach(entry => {
+      const count = accessByUser.get(entry.accessor_id) || 0;
+      accessByUser.set(entry.accessor_id, count + 1);
+    });
+
+    accessByUser.forEach((count, userId) => {
+      if (count > 100) {
+        area.score -= 5;
+        area.issues.push(`User ${userId} has excessive data access (${count} accesses)`);
+      }
+    });
+
+    return area;
+  }
+
+  private checkPurposeLimitation(auditData: any[]): ComplianceArea {
+    const area: ComplianceArea = {
+      name: 'Purpose Limitation',
+      score: 100,
+      issues: []
+    };
+
+    // Check if data is accessed only for stated purposes
+    const unauthorizedAccess = auditData.filter(entry =>
+      !entry.justification && entry.action === 'data_accessed'
+    );
+
+    if (unauthorizedAccess.length > 0) {
+      area.score -= (unauthorizedAccess.length * 2);
+      area.issues.push(`${unauthorizedAccess.length} data accesses without justification`);
+    }
+
+    return area;
+  }
+
+  private checkDataRetention(privacyData: any[]): ComplianceArea {
+    const area: ComplianceArea = {
+      name: 'Data Retention',
+      score: 100,
+      issues: []
+    };
+
+    privacyData.forEach(setting => {
+      const consent = JSON.parse(setting.pdpa_consent || '{}');
+
+      // Check retention period
+      if (!consent.dataRetentionPeriod || consent.dataRetentionPeriod > 2555) { // 7 years
+        area.score -= 10;
+        area.issues.push('Data retention period exceeds recommended maximum');
+      }
+    });
+
+    return area;
+  }
+
+  private generateComplianceRecommendations(analysis: ComplianceAnalysis): string[] {
+    const recommendations: string[] = [];
+
+    analysis.violations.forEach(violation => {
+      switch(violation.area) {
+        case 'Consent Management':
+          recommendations.push('Review and update user consent records');
+          recommendations.push('Implement automated consent renewal reminders');
+          break;
+        case 'Data Minimization':
+          recommendations.push('Review data access patterns and implement access limits');
+          recommendations.push('Implement role-based access controls');
+          break;
+        case 'Purpose Limitation':
+          recommendations.push('Enforce justification for all data access');
+          recommendations.push('Implement purpose-based access controls');
+          break;
+        case 'Data Retention':
+          recommendations.push('Review and update data retention policies');
+          recommendations.push('Implement automated data purging');
+          break;
+      }
+    });
+
+    if (analysis.score >= 90) {
+      recommendations.push('Maintain current excellent compliance practices');
+    } else if (analysis.score >= 70) {
+      recommendations.push('Schedule quarterly compliance reviews');
+    } else {
+      recommendations.push('Immediate compliance review and remediation required');
+    }
+
+    return [...new Set(recommendations)]; // Remove duplicates
+  }
+}
+
+// Additional type definitions for PDPA compliance
+
+export interface PDPAComplianceReport {
+  reportId: string;
+  familyId: string;
+  period: {
+    startDate: Date;
+    endDate: Date;
+  };
+  complianceScore: number;
+  areas: ComplianceArea[];
+  violations: ComplianceViolation[];
+  recommendations: string[];
+  generatedAt: Date;
+  nextReviewDate: Date;
+}
+
+export interface ComplianceAnalysis {
+  score: number;
+  areas: ComplianceArea[];
+  violations: ComplianceViolation[];
+}
+
+export interface ComplianceArea {
+  name: string;
+  score: number;
+  issues: string[];
+}
+
+export interface ComplianceViolation {
+  area: string;
+  severity: 'high' | 'medium' | 'low';
+  description: string;
 }
 
 // Type definitions for better type safety
