@@ -3,7 +3,7 @@
  * Handles CRUD operations and business logic for family management
  */
 
-import { pool } from '../../config/database';
+import { DatabaseService } from '../../services/database/databaseService';
 import {
   FamilyCircle,
   FamilySettings,
@@ -24,9 +24,9 @@ export class FamilyCircleModel {
     createdBy: string,
     familyData: CreateFamilyRequest
   ): Promise<FamilyCircle> {
-    const client = await pool.connect();
+    const db = DatabaseService.getInstance().getConnection();
     try {
-      await client.query('BEGIN');
+      await db.none('BEGIN');
 
       // Default settings
       const defaultSettings: FamilySettings = {
@@ -50,7 +50,7 @@ export class FamilyCircleModel {
       };
 
       // Create family circle
-      const result = await client.query(`
+      const result = await db.one(`
         INSERT INTO family_circles (
           name, created_by, settings, emergency_contacts, cultural_preferences
         ) VALUES ($1, $2, $3, $4, $5)
@@ -66,7 +66,7 @@ export class FamilyCircleModel {
       const familyCircle = result.rows[0];
 
       // Add creator as admin member
-      await client.query(`
+      await db.one(`
         INSERT INTO family_members (
           family_id, user_id, role, relationship, status, joined_at,
           permissions, privacy_settings, cultural_context
@@ -99,11 +99,11 @@ export class FamilyCircleModel {
         })
       ]);
 
-      await client.query('COMMIT');
+      await db.one('COMMIT');
 
       return this.mapDatabaseRowToFamilyCircle(familyCircle);
     } catch (error) {
-      await client.query('ROLLBACK');
+      await db.one('ROLLBACK');
       throw error;
     } finally {
       client.release();
@@ -117,7 +117,7 @@ export class FamilyCircleModel {
     familyId: string,
     userId?: string
   ): Promise<FamilyCircle | null> {
-    const client = await pool.connect();
+    const db = DatabaseService.getInstance().getConnection();
     try {
       let query = `
         SELECT fc.* FROM family_circles fc
@@ -138,7 +138,7 @@ export class FamilyCircleModel {
         params.push(userId);
       }
 
-      const result = await client.query(query, params);
+      const result = await db.one(query, params);
 
       if (result.rows.length === 0) {
         return null;
@@ -154,9 +154,9 @@ export class FamilyCircleModel {
    * Get all families for a user
    */
   static async findByUserId(userId: string): Promise<FamilyMembershipSummary[]> {
-    const client = await pool.connect();
+    const db = DatabaseService.getInstance().getConnection();
     try {
-      const result = await client.query(`
+      const result = await db.one(`
         SELECT
           fc.id as family_id,
           fc.name as family_name,
@@ -203,7 +203,7 @@ export class FamilyCircleModel {
       throw new Error('Insufficient permissions to update family');
     }
 
-    const client = await pool.connect();
+    const db = DatabaseService.getInstance().getConnection();
     try {
       const updates = [];
       const values = [];
@@ -241,7 +241,7 @@ export class FamilyCircleModel {
       updates.push(`updated_at = NOW()`);
       values.push(familyId);
 
-      const result = await client.query(`
+      const result = await db.one(`
         UPDATE family_circles
         SET ${updates.join(', ')}
         WHERE id = $${paramIndex} AND active = TRUE
@@ -272,36 +272,36 @@ export class FamilyCircleModel {
       throw new Error('Only family admin can archive family');
     }
 
-    const client = await pool.connect();
+    const db = DatabaseService.getInstance().getConnection();
     try {
-      await client.query('BEGIN');
+      await db.none('BEGIN');
 
       // Archive the family
-      const result = await client.query(`
+      const result = await db.one(`
         UPDATE family_circles
         SET active = FALSE, archived_reason = $1, updated_at = NOW()
         WHERE id = $2 AND active = TRUE
       `, [reason, familyId]);
 
       // Set all active members to left status
-      await client.query(`
+      await db.one(`
         UPDATE family_members
         SET status = 'left', updated_at = NOW()
         WHERE family_id = $1 AND status = 'active'
       `, [familyId]);
 
       // Revoke all pending invitations
-      await client.query(`
+      await db.one(`
         UPDATE family_invitations
         SET status = 'revoked', revoked_at = NOW(), revoked_by = $1,
             revoke_reason = 'Family archived'
         WHERE family_id = $2 AND status = 'pending'
       `, [userId, familyId]);
 
-      await client.query('COMMIT');
+      await db.one('COMMIT');
       return result.rowCount > 0;
     } catch (error) {
-      await client.query('ROLLBACK');
+      await db.one('ROLLBACK');
       throw error;
     } finally {
       client.release();
@@ -317,9 +317,9 @@ export class FamilyCircleModel {
     recentActivity: number;
     emergencyRules: number;
   }> {
-    const client = await pool.connect();
+    const db = DatabaseService.getInstance().getConnection();
     try {
-      const result = await client.query(`
+      const result = await db.one(`
         SELECT
           (
             SELECT COUNT(*)
@@ -380,9 +380,9 @@ export class FamilyCircleModel {
     familyId: string,
     userId: string
   ): Promise<boolean> {
-    const client = await pool.connect();
+    const db = DatabaseService.getInstance().getConnection();
     try {
-      const result = await client.query(`
+      const result = await db.one(`
         SELECT user_has_family_permission($1, $2, 'manageSettings') as has_permission
       `, [userId, familyId]);
 
@@ -396,9 +396,9 @@ export class FamilyCircleModel {
     familyId: string,
     userId: string
   ): Promise<boolean> {
-    const client = await pool.connect();
+    const db = DatabaseService.getInstance().getConnection();
     try {
-      const result = await client.query(`
+      const result = await db.one(`
         SELECT COUNT(*) > 0 as is_admin
         FROM family_members
         WHERE family_id = $1 AND user_id = $2 AND role = 'admin' AND status = 'active'
