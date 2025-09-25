@@ -22,6 +22,7 @@ import {
   FAMILY_CONSTANTS
 } from '../../models/family';
 import { logger } from '../../utils/logger';
+import { NotificationService } from '../realtime/notificationService';
 
 export class FamilyManagementService {
 
@@ -198,8 +199,11 @@ export class FamilyManagementService {
         role: invitationData.role
       });
 
-      // TODO: Generate QR code URL for mobile scanning
+      // Generate QR code URL for mobile scanning
       const qrCodeUrl = await this.generateQRCodeUrl(invitation.qrCodeData || '');
+
+      // Send invitation notification
+      await this.sendInvitationNotification(invitationWithDetails, qrCodeUrl);
 
       return {
         invitation: invitationWithDetails,
@@ -501,10 +505,74 @@ export class FamilyManagementService {
   }
 
   private static async generateQRCodeUrl(qrCodeData: string): Promise<string> {
-    // TODO: Implement QR code generation service
-    // This would typically use a QR code generation library or service
-    // For now, return a placeholder URL
-    const baseUrl = process.env.FRONTEND_URL || 'https://medimate.my';
-    return `${baseUrl}/qr-placeholder?data=${encodeURIComponent(qrCodeData)}`;
+    try {
+      // Generate QR code for family invitation
+      // The QR code data contains the invitation token and family info
+      const baseUrl = process.env.FRONTEND_URL || 'https://medimate.my';
+      const invitationUrl = `${baseUrl}/family/accept-invitation?code=${encodeURIComponent(qrCodeData)}`;
+
+      // In production, you would use a QR code generation service like:
+      // - qrcode npm package
+      // - External QR service API
+      // For now, return the invitation URL that mobile apps can use
+      return invitationUrl;
+    } catch (error) {
+      logger.error('Failed to generate QR code URL', { qrCodeData, error: error.message });
+      const baseUrl = process.env.FRONTEND_URL || 'https://medimate.my';
+      return `${baseUrl}/family/invitation-error`;
+    }
+  }
+
+  /**
+   * Send invitation notification via email/SMS
+   */
+  private static async sendInvitationNotification(
+    invitation: ActiveFamilyInvitation,
+    qrCodeUrl: string
+  ): Promise<void> {
+    try {
+      const notificationService = NotificationService.getInstance();
+
+      // Prepare invitation email content
+      const emailContent = {
+        to: invitation.email,
+        subject: `Family Invitation to ${invitation.family_name}`,
+        template: 'family-invitation',
+        data: {
+          familyName: invitation.family_name,
+          inviterName: invitation.invited_by_name,
+          role: invitation.role,
+          relationship: invitation.relationship,
+          invitationUrl: qrCodeUrl,
+          expiresAt: invitation.expires_at
+        }
+      };
+
+      // Send email notification
+      await notificationService.sendEmail(emailContent);
+
+      // Send SMS if phone number provided
+      if (invitation.phone) {
+        const smsContent = {
+          to: invitation.phone,
+          message: `You've been invited to join ${invitation.family_name} family circle by ${invitation.invited_by_name}. Accept: ${qrCodeUrl}`,
+          type: 'family-invitation' as const
+        };
+
+        await notificationService.sendSMS(smsContent);
+      }
+
+      logger.info('Family invitation notifications sent', {
+        invitationId: invitation.id,
+        email: invitation.email,
+        phone: invitation.phone ? 'provided' : 'none'
+      });
+    } catch (error) {
+      logger.error('Failed to send invitation notifications', {
+        invitationId: invitation.id,
+        error: error.message
+      });
+      // Don't throw error - invitation was created successfully, notification failure is not critical
+    }
   }
 }
