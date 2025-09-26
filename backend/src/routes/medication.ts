@@ -7,8 +7,10 @@ import { Router, Request, Response } from 'express';
 import { body, query, param, validationResult } from 'express-validator';
 import { authenticateUser, requireRole } from '../middleware/auth';
 import { classifyHealthcareData, HealthcareDataClass } from '../middleware/security';
+import { MedicationController } from '../controllers/medication/MedicationController';
 
 const router = Router();
+const medicationController = new MedicationController();
 
 /**
  * Get user's current medications
@@ -20,74 +22,7 @@ router.get('/', [
   query('category').optional().isString(),
   query('page').optional().isInt({ min: 1 }).withMessage('Page must be a positive integer'),
   query('limit').optional().isInt({ min: 1, max: 100 }).withMessage('Limit must be between 1 and 100')
-], classifyHealthcareData(HealthcareDataClass.RESTRICTED), async (req: Request, res: Response) => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    return res.status(400).json({
-      error: 'Invalid medication query parameters',
-      details: errors.array(),
-      cultural_message: {
-        en: 'Please check your medication search criteria',
-        ms: 'Sila semak kriteria carian ubat anda',
-        zh: '请检查您的药物搜索条件',
-        ta: 'உங்கள் மருந்து தேடல் அளவுகோல்களை சரிபார்க்கவும்'
-      }
-    });
-  }
-
-  const {
-    status = 'active',
-    category,
-    page = 1,
-    limit = 20
-  } = req.query;
-
-  try {
-    // In production, this would query the database
-    const medications = getMockUserMedications(req.user!.id, {
-      status: status as string,
-      category: category as string,
-      page: Number(page),
-      limit: Number(limit)
-    });
-
-    res.json({
-      success: true,
-      data: {
-        medications: medications.items.map(med => ({
-          ...med,
-          cultural_considerations: getMedicationCulturalContext(med),
-          halal_status: med.halal_certified ? 'certified' : 'unknown',
-          prayer_time_considerations: med.dosing_schedule ? 
-            alignWithPrayerTimes(med.dosing_schedule) : null
-        })),
-        pagination: {
-          current_page: Number(page),
-          total_pages: Math.ceil(medications.total / Number(limit)),
-          total_items: medications.total,
-          items_per_page: Number(limit)
-        },
-        malaysian_context: {
-          pharmacy_network: 'integrated',
-          moh_drug_registry: 'accessible',
-          halal_certification: 'verified_where_applicable'
-        }
-      },
-      timestamp: new Date().toISOString()
-    });
-  } catch (error) {
-    res.status(500).json({
-      error: 'Failed to retrieve medications',
-      code: 'MEDICATION_RETRIEVAL_ERROR',
-      cultural_message: {
-        en: 'Unable to access your medication information at this time',
-        ms: 'Tidak dapat mengakses maklumat ubat anda pada masa ini',
-        zh: '目前无法访问您的药物信息',
-        ta: 'இந்த நேரத்தில் உங்கள் மருந்து தகவலை அணுக முடியவில்லை'
-      }
-    });
-  }
-});
+], classifyHealthcareData(HealthcareDataClass.RESTRICTED), medicationController.getUserMedications.bind(medicationController));
 
 /**
  * Get specific medication details
@@ -95,62 +30,7 @@ router.get('/', [
 router.get('/:medicationId', [
   authenticateUser,
   param('medicationId').isUUID().withMessage('Invalid medication ID format')
-], classifyHealthcareData(HealthcareDataClass.RESTRICTED), async (req: Request, res: Response) => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    return res.status(400).json({
-      error: 'Invalid medication ID',
-      details: errors.array()
-    });
-  }
-
-  const { medicationId } = req.params;
-
-  try {
-    const medication = getMockMedicationDetails(medicationId, req.user!.id);
-    
-    if (!medication) {
-      return res.status(404).json({
-        error: 'Medication not found',
-        code: 'MEDICATION_NOT_FOUND',
-        cultural_message: {
-          en: 'The requested medication record was not found',
-          ms: 'Rekod ubat yang diminta tidak dijumpai',
-          zh: '未找到请求的药物记录',
-          ta: 'கோரப்பட்ட மருந்து பதிவு கிடைக்கவில்லை'
-        }
-      });
-    }
-
-    res.json({
-      success: true,
-      data: {
-        medication: {
-          ...medication,
-          cultural_considerations: getMedicationCulturalContext(medication),
-          malaysian_regulatory_info: {
-            moh_registration: medication.moh_registration || 'pending_verification',
-            halal_status: medication.halal_certified ? 'halal_certified' : 'unknown',
-            local_availability: checkMalaysianAvailability(medication.generic_name),
-            alternative_halal_options: medication.halal_certified ? null : 
-              findHalalAlternatives(medication.generic_name)
-          },
-          dosing_recommendations: {
-            prayer_aligned_schedule: alignWithPrayerTimes(medication.dosing_schedule),
-            ramadan_adjustments: getRamadanDosingAdjustments(medication),
-            cultural_timing_preferences: getCulturalTimingPreferences(medication)
-          }
-        }
-      },
-      timestamp: new Date().toISOString()
-    });
-  } catch (error) {
-    res.status(500).json({
-      error: 'Failed to retrieve medication details',
-      code: 'MEDICATION_DETAIL_ERROR'
-    });
-  }
-});
+], classifyHealthcareData(HealthcareDataClass.RESTRICTED), medicationController.getMedicationById.bind(medicationController));
 
 /**
  * Add new medication
