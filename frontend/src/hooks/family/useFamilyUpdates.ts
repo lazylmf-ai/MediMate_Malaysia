@@ -16,8 +16,8 @@ import {
   WebSocketFamilyMessage,
   FAMILY_UI_CONSTANTS,
 } from '@/types/family';
-import { RealtimeService } from '@/api/services/realtimeService';
-import { FamilyCoordinationService } from '@/services/family/FamilyCoordinationService';
+import { realtimeService } from '@/api/services/realtimeService';
+import { familyManager } from '@/services/family/FamilyManager';
 
 interface WebSocketState {
   connected: boolean;
@@ -54,29 +54,15 @@ export const useFamilyUpdates = (config: UseFamilyUpdatesConfig = {}): FamilyHoo
   });
 
   // Refs
-  const realtimeServiceRef = useRef<RealtimeService | null>(null);
-  const familyServiceRef = useRef<FamilyCoordinationService | null>(null);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const updateIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const appStateRef = useRef<AppStateStatus>('active');
+  const unsubscribeRef = useRef<(() => void) | null>(null);
 
-  // Initialize services
-  useEffect(() => {
-    familyServiceRef.current = new FamilyCoordinationService();
-    realtimeServiceRef.current = new RealtimeService();
-
-    return () => {
-      familyServiceRef.current = null;
-      realtimeServiceRef.current = null;
-    };
-  }, []);
-
-  // Handle WebSocket messages
-  const handleWebSocketMessage = useCallback((message: WebSocketFamilyMessage) => {
+  // Handle WebSocket messages from FamilyManager
+  const handleWebSocketMessage = useCallback((data: any) => {
     try {
-      const update: FamilyRealtimeUpdate = message.data;
-
-      if (!familyId || update.familyId !== familyId) {
+      if (!familyId || data.familyId !== familyId) {
         return; // Not for our family
       }
 
@@ -86,16 +72,16 @@ export const useFamilyUpdates = (config: UseFamilyUpdatesConfig = {}): FamilyHoo
       }));
 
       // Handle different update types
-      switch (update.type) {
-        case 'member_status':
+      switch (data.type) {
+        case 'member_status_changed':
           setDashboardData(prev => {
             if (!prev) return prev;
 
             const updatedMembers = prev.members.map(member => {
-              if (member.id === update.memberId) {
+              if (member.id === data.memberId) {
                 return {
                   ...member,
-                  ...update.data,
+                  ...data.status,
                   lastSeen: new Date(),
                 };
               }
@@ -105,25 +91,33 @@ export const useFamilyUpdates = (config: UseFamilyUpdatesConfig = {}): FamilyHoo
             return {
               ...prev,
               members: updatedMembers,
-              lastUpdated: new Date(),
+              lastSync: new Date(),
             };
           });
           break;
 
         case 'medication_taken':
+        case 'medication_missed':
           setDashboardData(prev => {
             if (!prev) return prev;
 
             // Update medication status for the member
             const updatedMembers = prev.members.map(member => {
-              if (member.id === update.memberId) {
+              if (member.id === data.memberId) {
+                const newStatus = data.type === 'medication_taken'
+                  ? {
+                      ...member.medicationStatus,
+                      takenToday: member.medicationStatus.takenToday + 1,
+                      lastTaken: new Date(),
+                    }
+                  : {
+                      ...member.medicationStatus,
+                      missedToday: member.medicationStatus.missedToday + 1,
+                    };
+
                 return {
                   ...member,
-                  medicationStatus: {
-                    ...member.medicationStatus,
-                    takenToday: member.medicationStatus.takenToday + 1,
-                    lastTaken: new Date(),
-                  },
+                  medicationStatus: newStatus,
                 };
               }
               return member;
@@ -132,47 +126,38 @@ export const useFamilyUpdates = (config: UseFamilyUpdatesConfig = {}): FamilyHoo
             return {
               ...prev,
               members: updatedMembers,
-              lastUpdated: new Date(),
+              lastSync: new Date(),
             };
           });
           break;
 
-        case 'emergency_alert':
+        case 'emergency_triggered':
           // Add to active notifications
           setDashboardData(prev => {
             if (!prev) return prev;
 
             const newNotification = {
-              ...update.data,
-              id: `emergency_${Date.now()}`,
-              familyId,
-              createdAt: new Date(),
+              id: data.emergency.id,
+              type: data.emergency.type,
+              severity: data.emergency.severity,
+              message: data.emergency.message,
+              timestamp: new Date(data.emergency.timestamp),
+              patientId: data.emergency.patientId,
+              isEmergency: true,
             };
 
             return {
               ...prev,
               activeNotifications: [newNotification, ...prev.activeNotifications],
-              lastUpdated: new Date(),
+              lastSync: new Date(),
             };
           });
           break;
 
-        case 'family_activity':
-          // Add to recent activity
-          setDashboardData(prev => {
-            if (!prev) return prev;
-
-            const newActivity = {
-              ...update.data,
-              createdAt: new Date(),
-            };
-
-            return {
-              ...prev,
-              recentActivity: [newActivity, ...prev.recentActivity.slice(0, 19)], // Keep last 20
-              lastUpdated: new Date(),
-            };
-          });
+        case 'member_joined':
+        case 'family_settings_updated':
+          // Refresh full family data
+          refresh();
           break;
       }
 
@@ -184,55 +169,33 @@ export const useFamilyUpdates = (config: UseFamilyUpdatesConfig = {}): FamilyHoo
     }
   }, [familyId]);
 
-  // WebSocket connection management
+  // WebSocket connection management using FamilyManager
   const connectWebSocket = useCallback(async () => {
-    if (!familyId || !realtimeServiceRef.current) {
+    if (!familyId) {
       return;
     }
 
     try {
       setWsState(prev => ({ ...prev, connecting: true, error: null }));
 
-      const wsConfig = {
-        onConnect: () => {
-          setWsState(prev => ({
-            ...prev,
-            connected: true,
-            connecting: false,
-            reconnectAttempts: 0,
-            error: null,
-          }));
-        },
-        onDisconnect: () => {
-          setWsState(prev => ({
-            ...prev,
-            connected: false,
-            connecting: false,
-          }));
+      // Subscribe to family updates through FamilyManager
+      const success = await familyManager.subscribeToFamilyUpdates(familyId);
 
-          // Auto-reconnect if in foreground
-          if (appStateRef.current === 'active') {
-            scheduleReconnect();
-          }
-        },
-        onMessage: handleWebSocketMessage,
-        onError: (error: Error) => {
-          console.error('WebSocket error:', error);
-          setWsState(prev => ({
-            ...prev,
-            connected: false,
-            connecting: false,
-            error: error.message,
-          }));
-          scheduleReconnect();
-        },
-        culturalContext,
-      };
+      if (success) {
+        // Set up update handler
+        const unsubscribe = familyManager.onFamilyUpdate(familyId, handleWebSocketMessage);
+        unsubscribeRef.current = unsubscribe;
 
-      await realtimeServiceRef.current.connect(wsConfig);
-
-      // Subscribe to family channel
-      await realtimeServiceRef.current.subscribe(`family:${familyId}`);
+        setWsState(prev => ({
+          ...prev,
+          connected: true,
+          connecting: false,
+          reconnectAttempts: 0,
+          error: null,
+        }));
+      } else {
+        throw new Error('Failed to subscribe to family updates');
+      }
 
     } catch (err) {
       console.error('Failed to connect WebSocket:', err);
@@ -244,7 +207,7 @@ export const useFamilyUpdates = (config: UseFamilyUpdatesConfig = {}): FamilyHoo
       }));
       scheduleReconnect();
     }
-  }, [familyId, handleWebSocketMessage, culturalContext]);
+  }, [familyId, handleWebSocketMessage]);
 
   // Schedule reconnection attempts
   const scheduleReconnect = useCallback(() => {
@@ -268,9 +231,9 @@ export const useFamilyUpdates = (config: UseFamilyUpdatesConfig = {}): FamilyHoo
     }, delay);
   }, [wsState.reconnectAttempts, reconnectAttempts, connectWebSocket]);
 
-  // Fetch initial dashboard data
+  // Fetch initial dashboard data using FamilyManager
   const fetchDashboardData = useCallback(async () => {
-    if (!familyId || !familyServiceRef.current) {
+    if (!familyId) {
       setLoading(false);
       return;
     }
@@ -280,7 +243,7 @@ export const useFamilyUpdates = (config: UseFamilyUpdatesConfig = {}): FamilyHoo
       setError(null);
 
       const startTime = Date.now();
-      const data = await familyServiceRef.current.getFamilyDashboard(familyId);
+      const data = await familyManager.getFamilyDashboard(familyId);
       const loadTime = Date.now() - startTime;
 
       // Performance monitoring
@@ -288,38 +251,19 @@ export const useFamilyUpdates = (config: UseFamilyUpdatesConfig = {}): FamilyHoo
         console.warn(`Family dashboard load time exceeded target: ${loadTime}ms`);
       }
 
-      const dashboardData: FamilyDashboardData = {
-        family: data.family,
-        members: data.members.map(member => ({
-          ...member,
-          isOnline: false, // Will be updated via WebSocket
-          emergencyStatus: 'normal', // Will be determined by medication status
-          medicationStatus: {
-            totalMedications: 0,
-            takenToday: 0,
-            missedToday: 0,
-            criticalMissed: 0,
-            adherenceRate: 0,
-            emergencyMedications: 0,
-          },
-          healthScore: 85, // Default score, will be calculated
-        })),
-        recentActivity: data.recentActivity || [],
-        activeNotifications: data.activeNotifications || [],
-        medicationSummary: data.medicationSummary || [],
-        lastUpdated: new Date(),
-        connectionStatus: wsState.connected ? 'connected' : 'disconnected',
-      };
-
-      setDashboardData(dashboardData);
-      setLastUpdate(new Date());
+      if (data) {
+        setDashboardData(data);
+        setLastUpdate(new Date());
+      } else {
+        throw new Error('No family dashboard data received');
+      }
     } catch (err) {
       console.error('Failed to fetch dashboard data:', err);
       setError(err instanceof Error ? err.message : 'Failed to load family data');
     } finally {
       setLoading(false);
     }
-  }, [familyId, wsState.connected]);
+  }, [familyId]);
 
   // Refresh data
   const refresh = useCallback(async () => {
@@ -328,8 +272,13 @@ export const useFamilyUpdates = (config: UseFamilyUpdatesConfig = {}): FamilyHoo
 
   // Disconnect WebSocket
   const disconnect = useCallback(() => {
-    if (realtimeServiceRef.current) {
-      realtimeServiceRef.current.disconnect();
+    if (familyId) {
+      familyManager.unsubscribeFromFamilyUpdates(familyId);
+    }
+
+    if (unsubscribeRef.current) {
+      unsubscribeRef.current();
+      unsubscribeRef.current = null;
     }
 
     if (reconnectTimeoutRef.current) {
@@ -344,7 +293,7 @@ export const useFamilyUpdates = (config: UseFamilyUpdatesConfig = {}): FamilyHoo
       reconnectAttempts: 0,
       lastMessageTime: null,
     });
-  }, []);
+  }, [familyId]);
 
   // Reconnect WebSocket
   const reconnect = useCallback(() => {
@@ -411,12 +360,11 @@ export const useFamilyUpdates = (config: UseFamilyUpdatesConfig = {}): FamilyHoo
     setDashboardData(prev => {
       if (!prev) return prev;
 
-      const status = wsState.connected ? 'connected' :
-                   wsState.connecting ? 'connecting' : 'disconnected';
-
       return {
         ...prev,
-        connectionStatus: status,
+        connectionStatus: wsState.connected ? 'connected' :
+                         wsState.connecting ? 'connecting' : 'disconnected',
+        lastSync: wsState.connected ? new Date() : prev.lastSync,
       };
     });
   }, [wsState.connected, wsState.connecting]);
@@ -425,8 +373,8 @@ export const useFamilyUpdates = (config: UseFamilyUpdatesConfig = {}): FamilyHoo
     dashboardData,
     loading,
     error: error || wsState.error,
-    connected: wsState.connected,
-    lastUpdate,
+    connected: familyId ? familyManager.isConnected(familyId) : false,
+    lastUpdate: familyId ? familyManager.getLastUpdate(familyId) : lastUpdate,
     refresh,
     disconnect,
     reconnect,
