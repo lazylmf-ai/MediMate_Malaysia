@@ -720,4 +720,222 @@ export class MedicationService {
 
     return considerations;
   }
+
+  /**
+   * Record medication adherence
+   */
+  async recordAdherence(medicationId: string, userId: string, adherenceData: any): Promise<any> {
+    const query = `
+      INSERT INTO medication_adherence (
+        medication_id, user_id, date, scheduled_time, taken, taken_at, notes, skipped_reason, created_at
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+      RETURNING *
+    `;
+
+    try {
+      const result = await this.db.one(query, [
+        medicationId,
+        userId,
+        adherenceData.date,
+        adherenceData.scheduled,
+        adherenceData.taken,
+        adherenceData.takenAt || null,
+        adherenceData.notes || null,
+        adherenceData.skippedReason || null,
+        new Date().toISOString()
+      ]);
+
+      return result;
+    } catch (error) {
+      throw new Error(`Failed to record adherence: ${error.message}`);
+    }
+  }
+
+  /**
+   * Get medication adherence history
+   */
+  async getAdherenceHistory(medicationId: string, userId: string, options: any): Promise<any[]> {
+    let query = `
+      SELECT * FROM medication_adherence
+      WHERE medication_id = $1 AND user_id = $2
+    `;
+
+    const params = [medicationId, userId];
+    let paramCount = 2;
+
+    if (options.startDate) {
+      paramCount++;
+      query += ` AND date >= $${paramCount}`;
+      params.push(options.startDate);
+    }
+
+    if (options.endDate) {
+      paramCount++;
+      query += ` AND date <= $${paramCount}`;
+      params.push(options.endDate);
+    }
+
+    query += ` ORDER BY date DESC, scheduled_time DESC LIMIT $${paramCount + 1}`;
+    params.push(options.limit || 30);
+
+    try {
+      return await this.db.query(query, params);
+    } catch (error) {
+      throw new Error(`Failed to get adherence history: ${error.message}`);
+    }
+  }
+
+  /**
+   * Share medication with family member
+   */
+  async shareMedicationWithFamily(medicationId: string, userId: string, familyMemberId: string, options: any): Promise<any> {
+    const query = `
+      INSERT INTO medication_family_shares (
+        medication_id, owner_id, family_member_id, permissions, cultural_preferences, created_at
+      ) VALUES ($1, $2, $3, $4, $5, $6)
+      RETURNING *
+    `;
+
+    try {
+      const result = await this.db.one(query, [
+        medicationId,
+        userId,
+        familyMemberId,
+        JSON.stringify(options.permissions),
+        JSON.stringify(options.culturalPreferences || {}),
+        new Date().toISOString()
+      ]);
+
+      return result;
+    } catch (error) {
+      throw new Error(`Failed to share medication: ${error.message}`);
+    }
+  }
+
+  /**
+   * Get shared medications from family
+   */
+  async getSharedFamilyMedications(userId: string, options: any): Promise<any[]> {
+    let query = `
+      SELECT mfs.*, m.name, m.dosage, m.schedule, m.status,
+             u.name as owner_name
+      FROM medication_family_shares mfs
+      JOIN medications m ON mfs.medication_id = m.id
+      JOIN users u ON mfs.owner_id = u.id
+      WHERE mfs.family_member_id = $1
+    `;
+
+    const params = [userId];
+    let paramCount = 1;
+
+    if (options.familyMemberId) {
+      paramCount++;
+      query += ` AND mfs.owner_id = $${paramCount}`;
+      params.push(options.familyMemberId);
+    }
+
+    if (options.permissionType) {
+      paramCount++;
+      query += ` AND mfs.permissions::jsonb ? $${paramCount}`;
+      params.push(options.permissionType);
+    }
+
+    query += ` ORDER BY mfs.created_at DESC`;
+
+    try {
+      return await this.db.query(query, params);
+    } catch (error) {
+      throw new Error(`Failed to get shared medications: ${error.message}`);
+    }
+  }
+
+  /**
+   * Check medication interactions
+   */
+  async checkMedicationInteractions(userId: string, medications: any[], newMedication?: any): Promise<any> {
+    // This would integrate with a comprehensive drug interaction database
+    // For now, provide a basic implementation
+
+    const medicationNames = medications.map(med => med.name.toLowerCase());
+    if (newMedication) {
+      medicationNames.push(newMedication.name.toLowerCase());
+    }
+
+    // Query interactions database
+    const query = `
+      SELECT mi.*, md1.name as medication_a_name, md2.name as medication_b_name
+      FROM medication_interactions mi
+      JOIN malaysian_drug_database md1 ON mi.medication_a = md1.id
+      JOIN malaysian_drug_database md2 ON mi.medication_b = md2.id
+      WHERE (LOWER(md1.name) = ANY($1) AND LOWER(md2.name) = ANY($1))
+         OR (LOWER(md1.generic_name) = ANY($1) AND LOWER(md2.generic_name) = ANY($1))
+    `;
+
+    try {
+      const interactions = await this.db.query(query, [medicationNames]);
+
+      return {
+        hasInteractions: interactions.length > 0,
+        interactions: interactions.map(interaction => ({
+          medicationA: interaction.medication_a_name,
+          medicationB: interaction.medication_b_name,
+          interactionType: interaction.interaction_type,
+          description: interaction.description,
+          recommendation: interaction.recommendation,
+          culturalConsiderations: interaction.cultural_considerations
+        })),
+        severity: interactions.length > 0
+          ? Math.max(...interactions.map(i => this.getInteractionSeverity(i.interaction_type)))
+          : 0
+      };
+    } catch (error) {
+      throw new Error(`Failed to check interactions: ${error.message}`);
+    }
+  }
+
+  /**
+   * Update medication schedule with cultural considerations
+   */
+  async updateMedicationSchedule(medicationId: string, userId: string, schedule: any, culturalAdjustments?: any): Promise<any> {
+    const query = `
+      UPDATE medications
+      SET schedule = $3, updated_at = $4
+      WHERE id = $1 AND user_id = $2
+      RETURNING *
+    `;
+
+    // Merge cultural adjustments with schedule
+    const updatedSchedule = {
+      ...schedule,
+      culturalAdjustments: {
+        ...schedule.culturalAdjustments,
+        ...culturalAdjustments
+      }
+    };
+
+    try {
+      const result = await this.db.one(query, [
+        medicationId,
+        userId,
+        JSON.stringify(updatedSchedule),
+        new Date().toISOString()
+      ]);
+
+      // Clear cache
+      await this.cache.del(`medication:${medicationId}:${userId}`);
+
+      return this.transformDatabaseMedication(result);
+    } catch (error) {
+      throw new Error(`Failed to update schedule: ${error.message}`);
+    }
+  }
+
+  private getInteractionSeverity(interactionType: string): number {
+    const severityMap = {
+      'minor': 1,
+      'moderate': 2,
+      'major': 3
+    };
+    return severityMap[interactionType.toLowerCase()] || 0;
+  }
 }
