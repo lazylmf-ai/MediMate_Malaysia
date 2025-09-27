@@ -26,6 +26,7 @@ import FamilyCoordinationService, {
   FamilyNotification,
   CoordinationAnalytics
 } from '@/services/family/FamilyCoordinationService';
+import { familyManager } from '@/services/family/FamilyManager';
 import { EscalationPanel } from '@/components/emergency/EscalationPanel';
 import { COLORS, TYPOGRAPHY } from '@/constants/config';
 import { useAppSelector } from '@/store/hooks';

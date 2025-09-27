@@ -215,3 +215,54 @@ export interface MalaysianPharmacyInfo {
   halalCertified: boolean;
   languages: string[];
 }
+
+// Offline Sync Types
+
+export interface OfflineSyncPayload {
+  medications?: Medication[];
+  adherenceRecords?: MedicationAdherence[];
+  ocrResults?: OCRResult[];
+  scheduleChanges?: ScheduleChange[];
+  checksum: string;
+  timestamp: string;
+  deviceInfo: {
+    deviceId: string;
+    platform: 'ios' | 'android';
+    appVersion: string;
+  };
+}
+
+export interface ScheduleChange {
+  medicationId: string;
+  oldSchedule: MedicationSchedule;
+  newSchedule: MedicationSchedule;
+  reason: string;
+  timestamp: string;
+}
+
+export interface SyncConflict {
+  id: string;
+  type: 'medication_conflict' | 'medication_error' | 'adherence_conflict' |
+        'ocr_low_confidence' | 'ocr_processing_error' | 'schedule_conflict';
+  medicationId?: string;
+  localData: any;
+  remoteData: any;
+  conflictReason: string;
+  suggestedResolution: 'merge_changes' | 'use_server_version' | 'use_client_version' |
+                      'manual_review' | 'retry_sync' | 'retry_processing';
+  culturalConsiderations: any;
+}
+
+export interface SyncResolution {
+  conflictId: string;
+  resolution: 'merge_changes' | 'use_server_version' | 'use_client_version' | 'skip';
+  mergedData?: any;
+  userChoice?: string;
+}
+
+export type SyncStatus =
+  | 'in_progress'
+  | 'completed'
+  | 'completed_with_errors'
+  | 'failed'
+  | 'never_synced';

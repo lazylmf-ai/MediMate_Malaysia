@@ -8,9 +8,13 @@ import { body, query, param, validationResult } from 'express-validator';
 import { authenticateUser, requireRole } from '../middleware/auth';
 import { classifyHealthcareData, HealthcareDataClass } from '../middleware/security';
 import { MedicationController } from '../controllers/medication/MedicationController';
+import { MedicationSearchService } from '../services/medication/MedicationSearchService';
+import { OfflineSyncService } from '../services/medication/OfflineSyncService';
 
 const router = Router();
 const medicationController = new MedicationController();
+const searchService = MedicationSearchService.getInstance();
+const offlineSyncService = OfflineSyncService.getInstance();
 
 /**
  * Get user's current medications
@@ -300,6 +304,360 @@ router.get('/:medicationId/reminders', [
   } catch (error) {
     res.status(500).json({
       error: 'Failed to generate medication reminders'
+    });
+  }
+});
+
+/**
+ * Enhanced medication search with cultural intelligence
+ */
+router.get('/search/enhanced', [
+  authenticateUser,
+  query('q').isString().isLength({ min: 1 }).withMessage('Search query is required'),
+  query('fuzzy_matching').optional().isBoolean().withMessage('Fuzzy matching must be true or false'),
+  query('halal_only').optional().isBoolean().withMessage('Halal filter must be true or false'),
+  query('local_manufacturers').optional().isBoolean().withMessage('Local manufacturers filter must be true or false'),
+  query('max_results').optional().isInt({ min: 1, max: 100 }).withMessage('Max results must be between 1 and 100'),
+  query('sort_by').optional().isIn(['relevance', 'popularity', 'price', 'availability'])
+    .withMessage('Sort by must be relevance, popularity, price, or availability')
+], async (req: Request, res: Response) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({
+      error: 'Invalid search parameters',
+      details: errors.array(),
+      cultural_message: {
+        en: 'Please check your search criteria',
+        ms: 'Sila semak kriteria carian anda',
+        zh: '请检查您的搜索条件',
+        ta: 'உங்கள் தேடல் அளவுகோலை சரிபார்க்கவும்'
+      }
+    });
+  }
+
+  try {
+    const searchParams = {
+      query: req.query.q as string,
+      fuzzyMatching: req.query.fuzzy_matching === 'true',
+      halalOnly: req.query.halal_only === 'true',
+      culturalContext: {
+        halalPreferred: req.query.halal_only === 'true',
+        localManufacturers: req.query.local_manufacturers === 'true',
+        traditionalEquivalents: true
+      },
+      searchOptimization: {
+        useIndex: true,
+        cacheResults: true,
+        maxResults: parseInt(req.query.max_results as string) || 50,
+        sortBy: (req.query.sort_by as any) || 'relevance'
+      }
+    };
+
+    const searchResult = await searchService.searchMedications(searchParams);
+
+    res.json({
+      success: true,
+      data: searchResult,
+      cultural_message: {
+        en: 'Search results optimized for Malaysian context',
+        ms: 'Hasil carian dioptimumkan untuk konteks Malaysia',
+        zh: '搜索结果针对马来西亚语境进行了优化',
+        ta: 'மலேசிய சூழலுக்கு ஏற்றவாறு தேடல் முடிவுகள் மேம்படுத்தப்பட்டுள்ளன'
+      },
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    res.status(500).json({
+      error: 'Enhanced search failed',
+      code: 'ENHANCED_SEARCH_ERROR',
+      message: error.message,
+      cultural_message: {
+        en: 'Search service is temporarily unavailable',
+        ms: 'Perkhidmatan carian tidak tersedia buat sementara',
+        zh: '搜索服务暂时不可用',
+        ta: 'தேடல் சேவை தற்காலிகமாக கிடைக்கவில்லை'
+      }
+    });
+  }
+});
+
+/**
+ * Medication autocomplete for enhanced search
+ */
+router.get('/autocomplete', [
+  authenticateUser,
+  query('q').isString().isLength({ min: 2 }).withMessage('Query must be at least 2 characters'),
+  query('limit').optional().isInt({ min: 1, max: 20 }).withMessage('Limit must be between 1 and 20'),
+  query('include_brands').optional().isBoolean(),
+  query('include_manufacturers').optional().isBoolean()
+], async (req: Request, res: Response) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({
+      error: 'Invalid autocomplete parameters',
+      details: errors.array()
+    });
+  }
+
+  try {
+    const autocompleteResult = await searchService.getAutocompletesuggestions(
+      req.query.q as string,
+      {
+        limit: parseInt(req.query.limit as string) || 10,
+        includeBrands: req.query.include_brands === 'true',
+        includeManufacturers: req.query.include_manufacturers === 'true'
+      }
+    );
+
+    res.json({
+      success: true,
+      data: autocompleteResult,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    res.status(500).json({
+      error: 'Autocomplete failed',
+      code: 'AUTOCOMPLETE_ERROR',
+      message: error.message
+    });
+  }
+});
+
+/**
+ * Advanced medication search with multiple criteria
+ */
+router.post('/search/advanced', [
+  authenticateUser,
+  body('medications').optional().isArray(),
+  body('conditions').optional().isArray(),
+  body('culturalRequirements').optional().isObject(),
+  body('demographics').optional().isObject()
+], async (req: Request, res: Response) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({
+      error: 'Invalid advanced search parameters',
+      details: errors.array()
+    });
+  }
+
+  try {
+    const searchResult = await searchService.advancedSearch(req.body);
+
+    res.json({
+      success: true,
+      data: searchResult,
+      cultural_message: {
+        en: 'Advanced search completed with cultural considerations',
+        ms: 'Carian lanjutan selesai dengan pertimbangan budaya',
+        zh: '高级搜索已完成，并考虑了文化因素',
+        ta: 'கலாச்சார கருத்துக்களுடன் மேம்பட்ட தேடல் முடிந்தது'
+      },
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    res.status(500).json({
+      error: 'Advanced search failed',
+      code: 'ADVANCED_SEARCH_ERROR',
+      message: error.message
+    });
+  }
+});
+
+/**
+ * Offline sync - Upload offline data
+ */
+router.post('/sync/upload', [
+  authenticateUser,
+  body('payload').isObject().withMessage('Sync payload is required'),
+  body('payload.checksum').isString().withMessage('Payload checksum is required'),
+  body('payload.timestamp').isISO8601().withMessage('Valid timestamp is required'),
+  body('payload.deviceInfo').isObject().withMessage('Device info is required'),
+  body('options').isObject().withMessage('Sync options are required'),
+  body('options.deviceId').isString().withMessage('Device ID is required'),
+  body('options.syncType').isIn(['full', 'incremental', 'medications_only', 'adherence_only'])
+    .withMessage('Invalid sync type')
+], async (req: Request, res: Response) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({
+      error: 'Invalid sync payload',
+      details: errors.array(),
+      cultural_message: {
+        en: 'Please check your offline data format',
+        ms: 'Sila semak format data luar talian anda',
+        zh: '请检查您的离线数据格式',
+        ta: 'உங்கள் ஆஃப்லைன் தரவு வடிவத்தைச் சரிபார்க்கவும்'
+      }
+    });
+  }
+
+  try {
+    const syncOptions = {
+      ...req.body.options,
+      userId: req.user!.id,
+      culturalPreferences: {
+        languagePreference: req.user!.preferences?.language || 'ms',
+        dataResidency: req.user!.preferences?.dataResidency || 'malaysia_only',
+        halalOnly: req.user!.preferences?.halalOnly || false
+      }
+    };
+
+    const syncResult = await offlineSyncService.syncFromOffline(
+      req.body.payload,
+      syncOptions
+    );
+
+    res.json({
+      success: true,
+      data: syncResult,
+      cultural_message: {
+        en: 'Offline data synchronized successfully',
+        ms: 'Data luar talian berjaya diselaraskan',
+        zh: '离线数据同步成功',
+        ta: 'ஆஃப்லைன் தரவு வெற்றிகரமாக ஒத்திசைக்கப்பட்டது'
+      },
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    res.status(500).json({
+      error: 'Offline sync failed',
+      code: 'OFFLINE_SYNC_ERROR',
+      message: error.message,
+      cultural_message: {
+        en: 'Unable to synchronize offline data at this time',
+        ms: 'Tidak dapat menyegerakkan data luar talian pada masa ini',
+        zh: '目前无法同步离线数据',
+        ta: 'இந்த நேரத்தில் ஆஃப்லைன் தரவை ஒத்திசைக்க முடியவில்லை'
+      }
+    });
+  }
+});
+
+/**
+ * Offline sync - Download data package for mobile
+ */
+router.get('/sync/download', [
+  authenticateUser,
+  query('device_id').isString().withMessage('Device ID is required'),
+  query('sync_type').optional().isIn(['full', 'incremental', 'medications_only', 'adherence_only']),
+  query('last_sync').optional().isISO8601().withMessage('Last sync must be valid ISO date')
+], async (req: Request, res: Response) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({
+      error: 'Invalid download parameters',
+      details: errors.array()
+    });
+  }
+
+  try {
+    const syncOptions = {
+      userId: req.user!.id,
+      deviceId: req.query.device_id as string,
+      syncType: (req.query.sync_type as any) || 'full',
+      lastSyncTimestamp: req.query.last_sync as string,
+      culturalPreferences: {
+        languagePreference: req.user!.preferences?.language || 'ms',
+        dataResidency: req.user!.preferences?.dataResidency || 'malaysia_only',
+        halalOnly: req.user!.preferences?.halalOnly || false
+      }
+    };
+
+    const offlinePackage = await offlineSyncService.generateOfflineDataPackage(syncOptions);
+
+    res.json({
+      success: true,
+      data: offlinePackage,
+      cultural_message: {
+        en: 'Offline data package prepared with cultural preferences',
+        ms: 'Pakej data luar talian disediakan dengan keutamaan budaya',
+        zh: '离线数据包已准备好，包含文化偏好',
+        ta: 'கலாச்சார விருப்பத்தேர்வுகளுடன் ஆஃப்லைன் தரவு தொகுப்பு தயாரிக்கப்பட்டது'
+      },
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    res.status(500).json({
+      error: 'Offline package generation failed',
+      code: 'OFFLINE_PACKAGE_ERROR',
+      message: error.message
+    });
+  }
+});
+
+/**
+ * Get sync status for device
+ */
+router.get('/sync/status', [
+  authenticateUser,
+  query('device_id').isString().withMessage('Device ID is required')
+], async (req: Request, res: Response) => {
+  try {
+    const syncStatus = await offlineSyncService.getSyncStatus(
+      req.user!.id,
+      req.query.device_id as string
+    );
+
+    res.json({
+      success: true,
+      data: syncStatus,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    res.status(500).json({
+      error: 'Failed to get sync status',
+      code: 'SYNC_STATUS_ERROR',
+      message: error.message
+    });
+  }
+});
+
+/**
+ * Database optimization endpoint (admin only)
+ */
+router.post('/admin/optimize-database', [
+  authenticateUser,
+  requireRole(['admin', 'system'])
+], async (req: Request, res: Response) => {
+  try {
+    const optimizationResult = await searchService.optimizeDatabase();
+
+    res.json({
+      success: true,
+      data: optimizationResult,
+      message: 'Database optimization completed',
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    res.status(500).json({
+      error: 'Database optimization failed',
+      code: 'OPTIMIZATION_ERROR',
+      message: error.message
+    });
+  }
+});
+
+/**
+ * Get database optimization statistics (admin only)
+ */
+router.get('/admin/optimization-stats', [
+  authenticateUser,
+  requireRole(['admin', 'system'])
+], async (req: Request, res: Response) => {
+  try {
+    const optimizationStats = await searchService.getDatabaseOptimizationStats();
+
+    res.json({
+      success: true,
+      data: optimizationStats,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    res.status(500).json({
+      error: 'Failed to get optimization stats',
+      code: 'OPTIMIZATION_STATS_ERROR',
+      message: error.message
     });
   }
 });
