@@ -7,7 +7,8 @@
 
 import { apiClient } from '../client';
 import { API_ENDPOINTS, buildQuery } from '../endpoints';
-import type { ApiResponse, FHIRBundle, FHIRPatient } from '../types';
+import type { ApiResponse, FHIRBundle, FHIRPatient, FHIRMedicationStatement, FHIRObservation } from '../types';
+import type { AdherenceReport, AdherenceRecord, ProgressMetrics } from '../../types/adherence';
 
 export interface FHIRSearchParams {
   identifier?: string; // MyKad number
@@ -426,7 +427,7 @@ export class FHIRService {
       data: {
         compliant: true,
         version: 'R4',
-        supportedResources: ['Patient', 'Practitioner', 'Organization', 'Appointment', 'Medication'],
+        supportedResources: ['Patient', 'Practitioner', 'Organization', 'Appointment', 'Medication', 'MedicationStatement', 'Observation'],
         malaysianProfiles: {
           patient: true,
           practitioner: true,
@@ -439,6 +440,386 @@ export class FHIRService {
         },
       },
     };
+  }
+
+  /**
+   * Create FHIR MedicationStatement for adherence reporting
+   */
+  async createMedicationStatement(
+    patientId: string,
+    medicationStatement: {
+      medicationName: string;
+      medicationCode?: string;
+      status: 'active' | 'completed' | 'stopped' | 'not-taken';
+      effectiveStart: Date;
+      effectiveEnd?: Date;
+      dosageText: string;
+      adherenceRecords?: AdherenceRecord[];
+      culturalContext?: any;
+    }
+  ): Promise<ApiResponse<FHIRMedicationStatement>> {
+    const fhirStatement: FHIRMedicationStatement = {
+      resourceType: 'MedicationStatement',
+      id: `medication-statement-${Date.now()}`,
+      status: medicationStatement.status,
+      medicationCodeableConcept: {
+        coding: [{
+          system: 'http://snomed.info/sct',
+          code: medicationStatement.medicationCode || '182840001',
+          display: medicationStatement.medicationName,
+        }],
+        text: medicationStatement.medicationName,
+      },
+      subject: {
+        reference: `Patient/${patientId}`,
+        display: 'Patient',
+      },
+      effectivePeriod: {
+        start: medicationStatement.effectiveStart.toISOString(),
+        end: medicationStatement.effectiveEnd?.toISOString(),
+      },
+      dateAsserted: new Date().toISOString(),
+      dosage: [{
+        text: medicationStatement.dosageText,
+      }],
+      extension: [],
+    };
+
+    // Add Malaysian cultural extensions
+    if (medicationStatement.culturalContext) {
+      fhirStatement.extension!.push({
+        url: 'http://medimate.my/fhir/StructureDefinition/cultural-adherence-context',
+        extension: [
+          {
+            url: 'prayerTimeAdjustment',
+            valueBoolean: medicationStatement.culturalContext.prayerTimeAdjustment || false,
+          },
+          {
+            url: 'ramadanConsideration',
+            valueBoolean: medicationStatement.culturalContext.ramadanConsideration || false,
+          },
+          {
+            url: 'culturalSensitivityLevel',
+            valueString: medicationStatement.culturalContext.culturalSensitivityLevel || 'medium',
+          },
+        ],
+      });
+    }
+
+    // Add adherence metrics extension
+    if (medicationStatement.adherenceRecords?.length) {
+      const adherenceRate = this.calculateAdherenceRate(medicationStatement.adherenceRecords);
+      fhirStatement.extension!.push({
+        url: 'http://medimate.my/fhir/StructureDefinition/adherence-metrics',
+        extension: [
+          {
+            url: 'adherenceRate',
+            valueDecimal: adherenceRate,
+          },
+          {
+            url: 'totalDoses',
+            valueDecimal: medicationStatement.adherenceRecords.length,
+          },
+          {
+            url: 'takenDoses',
+            valueDecimal: medicationStatement.adherenceRecords.filter(r => r.status === 'taken_on_time' || r.status === 'taken_late').length,
+          },
+        ],
+      });
+    }
+
+    return apiClient.request<FHIRMedicationStatement>(
+      `${API_ENDPOINTS.FHIR.PATIENT_GET(patientId)}/MedicationStatement`,
+      {
+        method: 'POST',
+        body: JSON.stringify(fhirStatement),
+        headers: {
+          'Content-Type': 'application/fhir+json',
+        },
+      }
+    );
+  }
+
+  /**
+   * Create FHIR Observations for adherence tracking
+   */
+  async createAdherenceObservations(
+    patientId: string,
+    adherenceData: {
+      medicationName: string;
+      adherenceRate: number;
+      period: string;
+      culturalInsights?: string[];
+      recommendations?: string[];
+    }
+  ): Promise<ApiResponse<FHIRObservation[]>> {
+    const observations: FHIRObservation[] = [];
+
+    // Primary adherence observation
+    const primaryObservation: FHIRObservation = {
+      resourceType: 'Observation',
+      id: `adherence-obs-${Date.now()}`,
+      status: 'final',
+      category: [{
+        coding: [{
+          system: 'http://terminology.hl7.org/CodeSystem/observation-category',
+          code: 'therapy',
+          display: 'Therapy',
+        }],
+      }],
+      code: {
+        coding: [{
+          system: 'http://loinc.org',
+          code: '71799-1',
+          display: 'Medication adherence',
+        }],
+        text: 'Medication Adherence Rate',
+      },
+      subject: {
+        reference: `Patient/${patientId}`,
+        display: 'Patient',
+      },
+      effectiveDateTime: new Date().toISOString(),
+      valueQuantity: {
+        value: adherenceData.adherenceRate,
+        unit: '%',
+        system: 'http://unitsofmeasure.org',
+        code: '%',
+      },
+      extension: [],
+    };
+
+    // Add cultural insights as extensions
+    if (adherenceData.culturalInsights?.length) {
+      primaryObservation.extension!.push({
+        url: 'http://medimate.my/fhir/StructureDefinition/cultural-insights',
+        valueString: adherenceData.culturalInsights.join('; '),
+      });
+    }
+
+    // Add recommendations as extensions
+    if (adherenceData.recommendations?.length) {
+      primaryObservation.extension!.push({
+        url: 'http://medimate.my/fhir/StructureDefinition/adherence-recommendations',
+        valueString: adherenceData.recommendations.join('; '),
+      });
+    }
+
+    observations.push(primaryObservation);
+
+    // Create all observations
+    const createdObservations = await Promise.all(
+      observations.map(obs =>
+        apiClient.request<FHIRObservation>(
+          `${API_ENDPOINTS.FHIR.PATIENT_GET(patientId)}/Observation`,
+          {
+            method: 'POST',
+            body: JSON.stringify(obs),
+            headers: {
+              'Content-Type': 'application/fhir+json',
+            },
+          }
+        )
+      )
+    );
+
+    return {
+      success: true,
+      data: createdObservations.filter(r => r.success).map(r => r.data!),
+    };
+  }
+
+  /**
+   * Generate FHIR adherence report for provider
+   */
+  async generateAdherenceReport(
+    patientId: string,
+    adherenceReport: AdherenceReport
+  ): Promise<ApiResponse<{
+    medicationStatements: FHIRMedicationStatement[];
+    observations: FHIRObservation[];
+    summary: {
+      overallAdherence: number;
+      culturalConsiderations: string[];
+      recommendations: string[];
+    };
+  }>> {
+    try {
+      const medicationStatements: FHIRMedicationStatement[] = [];
+      const observations: FHIRObservation[] = [];
+
+      // Create medication statements for each medication in the report
+      for (const medReport of adherenceReport.medications) {
+        const statementResponse = await this.createMedicationStatement(patientId, {
+          medicationName: medReport.medication.name,
+          medicationCode: medReport.medication.id,
+          status: medReport.adherenceRate > 80 ? 'active' : 'stopped',
+          effectiveStart: adherenceReport.periodStart,
+          effectiveEnd: adherenceReport.periodEnd,
+          dosageText: medReport.medication.dosage?.amount + ' ' + medReport.medication.dosage?.unit || 'As prescribed',
+          culturalContext: {
+            prayerTimeAdjustment: medReport.culturalFactors.includes('prayer_time'),
+            ramadanConsideration: medReport.culturalFactors.includes('ramadan'),
+            culturalSensitivityLevel: 'high',
+          },
+        });
+
+        if (statementResponse.success && statementResponse.data) {
+          medicationStatements.push(statementResponse.data);
+        }
+
+        // Create adherence observation for this medication
+        const observationResponse = await this.createAdherenceObservations(patientId, {
+          medicationName: medReport.medication.name,
+          adherenceRate: medReport.adherenceRate,
+          period: `${adherenceReport.periodStart.toISOString()} to ${adherenceReport.periodEnd.toISOString()}`,
+          culturalInsights: medReport.culturalFactors,
+          recommendations: medReport.recommendations,
+        });
+
+        if (observationResponse.success && observationResponse.data) {
+          observations.push(...observationResponse.data);
+        }
+      }
+
+      return {
+        success: true,
+        data: {
+          medicationStatements,
+          observations,
+          summary: {
+            overallAdherence: adherenceReport.overallAdherence,
+            culturalConsiderations: adherenceReport.culturalConsiderations,
+            recommendations: adherenceReport.recommendations,
+          },
+        },
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to generate FHIR adherence report',
+      };
+    }
+  }
+
+  /**
+   * Convert adherence progress metrics to FHIR Bundle
+   */
+  convertProgressMetricsToFHIRBundle(
+    patientId: string,
+    progressMetrics: ProgressMetrics
+  ): FHIRBundle {
+    const entries: Array<{ resource: FHIRObservation | FHIRMedicationStatement }> = [];
+
+    // Create overall adherence observation
+    const overallObservation: FHIRObservation = {
+      resourceType: 'Observation',
+      id: `overall-adherence-${Date.now()}`,
+      status: 'final',
+      category: [{
+        coding: [{
+          system: 'http://terminology.hl7.org/CodeSystem/observation-category',
+          code: 'therapy',
+          display: 'Therapy',
+        }],
+      }],
+      code: {
+        coding: [{
+          system: 'http://loinc.org',
+          code: '71799-1',
+          display: 'Overall medication adherence',
+        }],
+        text: 'Overall Medication Adherence Rate',
+      },
+      subject: {
+        reference: `Patient/${patientId}`,
+        display: 'Patient',
+      },
+      effectiveDateTime: new Date().toISOString(),
+      valueQuantity: {
+        value: progressMetrics.overallAdherence,
+        unit: '%',
+        system: 'http://unitsofmeasure.org',
+        code: '%',
+      },
+      extension: [{
+        url: 'http://medimate.my/fhir/StructureDefinition/adherence-period',
+        extension: [
+          {
+            url: 'startDate',
+            valueDateTime: progressMetrics.startDate.toISOString(),
+          },
+          {
+            url: 'endDate',
+            valueDateTime: progressMetrics.endDate.toISOString(),
+          },
+          {
+            url: 'period',
+            valueString: progressMetrics.period,
+          },
+        ],
+      }],
+    };
+
+    entries.push({ resource: overallObservation });
+
+    // Add cultural insights as observations
+    if (progressMetrics.culturalInsights?.length) {
+      progressMetrics.culturalInsights.forEach((insight, index) => {
+        const culturalObservation: FHIRObservation = {
+          resourceType: 'Observation',
+          id: `cultural-insight-${Date.now()}-${index}`,
+          status: 'final',
+          category: [{
+            coding: [{
+              system: 'http://medimate.my/fhir/CodeSystem/observation-category',
+              code: 'cultural-insight',
+              display: 'Cultural Insight',
+            }],
+          }],
+          code: {
+            coding: [{
+              system: 'http://medimate.my/fhir/CodeSystem/cultural-insights',
+              code: insight.type,
+              display: insight.type.replace(/_/g, ' '),
+            }],
+            text: insight.description,
+          },
+          subject: {
+            reference: `Patient/${patientId}`,
+            display: 'Patient',
+          },
+          effectiveDateTime: new Date().toISOString(),
+          valueString: insight.description,
+          extension: [{
+            url: 'http://medimate.my/fhir/StructureDefinition/adherence-impact',
+            valueDecimal: insight.adherenceImpact,
+          }],
+        };
+
+        entries.push({ resource: culturalObservation });
+      });
+    }
+
+    return {
+      resourceType: 'Bundle',
+      id: `adherence-bundle-${Date.now()}`,
+      type: 'searchset',
+      total: entries.length,
+      entry: entries,
+    };
+  }
+
+  /**
+   * Calculate adherence rate from adherence records
+   */
+  private calculateAdherenceRate(records: AdherenceRecord[]): number {
+    if (records.length === 0) return 0;
+
+    const takenOnTime = records.filter(r => r.status === 'taken_on_time').length;
+    const takenLate = records.filter(r => r.status === 'taken_late').length;
+
+    return Math.round(((takenOnTime + takenLate * 0.8) / records.length) * 100);
   }
 }
 

@@ -358,6 +358,155 @@ export interface FHIRPatient {
   }>;
 }
 
+export interface FHIRMedicationStatement {
+  resourceType: 'MedicationStatement';
+  id: string;
+  status: 'active' | 'completed' | 'entered-in-error' | 'intended' | 'stopped' | 'on-hold' | 'unknown' | 'not-taken';
+  medicationCodeableConcept?: {
+    coding: Array<{
+      system: string;
+      code: string;
+      display: string;
+    }>;
+    text: string;
+  };
+  medicationReference?: {
+    reference: string;
+    display: string;
+  };
+  subject: {
+    reference: string; // Patient reference
+    display: string;
+  };
+  effectiveDateTime?: string;
+  effectivePeriod?: {
+    start: string;
+    end?: string;
+  };
+  dateAsserted: string;
+  informationSource?: {
+    reference: string;
+    display: string;
+  };
+  derivedFrom?: Array<{
+    reference: string;
+    display: string;
+  }>;
+  reasonCode?: Array<{
+    coding: Array<{
+      system: string;
+      code: string;
+      display: string;
+    }>;
+    text: string;
+  }>;
+  note?: Array<{
+    text: string;
+    time?: string;
+  }>;
+  dosage?: Array<{
+    text: string;
+    timing?: {
+      repeat?: {
+        frequency: number;
+        period: number;
+        periodUnit: 'day' | 'week' | 'month';
+        timeOfDay?: string[];
+      };
+    };
+    route?: {
+      coding: Array<{
+        system: string;
+        code: string;
+        display: string;
+      }>;
+    };
+    doseAndRate?: Array<{
+      doseQuantity?: {
+        value: number;
+        unit: string;
+        system: string;
+        code: string;
+      };
+    }>;
+  }>;
+  extension?: Array<{
+    url: string;
+    valueString?: string;
+    valueDecimal?: number;
+    valueBoolean?: boolean;
+    valueDateTime?: string;
+    extension?: Array<{
+      url: string;
+      valueString?: string;
+      valueDecimal?: number;
+      valueBoolean?: boolean;
+    }>;
+  }>;
+}
+
+export interface FHIRObservation {
+  resourceType: 'Observation';
+  id: string;
+  status: 'registered' | 'preliminary' | 'final' | 'amended' | 'corrected' | 'cancelled' | 'entered-in-error' | 'unknown';
+  category: Array<{
+    coding: Array<{
+      system: string;
+      code: string;
+      display: string;
+    }>;
+  }>;
+  code: {
+    coding: Array<{
+      system: string;
+      code: string;
+      display: string;
+    }>;
+    text: string;
+  };
+  subject: {
+    reference: string;
+    display: string;
+  };
+  effectiveDateTime: string;
+  valueQuantity?: {
+    value: number;
+    unit: string;
+    system: string;
+    code: string;
+  };
+  valueCodeableConcept?: {
+    coding: Array<{
+      system: string;
+      code: string;
+      display: string;
+    }>;
+    text: string;
+  };
+  valueString?: string;
+  component?: Array<{
+    code: {
+      coding: Array<{
+        system: string;
+        code: string;
+        display: string;
+      }>;
+    };
+    valueQuantity?: {
+      value: number;
+      unit: string;
+      system: string;
+      code: string;
+    };
+  }>;
+  extension?: Array<{
+    url: string;
+    valueString?: string;
+    valueDecimal?: number;
+    valueBoolean?: boolean;
+  }>;
+}
+
 // Developer Portal Types
 export interface ApiKeyRequest {
   name: string;

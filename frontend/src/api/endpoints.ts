@@ -104,6 +104,26 @@ export const API_ENDPOINTS = {
   DOCUMENTATION: {
     POSTMAN_COLLECTION: `${BASE_URL}/docs/postman-collection`,
   },
+
+  // Adherence Tracking
+  ADHERENCE: {
+    RECORD: (patientId: string) => `${BASE_URL}/adherence/${patientId}/record`,
+    PROGRESS: (patientId: string) => `${BASE_URL}/adherence/${patientId}/progress`,
+    ANALYTICS: (patientId: string) => `${BASE_URL}/adherence/${patientId}/analytics`,
+    RECORDS: (patientId: string) => `${BASE_URL}/adherence/${patientId}/records`,
+    STREAKS: (patientId: string) => `${BASE_URL}/adherence/${patientId}/streaks`,
+    MILESTONES: (patientId: string) => `${BASE_URL}/adherence/${patientId}/milestones`,
+    REPORTS: (patientId: string) => `${BASE_URL}/adherence/${patientId}/reports`,
+    BATCH_UPDATE: (patientId: string) => `${BASE_URL}/adherence/${patientId}/batch`,
+    CULTURAL_INSIGHTS: (patientId: string) => `${BASE_URL}/adherence/${patientId}/cultural-insights`,
+    PREDICTIONS: (patientId: string) => `${BASE_URL}/adherence/${patientId}/predictions`,
+    FAMILY_METRICS: (familyId: string) => `${BASE_URL}/adherence/family/${familyId}/metrics`,
+    EXPORT: (patientId: string) => `${BASE_URL}/adherence/${patientId}/export`,
+    REALTIME: (patientId: string) => `${BASE_URL}/adherence/${patientId}/realtime`,
+    PREFERENCES: (patientId: string) => `${BASE_URL}/adherence/${patientId}/preferences`,
+    STATE: (patientId: string) => `${BASE_URL}/adherence/${patientId}/state`,
+    SYNC: (patientId: string) => `${BASE_URL}/adherence/${patientId}/sync`,
+  },
 } as const;
 
 // Endpoint path builders for dynamic routes
