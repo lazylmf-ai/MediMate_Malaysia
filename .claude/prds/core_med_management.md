@@ -1,8 +1,10 @@
 ---
 name: core_med_management
 description: Core medication management mobile application leveraging the existing Malaysian healthcare API platform
-status: backlog
+status: completed
 created: 2025-09-11T01:51:39Z
+updated: 2025-10-01T02:39:08Z
+completed: 2025-10-01T02:39:08Z
 ---
 
 # PRD: Core Medication Management
