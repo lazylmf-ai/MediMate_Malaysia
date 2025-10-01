@@ -51,6 +51,7 @@ import appointmentsRoutes from './routes/appointments';
 import medicalRecordsRoutes from './routes/medical-records';
 import emergencyAccessRoutes from './routes/emergency-access';
 import realtimeRoutes from './routes/realtime';
+import familyRoutes from './routes/family';
 
 // Load environment configuration
 config({ path: path.resolve(__dirname, '../.env') });
@@ -224,6 +225,9 @@ class MediMateBackendApplication {
     this.app.use('/api/v1/appointments', appointmentsRoutes);
     this.app.use('/api/v1/medical-records', medicalRecordsRoutes);
     this.app.use('/api/v1/emergency-access', emergencyAccessRoutes);
+
+    // Family management routes (requires authentication)
+    this.app.use('/api/v1/family', familyRoutes);
 
     // Real-time services routes
     this.app.use('/api/v1/realtime', realtimeRoutes);
