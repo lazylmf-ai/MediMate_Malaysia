@@ -4,7 +4,7 @@ status: backlog
 created: 2025-10-01T11:00:18Z
 progress: 0%
 prd: .claude/prds/education_hub.md
-github: [Will be updated when synced to GitHub]
+github: https://github.com/lazylmf-ai/MediMate_Malaysia/issues/29
 ---
 
 # Epic: Education Hub
@@ -702,14 +702,14 @@ This epic focuses on delivering core educational value while maximizing reuse of
 
 ## Tasks Created
 
-- [ ] 031.md - Content Infrastructure & Backend API (parallel: true, depends on: [], github: TBD)
-- [ ] 032.md - Frontend Education Hub UI (parallel: true, depends on: [031], github: TBD)
-- [ ] 033.md - Interactive Learning System (parallel: true, depends on: [031, 032], github: TBD)
-- [ ] 034.md - Offline & Sync Capability (parallel: true, depends on: [031, 032], github: TBD)
-- [ ] 035.md - Integration Layer (parallel: true, depends on: [031, 032, 033], github: TBD)
-- [ ] 036.md - Content Management & Admin Tools (parallel: true, depends on: [031], github: TBD)
-- [ ] 037.md - Content Creation & Localization (parallel: false, depends on: [036], github: TBD)
-- [ ] 038.md - Testing, Launch & Monitoring (parallel: false, depends on: [031, 032, 033, 034, 035, 037], github: TBD)
+- [ ] #30 - Content Infrastructure & Backend API (parallel: true, depends on: [])
+- [ ] #31 - Frontend Education Hub UI (parallel: true, depends on: [30])
+- [ ] #32 - Interactive Learning System (parallel: true, depends on: [30, 31])
+- [ ] #33 - Offline & Sync Capability (parallel: true, depends on: [30, 31])
+- [ ] #34 - Integration Layer (parallel: true, depends on: [30, 31, 32])
+- [ ] #35 - Content Management & Admin Tools (parallel: true, depends on: [30])
+- [ ] #36 - Content Creation & Localization (parallel: false, depends on: [35])
+- [ ] #37 - Testing, Launch & Monitoring (parallel: false, depends on: [30, 31, 32, 33, 34, 36])
 
 **Total tasks:** 8
 **Parallel tasks:** 6 (031-036 can run in parallel after dependencies met)
