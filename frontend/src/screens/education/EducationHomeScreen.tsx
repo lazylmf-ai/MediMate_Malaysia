@@ -21,13 +21,14 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
+import Icon from 'react-native-vector-icons/MaterialIcons';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import {
   fetchRecommendations,
   fetchTrendingContent,
   fetchUserProgressList,
 } from '@/store/slices/educationSlice';
-import { RecommendationCarousel, CategoryGrid, ContentCard } from '@/components/education';
+import { RecommendationCarousel, CategoryGrid, ContentCard, OfflineIndicator } from '@/components/education';
 import { COLORS, TYPOGRAPHY } from '@/constants/config';
 import type { EducationStackScreenProps } from '@/types/navigation';
 import type { Category, EducationContent } from '@/types/education';
@@ -49,6 +50,8 @@ export default function EducationHomeScreen({ navigation }: Props) {
   const [refreshing, setRefreshing] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
 
+  const language = (profile?.language || 'en') as 'ms' | 'en' | 'zh' | 'ta';
+
   const loadData = useCallback(async () => {
     await Promise.all([
       dispatch(fetchRecommendations(10)),
@@ -69,7 +72,6 @@ export default function EducationHomeScreen({ navigation }: Props) {
 
   const getGreeting = () => {
     const hour = new Date().getHours();
-    const language = profile?.language || 'en';
 
     if (hour < 12) {
       switch (language) {
@@ -119,6 +121,10 @@ export default function EducationHomeScreen({ navigation }: Props) {
     navigation.navigate('ContentSearch');
   };
 
+  const handleDownloadManagerPress = () => {
+    navigation.navigate('DownloadManager');
+  };
+
   const getInProgressContent = (): EducationContent[] => {
     return [];
   };
@@ -146,13 +152,33 @@ export default function EducationHomeScreen({ navigation }: Props) {
         }
       >
         <View style={styles.header}>
-          <View>
+          <View style={styles.headerLeft}>
             <Text style={styles.greeting}>{getGreeting()}</Text>
             <Text style={styles.userName}>{user?.fullName}</Text>
           </View>
-          <TouchableOpacity style={styles.searchButton} onPress={handleSearchPress}>
-            <Text style={styles.searchButtonText}>Search</Text>
-          </TouchableOpacity>
+          <View style={styles.headerRight}>
+            <TouchableOpacity
+              style={styles.iconButton}
+              onPress={handleDownloadManagerPress}
+              accessibilityLabel="Download Manager"
+              accessibilityRole="button"
+            >
+              <Icon name="download" size={24} color={COLORS.gray[700]} />
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.searchButton}
+              onPress={handleSearchPress}
+              accessibilityLabel="Search"
+              accessibilityRole="button"
+            >
+              <Icon name="search" size={24} color={COLORS.gray[700]} />
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* Offline Indicator Banner */}
+        <View style={styles.offlineIndicatorContainer}>
+          <OfflineIndicator language={language} />
         </View>
 
         <View style={styles.heroSection}>
@@ -226,6 +252,14 @@ const styles = StyleSheet.create({
     padding: 20,
     paddingBottom: 16,
   },
+  headerLeft: {
+    flex: 1,
+  },
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
   greeting: {
     fontSize: TYPOGRAPHY.fontSizes.base,
     color: COLORS.gray[600],
@@ -236,18 +270,29 @@ const styles = StyleSheet.create({
     fontWeight: TYPOGRAPHY.fontWeights.bold,
     color: COLORS.gray[900],
   },
-  searchButton: {
+  iconButton: {
+    width: 44,
+    height: 44,
+    justifyContent: 'center',
+    alignItems: 'center',
     backgroundColor: COLORS.white,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
+    borderRadius: 22,
     borderWidth: 1,
     borderColor: COLORS.gray[300],
   },
-  searchButtonText: {
-    color: COLORS.gray[700],
-    fontSize: TYPOGRAPHY.fontSizes.sm,
-    fontWeight: TYPOGRAPHY.fontWeights.medium,
+  searchButton: {
+    width: 44,
+    height: 44,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: COLORS.white,
+    borderRadius: 22,
+    borderWidth: 1,
+    borderColor: COLORS.gray[300],
+  },
+  offlineIndicatorContainer: {
+    paddingHorizontal: 20,
+    paddingBottom: 12,
   },
   heroSection: {
     backgroundColor: COLORS.primary,

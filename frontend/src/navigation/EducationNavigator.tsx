@@ -16,6 +16,7 @@ import EducationHomeScreen from '@/screens/education/EducationHomeScreen';
 import ContentDetailScreen from '@/screens/education/ContentDetailScreen';
 import ContentSearchScreen from '@/screens/education/ContentSearchScreen';
 import CategoryBrowseScreen from '@/screens/education/CategoryBrowseScreen';
+import DownloadManagerScreen from '@/screens/education/DownloadManagerScreen';
 import { COLORS, TYPOGRAPHY } from '@/constants/config';
 import type { EducationStackParamList } from '@/types/navigation';
 
@@ -76,6 +77,15 @@ export default function EducationNavigator() {
           title: route.params.category || 'Browse',
           headerShown: true,
         })}
+      />
+
+      <Stack.Screen
+        name="DownloadManager"
+        component={DownloadManagerScreen}
+        options={{
+          title: 'Downloads',
+          headerShown: true,
+        }}
       />
     </Stack.Navigator>
   );

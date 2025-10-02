@@ -16,3 +16,6 @@ export { RelatedContentList } from './RelatedContentList';
 export { AchievementBadge } from './AchievementBadge';
 export { AchievementGrid } from './AchievementGrid';
 export { AchievementModal } from './AchievementModal';
+export { DownloadButton } from './DownloadButton';
+export { OfflineIndicator } from './OfflineIndicator';
+export { StorageStatsCard } from './StorageStatsCard';

@@ -33,6 +33,7 @@ export type EducationStackParamList = {
   ContentDetail: { id: string };
   ContentSearch: undefined;
   CategoryBrowse: { category: string };
+  DownloadManager: undefined;
 };
 
 // Profile Stack Navigator

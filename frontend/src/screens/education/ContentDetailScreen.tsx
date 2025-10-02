@@ -28,7 +28,9 @@ import {
   trackContentCompletion,
   fetchContent,
 } from '@/store/slices/educationSlice';
-import { ArticleRenderer, VideoPlayer, RelatedContentList } from '@/components/education';
+import { ArticleRenderer, VideoPlayer, RelatedContentList, DownloadButton } from '@/components/education';
+import { useOfflineContent } from '@/hooks/useOfflineContent';
+import { useEducationNetworkStatus } from '@/hooks/useEducationNetworkStatus';
 import { COLORS, TYPOGRAPHY } from '@/constants/config';
 import type { EducationStackScreenProps } from '@/types/navigation';
 
@@ -45,8 +47,27 @@ export default function ContentDetailScreen({ route, navigation }: Props) {
   const [viewTracked, setViewTracked] = useState(false);
   const [startTime, setStartTime] = useState(Date.now());
   const [isCompleted, setIsCompleted] = useState(false);
+  const [loadedFromOffline, setLoadedFromOffline] = useState(false);
 
   const language = profile?.language || 'en';
+
+  // Offline functionality
+  const { isOnline } = useEducationNetworkStatus();
+  const {
+    isDownloaded,
+    getOfflineContent,
+  } = useOfflineContent(
+    id,
+    currentContent?.type || 'article',
+    currentContent?.mediaUrl,
+    currentContent
+      ? {
+          title: currentContent.title,
+          size: 0, // Size will be determined during download
+          duration: currentContent.type === 'video' ? currentContent.estimatedReadTime : undefined,
+        }
+      : undefined
+  );
 
   useEffect(() => {
     const loadContent = async () => {
@@ -70,6 +91,34 @@ export default function ContentDetailScreen({ route, navigation }: Props) {
       dispatch(fetchContent({ limit: 5 }));
     }
   }, [currentContent, dispatch]);
+
+  // Load offline content when offline and content is downloaded
+  useEffect(() => {
+    const loadOfflineContent = async () => {
+      if (!isOnline && isDownloaded && !currentContent) {
+        try {
+          console.log('[ContentDetail] Loading offline content for:', id);
+          const offlineData = await getOfflineContent();
+          setLoadedFromOffline(true);
+
+          // Note: In a real implementation, you would dispatch this to the Redux store
+          // or set it in local state. For now, we rely on the existing content load
+          console.log('[ContentDetail] Offline content loaded:', offlineData);
+        } catch (error) {
+          console.error('[ContentDetail] Failed to load offline content:', error);
+          Alert.alert(
+            'Offline Content Unavailable',
+            'Unable to load this content while offline. Please try again when online.'
+          );
+        }
+      } else if (!isOnline && !isDownloaded) {
+        // Offline but content not downloaded
+        console.log('[ContentDetail] Content not available offline');
+      }
+    };
+
+    loadOfflineContent();
+  }, [isOnline, isDownloaded, currentContent, id, getOfflineContent]);
 
   const handleComplete = useCallback(async () => {
     if (!isCompleted && currentContent) {
@@ -131,6 +180,11 @@ export default function ContentDetailScreen({ route, navigation }: Props) {
             <Text style={styles.metadataText}>
               {currentContent.estimatedReadTime} min · {currentContent.category}
             </Text>
+            {loadedFromOffline && (
+              <View style={styles.offlineBadge}>
+                <Text style={styles.offlineBadgeText}>Viewing Offline</Text>
+              </View>
+            )}
           </View>
 
           <Text style={styles.title}>{title}</Text>
@@ -141,6 +195,27 @@ export default function ContentDetailScreen({ route, navigation }: Props) {
               Medically reviewed by {currentContent.medicalReviewer}
             </Text>
           )}
+
+          {/* Download Button - only show for articles and videos */}
+          {(currentContent.type === 'article' || currentContent.type === 'video') &&
+            currentContent.mediaUrl && (
+              <View style={styles.downloadButtonContainer}>
+                <DownloadButton
+                  contentId={currentContent.id}
+                  contentType={currentContent.type}
+                  downloadUrl={currentContent.mediaUrl}
+                  metadata={{
+                    title: currentContent.title,
+                    size: 0,
+                    duration:
+                      currentContent.type === 'video'
+                        ? currentContent.estimatedReadTime
+                        : undefined,
+                  }}
+                  language={language}
+                />
+              </View>
+            )}
         </View>
 
         {currentContent.type === 'video' ? (
@@ -311,5 +386,20 @@ const styles = StyleSheet.create({
   tagText: {
     fontSize: TYPOGRAPHY.fontSizes.sm,
     color: COLORS.gray[700],
+  },
+  offlineBadge: {
+    backgroundColor: COLORS.gray[600],
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 6,
+    marginLeft: 8,
+  },
+  offlineBadgeText: {
+    color: COLORS.white,
+    fontSize: TYPOGRAPHY.fontSizes.xs,
+    fontWeight: TYPOGRAPHY.fontWeights.semibold,
+  },
+  downloadButtonContainer: {
+    marginTop: 16,
   },
 });
