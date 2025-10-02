@@ -60,6 +60,29 @@ export interface Category {
   contentCount: number;
 }
 
+// Quiz structure
+export interface QuizOption {
+  id: string;
+  text: MultiLanguageText;
+  isCorrect: boolean;
+}
+
+export interface QuizQuestion {
+  id: string;
+  text: MultiLanguageText;
+  options: QuizOption[];
+  explanation: MultiLanguageText;
+  points: number;
+}
+
+export interface Quiz {
+  id: string;
+  contentId: string;
+  questions: QuizQuestion[];
+  passingScore: number; // 0-100 percentage
+  timeLimit?: number; // in seconds (optional)
+}
+
 // User progress tracking
 export interface UserProgress {
   id: string;
@@ -92,7 +115,19 @@ export type BadgeId =
   | '5_videos'
   | 'perfect_score'
   | 'medication_expert'
-  | 'condition_expert';
+  | 'condition_expert'
+  | 'learner_10'
+  | 'learner_50'
+  | '30_day_streak'
+  | 'diabetes_expert';
+
+export interface Badge {
+  id: string;
+  name: MultiLanguageText;
+  description: MultiLanguageText;
+  icon: string; // emoji
+  earnedAt?: string; // ISO date string (undefined if locked)
+}
 
 export interface Achievement {
   id: string;

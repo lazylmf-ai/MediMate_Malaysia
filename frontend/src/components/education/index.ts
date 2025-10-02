@@ -13,3 +13,6 @@ export { ContentFilters } from './ContentFilters';
 export { ArticleRenderer } from './ArticleRenderer';
 export { VideoPlayer } from './VideoPlayer';
 export { RelatedContentList } from './RelatedContentList';
+export { AchievementBadge } from './AchievementBadge';
+export { AchievementGrid } from './AchievementGrid';
+export { AchievementModal } from './AchievementModal';
