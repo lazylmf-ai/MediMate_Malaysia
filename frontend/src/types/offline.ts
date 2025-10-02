@@ -203,3 +203,43 @@ export interface OfflineDataState {
   storageStats: StorageStats;
   errors: SyncError[];
 }
+
+// Education Content Offline Storage Types
+
+// Cached education content
+export interface CachedContent {
+  id: string;
+  type: 'article' | 'video';
+  downloadedAt: string;
+  expiresAt: string;
+  filePath: string;
+  metadata: {
+    title: Record<string, string>;
+    size: number;
+    duration?: number;
+  };
+}
+
+// Download progress tracking
+export interface DownloadProgress {
+  contentId: string;
+  progress: number;
+  bytesWritten: number;
+  totalBytes: number;
+}
+
+// Storage statistics (education-specific, simpler than general StorageStats)
+export interface EducationStorageStats {
+  used: number;
+  available: number;
+  total: number;
+}
+
+// Education sync operation for background sync queue
+export interface EducationSyncOperation {
+  id: string;
+  type: 'progress' | 'quiz' | 'achievement';
+  timestamp: string;
+  payload: any;
+  retries: number;
+}
