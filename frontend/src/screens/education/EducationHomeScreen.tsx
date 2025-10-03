@@ -30,6 +30,7 @@ import {
 } from '@/store/slices/educationSlice';
 import { RecommendationCarousel, CategoryGrid, ContentCard, OfflineIndicator } from '@/components/education';
 import { COLORS, TYPOGRAPHY } from '@/constants/config';
+import { useCulturalPreferences } from '@/hooks/useCulturalPreferences';
 import type { EducationStackScreenProps } from '@/types/navigation';
 import type { Category, EducationContent } from '@/types/education';
 
@@ -38,7 +39,6 @@ type Props = EducationStackScreenProps<'EducationHome'>;
 export default function EducationHomeScreen({ navigation }: Props) {
   const dispatch = useAppDispatch();
   const { user } = useAppSelector(state => state.auth);
-  const { profile } = useAppSelector(state => state.cultural);
   const {
     recommendations,
     recommendationsLoading,
@@ -47,67 +47,36 @@ export default function EducationHomeScreen({ navigation }: Props) {
     progressLoading,
   } = useAppSelector(state => state.education);
 
+  // Use cultural preferences hook for language and cultural settings
+  const {
+    language,
+    culturalSettings,
+    getGreeting: getCulturalGreeting,
+    isLoading: culturalLoading
+  } = useCulturalPreferences();
+
   const [refreshing, setRefreshing] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
 
-  const language = (profile?.language || 'en') as 'ms' | 'en' | 'zh' | 'ta';
-
   const loadData = useCallback(async () => {
+    // Fetch content in user's preferred language
     await Promise.all([
       dispatch(fetchRecommendations(10)),
       dispatch(fetchTrendingContent({ limit: 10 })),
       dispatch(fetchUserProgressList({ completed: false, limit: 5 })),
     ]);
-  }, [dispatch]);
+  }, [dispatch, language]);
 
   useEffect(() => {
+    // Reload data when language changes
     loadData();
-  }, [loadData]);
+  }, [loadData, language]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     await loadData();
     setRefreshing(false);
   }, [loadData]);
-
-  const getGreeting = () => {
-    const hour = new Date().getHours();
-
-    if (hour < 12) {
-      switch (language) {
-        case 'ms':
-          return 'Selamat Pagi';
-        case 'zh':
-          return '早上好';
-        case 'ta':
-          return 'காலை வணக்கம்';
-        default:
-          return 'Good Morning';
-      }
-    } else if (hour < 18) {
-      switch (language) {
-        case 'ms':
-          return 'Selamat Petang';
-        case 'zh':
-          return '下午好';
-        case 'ta':
-          return 'மதிய வணக்கம்';
-        default:
-          return 'Good Afternoon';
-      }
-    } else {
-      switch (language) {
-        case 'ms':
-          return 'Selamat Malam';
-        case 'zh':
-          return '晚上好';
-        case 'ta':
-          return 'மாலை வணக்கம்';
-        default:
-          return 'Good Evening';
-      }
-    }
-  };
 
   const handleContentPress = (contentId: string) => {
     navigation.navigate('ContentDetail', { id: contentId });
@@ -129,7 +98,7 @@ export default function EducationHomeScreen({ navigation }: Props) {
     return [];
   };
 
-  const isLoading = recommendationsLoading || progressLoading;
+  const isLoading = recommendationsLoading || progressLoading || culturalLoading;
 
   if (isLoading && !refreshing) {
     return (
@@ -153,7 +122,7 @@ export default function EducationHomeScreen({ navigation }: Props) {
       >
         <View style={styles.header}>
           <View style={styles.headerLeft}>
-            <Text style={styles.greeting}>{getGreeting()}</Text>
+            <Text style={styles.greeting}>{getCulturalGreeting()}</Text>
             <Text style={styles.userName}>{user?.fullName}</Text>
           </View>
           <View style={styles.headerRight}>
