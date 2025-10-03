@@ -19,3 +19,4 @@ export { AchievementModal } from './AchievementModal';
 export { DownloadButton } from './DownloadButton';
 export { OfflineIndicator } from './OfflineIndicator';
 export { StorageStatsCard } from './StorageStatsCard';
+export { EducationContentSection } from './EducationContentSection';
