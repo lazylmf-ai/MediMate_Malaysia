@@ -1,0 +1,983 @@
+{
+  "dashboardName": "MediMate Education Hub Analytics Dashboard",
+  "description": "Comprehensive analytics dashboard tracking user engagement, content performance, and learning outcomes",
+  "version": "1.0.0",
+  "refreshInterval": 300,
+  "dateRange": {
+    "default": "last_30_days",
+    "options": ["today", "yesterday", "last_7_days", "last_30_days", "last_90_days", "custom"]
+  },
+  "sections": [
+    {
+      "id": "overview",
+      "name": "Overview",
+      "widgets": [
+        {
+          "type": "scorecard",
+          "title": "Daily Active Users",
+          "metric": "daily_active_users",
+          "aggregation": "unique_count",
+          "dimension": "user_id",
+          "comparison": {
+            "enabled": true,
+            "period": "previous_period",
+            "showPercentChange": true
+          },
+          "thresholds": {
+            "good": 500,
+            "warning": 300,
+            "poor": 100
+          },
+          "size": "small"
+        },
+        {
+          "type": "scorecard",
+          "title": "Weekly Active Users",
+          "metric": "weekly_active_users",
+          "aggregation": "unique_count",
+          "dimension": "user_id",
+          "comparison": {
+            "enabled": true,
+            "period": "previous_period",
+            "showPercentChange": true
+          },
+          "size": "small"
+        },
+        {
+          "type": "scorecard",
+          "title": "Monthly Active Users",
+          "metric": "monthly_active_users",
+          "aggregation": "unique_count",
+          "dimension": "user_id",
+          "comparison": {
+            "enabled": true,
+            "period": "previous_period",
+            "showPercentChange": true
+          },
+          "size": "small"
+        },
+        {
+          "type": "scorecard",
+          "title": "Total Content Views",
+          "metric": "content_views",
+          "aggregation": "sum",
+          "comparison": {
+            "enabled": true,
+            "period": "previous_period",
+            "showPercentChange": true
+          },
+          "size": "small"
+        },
+        {
+          "type": "line_chart",
+          "title": "Daily Active Users Trend",
+          "metrics": [
+            {
+              "name": "daily_active_users",
+              "aggregation": "unique_count",
+              "dimension": "user_id"
+            }
+          ],
+          "xAxis": "date",
+          "yAxis": "users",
+          "size": "medium"
+        },
+        {
+          "type": "pie_chart",
+          "title": "User Distribution by Language",
+          "metric": "sessions",
+          "dimension": "language",
+          "aggregation": "count",
+          "showPercentage": true,
+          "size": "small"
+        }
+      ]
+    },
+    {
+      "id": "engagement",
+      "name": "User Engagement",
+      "widgets": [
+        {
+          "type": "scorecard",
+          "title": "Average Session Duration",
+          "metric": "session_duration",
+          "aggregation": "average",
+          "format": "duration",
+          "comparison": {
+            "enabled": true,
+            "period": "previous_period"
+          },
+          "thresholds": {
+            "good": 600,
+            "warning": 300,
+            "poor": 120
+          },
+          "size": "small"
+        },
+        {
+          "type": "scorecard",
+          "title": "Content Views per User",
+          "metric": "content_views_per_user",
+          "aggregation": "average",
+          "comparison": {
+            "enabled": true,
+            "period": "previous_period"
+          },
+          "thresholds": {
+            "good": 5,
+            "warning": 3,
+            "poor": 1
+          },
+          "size": "small"
+        },
+        {
+          "type": "scorecard",
+          "title": "Content Completion Rate",
+          "metric": "content_completion_rate",
+          "aggregation": "percentage",
+          "format": "percentage",
+          "comparison": {
+            "enabled": true,
+            "period": "previous_period"
+          },
+          "thresholds": {
+            "good": 70,
+            "warning": 50,
+            "poor": 30
+          },
+          "size": "small"
+        },
+        {
+          "type": "scorecard",
+          "title": "Return User Rate",
+          "metric": "return_user_rate",
+          "aggregation": "percentage",
+          "format": "percentage",
+          "comparison": {
+            "enabled": true,
+            "period": "previous_period"
+          },
+          "size": "small"
+        },
+        {
+          "type": "line_chart",
+          "title": "Engagement Metrics Over Time",
+          "metrics": [
+            {
+              "name": "sessions",
+              "aggregation": "count",
+              "label": "Sessions"
+            },
+            {
+              "name": "content_views",
+              "aggregation": "count",
+              "label": "Content Views"
+            },
+            {
+              "name": "quiz_attempts",
+              "aggregation": "count",
+              "label": "Quiz Attempts"
+            }
+          ],
+          "xAxis": "date",
+          "yAxis": "count",
+          "size": "large"
+        },
+        {
+          "type": "bar_chart",
+          "title": "Top 10 Most Viewed Content",
+          "metric": "content_views",
+          "dimension": "content_name",
+          "aggregation": "count",
+          "sortBy": "value",
+          "sortOrder": "desc",
+          "limit": 10,
+          "size": "medium"
+        }
+      ]
+    },
+    {
+      "id": "content_performance",
+      "name": "Content Performance",
+      "widgets": [
+        {
+          "type": "table",
+          "title": "Content Performance Summary",
+          "columns": [
+            {
+              "name": "content_name",
+              "label": "Content Name",
+              "type": "string"
+            },
+            {
+              "name": "content_type",
+              "label": "Type",
+              "type": "string"
+            },
+            {
+              "name": "views",
+              "label": "Views",
+              "type": "number",
+              "aggregation": "count"
+            },
+            {
+              "name": "completions",
+              "label": "Completions",
+              "type": "number",
+              "aggregation": "count"
+            },
+            {
+              "name": "completion_rate",
+              "label": "Completion Rate",
+              "type": "percentage",
+              "formula": "(completions / views) * 100"
+            },
+            {
+              "name": "average_time_spent",
+              "label": "Avg Time Spent",
+              "type": "duration",
+              "aggregation": "average"
+            },
+            {
+              "name": "average_rating",
+              "label": "Avg Rating",
+              "type": "number",
+              "aggregation": "average",
+              "format": "decimal_1"
+            }
+          ],
+          "sortBy": "views",
+          "sortOrder": "desc",
+          "limit": 50,
+          "size": "large"
+        },
+        {
+          "type": "pie_chart",
+          "title": "Content Views by Type",
+          "metric": "content_views",
+          "dimension": "content_type",
+          "aggregation": "count",
+          "showPercentage": true,
+          "size": "small"
+        },
+        {
+          "type": "bar_chart",
+          "title": "Content Views by Category",
+          "metric": "content_views",
+          "dimension": "content_category",
+          "aggregation": "count",
+          "sortBy": "value",
+          "sortOrder": "desc",
+          "size": "medium"
+        },
+        {
+          "type": "heatmap",
+          "title": "Content Views by Day and Hour",
+          "metric": "content_views",
+          "xAxis": "hour_of_day",
+          "yAxis": "day_of_week",
+          "aggregation": "count",
+          "size": "medium"
+        }
+      ]
+    },
+    {
+      "id": "learning_outcomes",
+      "name": "Learning Outcomes",
+      "widgets": [
+        {
+          "type": "scorecard",
+          "title": "Total Quiz Attempts",
+          "metric": "quiz_attempts",
+          "aggregation": "count",
+          "comparison": {
+            "enabled": true,
+            "period": "previous_period",
+            "showPercentChange": true
+          },
+          "size": "small"
+        },
+        {
+          "type": "scorecard",
+          "title": "Quiz Completion Rate",
+          "metric": "quiz_completion_rate",
+          "aggregation": "percentage",
+          "format": "percentage",
+          "comparison": {
+            "enabled": true,
+            "period": "previous_period"
+          },
+          "thresholds": {
+            "good": 80,
+            "warning": 60,
+            "poor": 40
+          },
+          "size": "small"
+        },
+        {
+          "type": "scorecard",
+          "title": "Quiz Pass Rate",
+          "metric": "quiz_pass_rate",
+          "aggregation": "percentage",
+          "format": "percentage",
+          "comparison": {
+            "enabled": true,
+            "period": "previous_period"
+          },
+          "thresholds": {
+            "good": 70,
+            "warning": 50,
+            "poor": 30
+          },
+          "size": "small"
+        },
+        {
+          "type": "scorecard",
+          "title": "Average Quiz Score",
+          "metric": "average_quiz_score",
+          "aggregation": "average",
+          "format": "percentage",
+          "comparison": {
+            "enabled": true,
+            "period": "previous_period"
+          },
+          "size": "small"
+        },
+        {
+          "type": "line_chart",
+          "title": "Quiz Performance Trends",
+          "metrics": [
+            {
+              "name": "quiz_attempts",
+              "aggregation": "count",
+              "label": "Attempts"
+            },
+            {
+              "name": "quiz_completions",
+              "aggregation": "count",
+              "label": "Completions"
+            },
+            {
+              "name": "quiz_passes",
+              "aggregation": "count",
+              "label": "Passes"
+            }
+          ],
+          "xAxis": "date",
+          "yAxis": "count",
+          "size": "large"
+        },
+        {
+          "type": "table",
+          "title": "Quiz Performance by Content",
+          "columns": [
+            {
+              "name": "quiz_name",
+              "label": "Quiz Name",
+              "type": "string"
+            },
+            {
+              "name": "attempts",
+              "label": "Attempts",
+              "type": "number",
+              "aggregation": "count"
+            },
+            {
+              "name": "completions",
+              "label": "Completions",
+              "type": "number",
+              "aggregation": "count"
+            },
+            {
+              "name": "pass_rate",
+              "label": "Pass Rate",
+              "type": "percentage",
+              "aggregation": "percentage"
+            },
+            {
+              "name": "average_score",
+              "label": "Avg Score",
+              "type": "percentage",
+              "aggregation": "average"
+            },
+            {
+              "name": "average_time",
+              "label": "Avg Time",
+              "type": "duration",
+              "aggregation": "average"
+            }
+          ],
+          "sortBy": "attempts",
+          "sortOrder": "desc",
+          "size": "medium"
+        },
+        {
+          "type": "bar_chart",
+          "title": "Achievements Unlocked",
+          "metric": "achievements_unlocked",
+          "dimension": "achievement_category",
+          "aggregation": "count",
+          "size": "small"
+        }
+      ]
+    },
+    {
+      "id": "video_performance",
+      "name": "Video Performance",
+      "widgets": [
+        {
+          "type": "scorecard",
+          "title": "Video Playback Starts",
+          "metric": "video_starts",
+          "aggregation": "count",
+          "comparison": {
+            "enabled": true,
+            "period": "previous_period",
+            "showPercentChange": true
+          },
+          "size": "small"
+        },
+        {
+          "type": "scorecard",
+          "title": "Video Completion Rate",
+          "metric": "video_completion_rate",
+          "aggregation": "percentage",
+          "format": "percentage",
+          "comparison": {
+            "enabled": true,
+            "period": "previous_period"
+          },
+          "thresholds": {
+            "good": 70,
+            "warning": 50,
+            "poor": 30
+          },
+          "size": "small"
+        },
+        {
+          "type": "scorecard",
+          "title": "Video Playback Success Rate",
+          "metric": "video_playback_success_rate",
+          "aggregation": "percentage",
+          "format": "percentage",
+          "comparison": {
+            "enabled": true,
+            "period": "previous_period"
+          },
+          "thresholds": {
+            "good": 95,
+            "warning": 90,
+            "poor": 85
+          },
+          "size": "small"
+        },
+        {
+          "type": "scorecard",
+          "title": "Average Watch Time",
+          "metric": "average_watch_time",
+          "aggregation": "average",
+          "format": "duration",
+          "comparison": {
+            "enabled": true,
+            "period": "previous_period"
+          },
+          "size": "small"
+        },
+        {
+          "type": "table",
+          "title": "Top Videos by Views",
+          "columns": [
+            {
+              "name": "video_name",
+              "label": "Video Name",
+              "type": "string"
+            },
+            {
+              "name": "starts",
+              "label": "Starts",
+              "type": "number",
+              "aggregation": "count"
+            },
+            {
+              "name": "completions",
+              "label": "Completions",
+              "type": "number",
+              "aggregation": "count"
+            },
+            {
+              "name": "completion_rate",
+              "label": "Completion Rate",
+              "type": "percentage"
+            },
+            {
+              "name": "average_watch_time",
+              "label": "Avg Watch Time",
+              "type": "duration"
+            },
+            {
+              "name": "error_rate",
+              "label": "Error Rate",
+              "type": "percentage"
+            }
+          ],
+          "sortBy": "starts",
+          "sortOrder": "desc",
+          "limit": 20,
+          "size": "large"
+        },
+        {
+          "type": "bar_chart",
+          "title": "Video Errors by Type",
+          "metric": "video_errors",
+          "dimension": "error_code",
+          "aggregation": "count",
+          "sortBy": "value",
+          "sortOrder": "desc",
+          "size": "small"
+        }
+      ]
+    },
+    {
+      "id": "recommendations",
+      "name": "Recommendation Performance",
+      "widgets": [
+        {
+          "type": "scorecard",
+          "title": "Recommendation Click-Through Rate",
+          "metric": "recommendation_ctr",
+          "aggregation": "percentage",
+          "format": "percentage",
+          "comparison": {
+            "enabled": true,
+            "period": "previous_period"
+          },
+          "thresholds": {
+            "good": 20,
+            "warning": 15,
+            "poor": 10
+          },
+          "size": "small"
+        },
+        {
+          "type": "scorecard",
+          "title": "Avg Recommendation Relevance Score",
+          "metric": "recommendation_relevance_score",
+          "aggregation": "average",
+          "format": "decimal_2",
+          "comparison": {
+            "enabled": true,
+            "period": "previous_period"
+          },
+          "thresholds": {
+            "good": 8.0,
+            "warning": 6.0,
+            "poor": 4.0
+          },
+          "size": "small"
+        },
+        {
+          "type": "bar_chart",
+          "title": "CTR by Recommendation Type",
+          "metric": "recommendation_clicks",
+          "dimension": "recommendation_type",
+          "aggregation": "percentage",
+          "size": "medium"
+        },
+        {
+          "type": "line_chart",
+          "title": "Recommendation Performance Trend",
+          "metrics": [
+            {
+              "name": "recommendation_impressions",
+              "aggregation": "count",
+              "label": "Impressions"
+            },
+            {
+              "name": "recommendation_clicks",
+              "aggregation": "count",
+              "label": "Clicks"
+            }
+          ],
+          "xAxis": "date",
+          "yAxis": "count",
+          "size": "medium"
+        },
+        {
+          "type": "heatmap",
+          "title": "Recommendation CTR by Position",
+          "metric": "recommendation_ctr",
+          "xAxis": "position",
+          "yAxis": "context",
+          "aggregation": "percentage",
+          "size": "medium"
+        }
+      ]
+    },
+    {
+      "id": "offline_usage",
+      "name": "Offline Usage",
+      "widgets": [
+        {
+          "type": "scorecard",
+          "title": "Offline Downloads",
+          "metric": "offline_downloads",
+          "aggregation": "count",
+          "comparison": {
+            "enabled": true,
+            "period": "previous_period",
+            "showPercentChange": true
+          },
+          "size": "small"
+        },
+        {
+          "type": "scorecard",
+          "title": "Offline Playbacks",
+          "metric": "offline_playbacks",
+          "aggregation": "count",
+          "comparison": {
+            "enabled": true,
+            "period": "previous_period",
+            "showPercentChange": true
+          },
+          "size": "small"
+        },
+        {
+          "type": "scorecard",
+          "title": "Offline Usage Rate",
+          "metric": "offline_usage_rate",
+          "aggregation": "percentage",
+          "format": "percentage",
+          "comparison": {
+            "enabled": true,
+            "period": "previous_period"
+          },
+          "size": "small"
+        },
+        {
+          "type": "scorecard",
+          "title": "Sync Success Rate",
+          "metric": "sync_success_rate",
+          "aggregation": "percentage",
+          "format": "percentage",
+          "comparison": {
+            "enabled": true,
+            "period": "previous_period"
+          },
+          "thresholds": {
+            "good": 95,
+            "warning": 90,
+            "poor": 85
+          },
+          "size": "small"
+        },
+        {
+          "type": "bar_chart",
+          "title": "Most Downloaded Content",
+          "metric": "offline_downloads",
+          "dimension": "content_name",
+          "aggregation": "count",
+          "sortBy": "value",
+          "sortOrder": "desc",
+          "limit": 10,
+          "size": "medium"
+        },
+        {
+          "type": "line_chart",
+          "title": "Offline Usage Trend",
+          "metrics": [
+            {
+              "name": "offline_downloads",
+              "aggregation": "count",
+              "label": "Downloads"
+            },
+            {
+              "name": "offline_playbacks",
+              "aggregation": "count",
+              "label": "Playbacks"
+            },
+            {
+              "name": "sync_operations",
+              "aggregation": "count",
+              "label": "Sync Operations"
+            }
+          ],
+          "xAxis": "date",
+          "yAxis": "count",
+          "size": "medium"
+        }
+      ]
+    },
+    {
+      "id": "technical_performance",
+      "name": "Technical Performance",
+      "widgets": [
+        {
+          "type": "scorecard",
+          "title": "Average API Response Time",
+          "metric": "api_response_time",
+          "aggregation": "p95",
+          "format": "milliseconds",
+          "comparison": {
+            "enabled": true,
+            "period": "previous_period"
+          },
+          "thresholds": {
+            "good": 1000,
+            "warning": 2000,
+            "poor": 3000
+          },
+          "size": "small"
+        },
+        {
+          "type": "scorecard",
+          "title": "Error Rate",
+          "metric": "error_rate",
+          "aggregation": "percentage",
+          "format": "percentage",
+          "comparison": {
+            "enabled": true,
+            "period": "previous_period"
+          },
+          "thresholds": {
+            "good": 0.1,
+            "warning": 0.5,
+            "poor": 1.0
+          },
+          "size": "small"
+        },
+        {
+          "type": "scorecard",
+          "title": "Crash Rate (per 1000 sessions)",
+          "metric": "crash_rate_per_1000",
+          "aggregation": "average",
+          "comparison": {
+            "enabled": true,
+            "period": "previous_period"
+          },
+          "thresholds": {
+            "good": 1,
+            "warning": 5,
+            "poor": 10
+          },
+          "size": "small"
+        },
+        {
+          "type": "scorecard",
+          "title": "Search Response Time",
+          "metric": "search_response_time",
+          "aggregation": "p95",
+          "format": "milliseconds",
+          "comparison": {
+            "enabled": true,
+            "period": "previous_period"
+          },
+          "thresholds": {
+            "good": 500,
+            "warning": 1000,
+            "poor": 2000
+          },
+          "size": "small"
+        },
+        {
+          "type": "line_chart",
+          "title": "Response Time Percentiles",
+          "metrics": [
+            {
+              "name": "api_response_time",
+              "aggregation": "p50",
+              "label": "p50"
+            },
+            {
+              "name": "api_response_time",
+              "aggregation": "p95",
+              "label": "p95"
+            },
+            {
+              "name": "api_response_time",
+              "aggregation": "p99",
+              "label": "p99"
+            }
+          ],
+          "xAxis": "date",
+          "yAxis": "milliseconds",
+          "size": "large"
+        },
+        {
+          "type": "bar_chart",
+          "title": "Errors by Type",
+          "metric": "errors",
+          "dimension": "error_type",
+          "aggregation": "count",
+          "sortBy": "value",
+          "sortOrder": "desc",
+          "size": "medium"
+        }
+      ]
+    },
+    {
+      "id": "user_feedback",
+      "name": "User Feedback",
+      "widgets": [
+        {
+          "type": "scorecard",
+          "title": "Average Content Rating",
+          "metric": "average_content_rating",
+          "aggregation": "average",
+          "format": "decimal_1",
+          "comparison": {
+            "enabled": true,
+            "period": "previous_period"
+          },
+          "thresholds": {
+            "good": 4.0,
+            "warning": 3.5,
+            "poor": 3.0
+          },
+          "size": "small"
+        },
+        {
+          "type": "scorecard",
+          "title": "Total Ratings",
+          "metric": "total_ratings",
+          "aggregation": "count",
+          "comparison": {
+            "enabled": true,
+            "period": "previous_period",
+            "showPercentChange": true
+          },
+          "size": "small"
+        },
+        {
+          "type": "scorecard",
+          "title": "Bug Reports",
+          "metric": "bug_reports",
+          "aggregation": "count",
+          "comparison": {
+            "enabled": true,
+            "period": "previous_period",
+            "showPercentChange": true
+          },
+          "size": "small"
+        },
+        {
+          "type": "scorecard",
+          "title": "Feature Requests",
+          "metric": "feature_requests",
+          "aggregation": "count",
+          "comparison": {
+            "enabled": true,
+            "period": "previous_period",
+            "showPercentChange": true
+          },
+          "size": "small"
+        },
+        {
+          "type": "bar_chart",
+          "title": "Rating Distribution",
+          "metric": "ratings",
+          "dimension": "rating_value",
+          "aggregation": "count",
+          "size": "small"
+        },
+        {
+          "type": "table",
+          "title": "Recent Feedback",
+          "columns": [
+            {
+              "name": "date",
+              "label": "Date",
+              "type": "datetime"
+            },
+            {
+              "name": "feedback_type",
+              "label": "Type",
+              "type": "string"
+            },
+            {
+              "name": "content_name",
+              "label": "Content",
+              "type": "string"
+            },
+            {
+              "name": "rating",
+              "label": "Rating",
+              "type": "number"
+            },
+            {
+              "name": "severity",
+              "label": "Severity",
+              "type": "string"
+            }
+          ],
+          "sortBy": "date",
+          "sortOrder": "desc",
+          "limit": 50,
+          "size": "large"
+        }
+      ]
+    }
+  ],
+  "filters": [
+    {
+      "name": "language",
+      "label": "Language",
+      "type": "multi_select",
+      "options": ["ms", "en", "zh", "ta"],
+      "default": "all"
+    },
+    {
+      "name": "device_type",
+      "label": "Device Type",
+      "type": "multi_select",
+      "options": ["mobile", "tablet", "desktop"],
+      "default": "all"
+    },
+    {
+      "name": "content_type",
+      "label": "Content Type",
+      "type": "multi_select",
+      "options": ["article", "video", "infographic", "interactive"],
+      "default": "all"
+    },
+    {
+      "name": "content_category",
+      "label": "Content Category",
+      "type": "multi_select",
+      "options": ["diabetes", "hypertension", "heart_disease", "mental_health", "nutrition", "exercise"],
+      "default": "all"
+    },
+    {
+      "name": "user_type",
+      "label": "User Type",
+      "type": "multi_select",
+      "options": ["patient", "caregiver"],
+      "default": "all"
+    }
+  ],
+  "export": {
+    "enabled": true,
+    "formats": ["csv", "excel", "pdf"],
+    "scheduled_reports": {
+      "daily": {
+        "enabled": true,
+        "time": "09:00",
+        "timezone": "Asia/Kuala_Lumpur",
+        "recipients": ["product-team@medimate.my"]
+      },
+      "weekly": {
+        "enabled": true,
+        "day": "Monday",
+        "time": "10:00",
+        "timezone": "Asia/Kuala_Lumpur",
+        "recipients": ["product-team@medimate.my", "leadership@medimate.my"]
+      },
+      "monthly": {
+        "enabled": true,
+        "day": 1,
+        "time": "09:00",
+        "timezone": "Asia/Kuala_Lumpur",
+        "recipients": ["product-team@medimate.my", "leadership@medimate.my"]
+      }
+    }
+  }
+}

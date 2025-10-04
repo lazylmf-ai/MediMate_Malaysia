@@ -1,0 +1,396 @@
+# MediMate Education Hub - Alert Configuration
+# This configuration defines alert rules, thresholds, and notification channels
+# for monitoring the Education Hub production environment
+
+alerts:
+  # Critical Alerts (P0) - PagerDuty + Slack
+  critical:
+    - name: api_error_rate_critical
+      description: API error rate exceeds critical threshold (1%)
+      metric: MediMate/EducationHub/ErrorRate
+      threshold: 1.0
+      comparison: GreaterThanThreshold
+      evaluation_periods: 2
+      period: 300
+      statistic: Average
+      treat_missing_data: notBreaching
+      actions:
+        - pagerduty_critical
+        - slack_critical
+      runbook: runbooks/api_error_rate.md
+
+    - name: api_completely_down
+      description: API is completely unresponsive
+      metric: AWS/ApplicationELB/HealthyHostCount
+      threshold: 0
+      comparison: LessThanOrEqualToThreshold
+      evaluation_periods: 1
+      period: 60
+      statistic: Minimum
+      treat_missing_data: breaching
+      actions:
+        - pagerduty_critical
+        - slack_critical
+      runbook: runbooks/api_down.md
+
+    - name: authentication_system_failure
+      description: Authentication system experiencing critical failures
+      metric: MediMate/EducationHub/AuthenticationFailureRate
+      threshold: 50.0
+      comparison: GreaterThanThreshold
+      evaluation_periods: 2
+      period: 300
+      statistic: Average
+      treat_missing_data: notBreaching
+      actions:
+        - pagerduty_critical
+        - slack_critical
+      runbook: runbooks/auth_failure.md
+
+    - name: database_connection_failure
+      description: Database connection pool exhausted or unavailable
+      metric: MediMate/EducationHub/DatabaseConnectionErrors
+      threshold: 10
+      comparison: GreaterThanThreshold
+      evaluation_periods: 2
+      period: 300
+      statistic: Sum
+      treat_missing_data: notBreaching
+      actions:
+        - pagerduty_critical
+        - slack_critical
+      runbook: runbooks/database_connection.md
+
+    - name: memory_utilization_critical
+      description: Container memory utilization critically high
+      metric: AWS/ECS/MemoryUtilization
+      threshold: 90.0
+      comparison: GreaterThanThreshold
+      evaluation_periods: 3
+      period: 300
+      statistic: Average
+      treat_missing_data: notBreaching
+      actions:
+        - pagerduty_critical
+        - slack_critical
+      runbook: runbooks/memory_critical.md
+
+  # Warning Alerts (P1) - Slack + Email
+  warning:
+    - name: api_error_rate_warning
+      description: API error rate elevated (>0.5%)
+      metric: MediMate/EducationHub/ErrorRate
+      threshold: 0.5
+      comparison: GreaterThanThreshold
+      evaluation_periods: 3
+      period: 300
+      statistic: Average
+      treat_missing_data: notBreaching
+      actions:
+        - slack_warning
+        - email_oncall
+      runbook: runbooks/api_error_rate.md
+
+    - name: api_response_time_slow
+      description: API response time exceeds 2 seconds (p95)
+      metric: AWS/ApplicationELB/TargetResponseTime
+      threshold: 2000
+      comparison: GreaterThanThreshold
+      evaluation_periods: 3
+      period: 300
+      statistic: p95
+      treat_missing_data: notBreaching
+      actions:
+        - slack_warning
+        - email_oncall
+      runbook: runbooks/slow_api.md
+
+    - name: video_playback_failure_rate
+      description: Video playback failure rate exceeds 5%
+      metric: MediMate/EducationHub/VideoPlaybackErrorRate
+      threshold: 5.0
+      comparison: GreaterThanThreshold
+      evaluation_periods: 3
+      period: 900
+      statistic: Average
+      treat_missing_data: notBreaching
+      actions:
+        - slack_warning
+        - email_oncall
+      runbook: runbooks/video_playback.md
+
+    - name: cdn_cache_hit_rate_low
+      description: CDN cache hit rate below 80%
+      metric: AWS/CloudFront/CacheHitRate
+      threshold: 80.0
+      comparison: LessThanThreshold
+      evaluation_periods: 4
+      period: 900
+      statistic: Average
+      treat_missing_data: notBreaching
+      actions:
+        - slack_warning
+        - email_oncall
+      runbook: runbooks/cdn_performance.md
+
+    - name: mobile_crash_rate_high
+      description: Mobile app crash rate exceeds 5 per 1000 sessions
+      metric: MediMate/EducationHub/CrashRatePer1000Sessions
+      threshold: 5.0
+      comparison: GreaterThanThreshold
+      evaluation_periods: 2
+      period: 3600
+      statistic: Average
+      treat_missing_data: notBreaching
+      actions:
+        - slack_warning
+        - email_oncall
+      runbook: runbooks/mobile_crashes.md
+
+    - name: database_query_slow
+      description: Database queries taking too long (p95 > 500ms)
+      metric: MediMate/EducationHub/DatabaseQueryDuration
+      threshold: 500
+      comparison: GreaterThanThreshold
+      evaluation_periods: 3
+      period: 300
+      statistic: p95
+      treat_missing_data: notBreaching
+      actions:
+        - slack_warning
+        - email_oncall
+      runbook: runbooks/slow_queries.md
+
+    - name: search_performance_degraded
+      description: Search queries taking longer than expected (>500ms)
+      metric: MediMate/EducationHub/SearchDuration
+      threshold: 500
+      comparison: GreaterThanThreshold
+      evaluation_periods: 3
+      period: 300
+      statistic: Average
+      treat_missing_data: notBreaching
+      actions:
+        - slack_warning
+        - email_oncall
+      runbook: runbooks/search_performance.md
+
+    - name: cpu_utilization_high
+      description: Container CPU utilization high (>80%)
+      metric: AWS/ECS/CPUUtilization
+      threshold: 80.0
+      comparison: GreaterThanThreshold
+      evaluation_periods: 4
+      period: 300
+      statistic: Average
+      treat_missing_data: notBreaching
+      actions:
+        - slack_warning
+        - email_oncall
+      runbook: runbooks/cpu_high.md
+
+    - name: sync_conflicts_elevated
+      description: Offline sync conflicts elevated
+      metric: MediMate/EducationHub/SyncConflicts
+      threshold: 10
+      comparison: GreaterThanThreshold
+      evaluation_periods: 2
+      period: 3600
+      statistic: Sum
+      treat_missing_data: notBreaching
+      actions:
+        - slack_warning
+        - email_oncall
+      runbook: runbooks/sync_conflicts.md
+
+  # Informational Alerts (P2/P3) - Email only
+  info:
+    - name: daily_active_users_low
+      description: Daily active users below expected threshold
+      metric: MediMate/EducationHub/DailyActiveUsers
+      threshold: 100
+      comparison: LessThanThreshold
+      evaluation_periods: 1
+      period: 86400
+      statistic: Sum
+      treat_missing_data: notBreaching
+      actions:
+        - email_product_team
+
+    - name: content_engagement_low
+      description: Content view rate below 30%
+      metric: MediMate/EducationHub/ContentViewRate
+      threshold: 30.0
+      comparison: LessThanThreshold
+      evaluation_periods: 1
+      period: 86400
+      statistic: Average
+      treat_missing_data: notBreaching
+      actions:
+        - email_product_team
+
+    - name: quiz_completion_rate_low
+      description: Quiz completion rate below expected
+      metric: MediMate/EducationHub/QuizCompletionRate
+      threshold: 20.0
+      comparison: LessThanThreshold
+      evaluation_periods: 1
+      period: 86400
+      statistic: Average
+      treat_missing_data: notBreaching
+      actions:
+        - email_product_team
+
+    - name: recommendation_click_rate_low
+      description: Recommendation click-through rate below 15%
+      metric: MediMate/EducationHub/RecommendationClickRate
+      threshold: 15.0
+      comparison: LessThanThreshold
+      evaluation_periods: 1
+      period: 86400
+      statistic: Average
+      treat_missing_data: notBreaching
+      actions:
+        - email_product_team
+
+# Notification Channels
+notification_channels:
+  pagerduty_critical:
+    type: pagerduty
+    integration_key: ${PAGERDUTY_INTEGRATION_KEY}
+    severity: critical
+    auto_resolve: true
+
+  slack_critical:
+    type: slack
+    webhook_url: ${SLACK_CRITICAL_WEBHOOK_URL}
+    channel: "#medimate-alerts-critical"
+    username: "MediMate Alert Bot"
+    icon_emoji: ":rotating_light:"
+    mention: "@oncall @channel"
+
+  slack_warning:
+    type: slack
+    webhook_url: ${SLACK_WARNING_WEBHOOK_URL}
+    channel: "#medimate-alerts-warning"
+    username: "MediMate Alert Bot"
+    icon_emoji: ":warning:"
+    mention: "@oncall"
+
+  email_oncall:
+    type: email
+    addresses:
+      - oncall@medimate.my
+      - devops-team@medimate.my
+
+  email_product_team:
+    type: email
+    addresses:
+      - product-team@medimate.my
+      - analytics@medimate.my
+
+# Composite Alarms (combine multiple metrics)
+composite_alarms:
+  - name: education_hub_health_degraded
+    description: Multiple health indicators showing degradation
+    alarm_rule: >
+      ALARM(api_error_rate_warning) OR
+      ALARM(api_response_time_slow) OR
+      ALARM(video_playback_failure_rate)
+    actions:
+      - slack_warning
+      - email_oncall
+
+  - name: infrastructure_critical
+    description: Critical infrastructure issues detected
+    alarm_rule: >
+      ALARM(api_completely_down) OR
+      ALARM(database_connection_failure) OR
+      ALARM(memory_utilization_critical)
+    actions:
+      - pagerduty_critical
+      - slack_critical
+
+# Schedule-based Alerts (cron expressions)
+scheduled_reports:
+  - name: daily_usage_summary
+    description: Daily summary of Education Hub usage metrics
+    schedule: "cron(0 9 * * ? *)"  # 9 AM daily
+    timezone: Asia/Kuala_Lumpur
+    metrics:
+      - DailyActiveUsers
+      - ContentViews
+      - QuizAttempts
+      - VideoPlaybacks
+      - ErrorRate
+      - AverageResponseTime
+    recipients:
+      - email_product_team
+    format: html
+
+  - name: weekly_engagement_report
+    description: Weekly engagement and performance report
+    schedule: "cron(0 10 ? * MON *)"  # 10 AM every Monday
+    timezone: Asia/Kuala_Lumpur
+    metrics:
+      - WeeklyActiveUsers
+      - ContentCompletionRate
+      - QuizPassRate
+      - RecommendationClickRate
+      - VideoPlaybackSuccessRate
+      - AverageSessionDuration
+      - LanguageDistribution
+    recipients:
+      - email_product_team
+    format: html
+    include_charts: true
+
+# Alert Suppression Rules
+suppression_rules:
+  - name: maintenance_window
+    description: Suppress alerts during planned maintenance
+    enabled: false  # Enable manually during maintenance
+    suppress_all: false
+    suppress_alerts:
+      - api_completely_down
+      - api_error_rate_critical
+
+  - name: non_business_hours_info
+    description: Suppress info alerts outside business hours
+    enabled: true
+    time_window:
+      days: [Mon, Tue, Wed, Thu, Fri]
+      hours: "09:00-18:00"
+      timezone: Asia/Kuala_Lumpur
+    suppress_alerts:
+      - daily_active_users_low
+      - content_engagement_low
+
+# Auto-remediation Actions (future enhancement)
+auto_remediation:
+  - alert: memory_utilization_critical
+    action: scale_up_containers
+    max_instances: 10
+    cooldown: 300
+
+  - alert: cpu_utilization_high
+    action: scale_up_containers
+    max_instances: 10
+    cooldown: 300
+
+# Health Check Configuration
+health_checks:
+  - name: education_hub_api_health
+    endpoint: https://api.medimate.my/education/health
+    interval: 60
+    timeout: 10
+    healthy_threshold: 2
+    unhealthy_threshold: 3
+    expected_status: 200
+
+  - name: database_health
+    type: database
+    connection_string: ${DATABASE_URL}
+    interval: 300
+    timeout: 30
+    query: "SELECT 1"
