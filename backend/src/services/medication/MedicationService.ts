@@ -6,7 +6,7 @@
  */
 
 import { DatabaseService } from '../database/databaseService';
-import { CacheService } from '../cache/redisService';
+import RedisService from '../cache/redisService';
 import {
   Medication,
   MedicationDatabaseEntry,
@@ -22,11 +22,11 @@ import { v4 as uuidv4 } from 'uuid';
 export class MedicationService {
   private static instance: MedicationService;
   private db: DatabaseService;
-  private cache: CacheService;
+  private cache: RedisService;
 
   constructor() {
     this.db = DatabaseService.getInstance();
-    this.cache = CacheService.getInstance();
+    this.cache = RedisService.getInstance();
   }
 
   public static getInstance(): MedicationService {
