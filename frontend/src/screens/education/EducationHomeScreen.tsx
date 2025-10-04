@@ -1,451 +1,295 @@
 /**
  * Education Home Screen
- * Main hub for educational content with cultural intelligence integration
- * Displays content in user's preferred language and respects cultural preferences
+ *
+ * Main education hub screen with:
+ * - Personalized greeting
+ * - Recommended content carousel
+ * - Continue learning section (in-progress content)
+ * - Category browsing grid
+ * - Trending topics section
  */
 
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useCallback, useState } from 'react';
 import {
   View,
   Text,
-  ScrollView,
   StyleSheet,
-  TouchableOpacity,
+  SafeAreaView,
+  ScrollView,
+  RefreshControl,
   ActivityIndicator,
-  RefreshControl
+  TouchableOpacity,
 } from 'react-native';
-import { useCulturalPreferences } from '../../hooks/useCulturalPreferences';
+import { StatusBar } from 'expo-status-bar';
+import Icon from 'react-native-vector-icons/MaterialIcons';
+import { useAppDispatch, useAppSelector } from '@/store/hooks';
+import {
+  fetchRecommendations,
+  fetchTrendingContent,
+  fetchUserProgressList,
+} from '@/store/slices/educationSlice';
+import { RecommendationCarousel, CategoryGrid, ContentCard, OfflineIndicator } from '@/components/education';
+import { COLORS, TYPOGRAPHY } from '@/constants/config';
+import { useCulturalPreferences } from '@/hooks/useCulturalPreferences';
+import type { EducationStackScreenProps } from '@/types/navigation';
+import type { Category, EducationContent } from '@/types/education';
 
-interface EducationContent {
-  id: string;
-  title: string;
-  description: string;
-  category: string;
-  language: string;
-  duration_minutes?: number;
-  difficulty_level: 'beginner' | 'intermediate' | 'advanced';
-}
+type Props = EducationStackScreenProps<'EducationHome'>;
 
-interface ContentCategory {
-  id: string;
-  name: string;
-  description: string;
-  icon: string;
-  content_count: number;
-}
+export default function EducationHomeScreen({ navigation }: Props) {
+  const dispatch = useAppDispatch();
+  const { user } = useAppSelector(state => state.auth);
+  const {
+    recommendations,
+    recommendationsLoading,
+    trendingContent,
+    userProgress,
+    progressLoading,
+  } = useAppSelector(state => state.education);
 
-export const EducationHomeScreen: React.FC = () => {
+  // Use cultural preferences hook for language and cultural settings
   const {
     language,
     culturalSettings,
-    preferences,
-    isLoading: prefsLoading,
-    getGreeting,
-    getCulturalContext
+    getGreeting: getCulturalGreeting,
+    isLoading: culturalLoading
   } = useCulturalPreferences();
 
-  const [recommendations, setRecommendations] = useState<EducationContent[]>([]);
-  const [categories, setCategories] = useState<ContentCategory[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [categories, setCategories] = useState<Category[]>([]);
 
-  /**
-   * Fetch recommendations in user's preferred language
-   */
-  const fetchRecommendations = useCallback(async () => {
-    try {
-      // In production, this would call API with language parameter
-      console.log(`[EducationHome] Fetching recommendations in ${language}`);
+  const loadData = useCallback(async () => {
+    // Fetch content in user's preferred language
+    await Promise.all([
+      dispatch(fetchRecommendations(10)),
+      dispatch(fetchTrendingContent({ limit: 10 })),
+      dispatch(fetchUserProgressList({ completed: false, limit: 5 })),
+    ]);
+  }, [dispatch, language]);
 
-      // Mock API call
-      // const response = await educationService.getRecommendations({ language });
-      // setRecommendations(response.data);
+  useEffect(() => {
+    // Reload data when language changes
+    loadData();
+  }, [loadData, language]);
 
-      // Mock data for demonstration
-      setRecommendations([]);
-    } catch (error) {
-      console.error('[EducationHome] Failed to fetch recommendations:', error);
-    }
-  }, [language]);
-
-  /**
-   * Fetch categories in user's preferred language
-   */
-  const fetchCategories = useCallback(async () => {
-    try {
-      console.log(`[EducationHome] Fetching categories in ${language}`);
-
-      // Mock API call
-      // const response = await educationService.getCategories({ language });
-      // setCategories(response.data);
-
-      // Mock data for demonstration
-      setCategories([]);
-    } catch (error) {
-      console.error('[EducationHome] Failed to fetch categories:', error);
-    }
-  }, [language]);
-
-  /**
-   * Load all content
-   */
-  const loadContent = useCallback(async () => {
-    setIsLoading(true);
-    try {
-      await Promise.all([
-        fetchRecommendations(),
-        fetchCategories()
-      ]);
-    } catch (error) {
-      console.error('[EducationHome] Failed to load content:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [fetchRecommendations, fetchCategories]);
-
-  /**
-   * Handle pull to refresh
-   */
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    await loadContent();
+    await loadData();
     setRefreshing(false);
-  }, [loadContent]);
+  }, [loadData]);
 
-  /**
-   * Reload content when language changes
-   */
-  useEffect(() => {
-    if (!prefsLoading) {
-      loadContent();
-    }
-  }, [language, prefsLoading, loadContent]);
-
-  /**
-   * Get translations for UI text based on language
-   */
-  const getTranslations = () => {
-    const translations = {
-      ms: {
-        title: 'Pusat Pendidikan',
-        subtitle: 'Ketahui lebih lanjut tentang kesihatan anda',
-        recommended: 'Disyorkan Untuk Anda',
-        categories: 'Kategori',
-        viewAll: 'Lihat Semua',
-        noContent: 'Tiada kandungan tersedia',
-        loading: 'Memuatkan...'
-      },
-      en: {
-        title: 'Education Hub',
-        subtitle: 'Learn more about your health',
-        recommended: 'Recommended For You',
-        categories: 'Categories',
-        viewAll: 'View All',
-        noContent: 'No content available',
-        loading: 'Loading...'
-      },
-      zh: {
-        title: '教育中心',
-        subtitle: '了解更多关于您的健康',
-        recommended: '为您推荐',
-        categories: '类别',
-        viewAll: '查看全部',
-        noContent: '没有可用内容',
-        loading: '加载中...'
-      },
-      ta: {
-        title: 'கல்வி மையம்',
-        subtitle: 'உங்கள் ஆரோக்கியம் பற்றி மேலும் அறியவும்',
-        recommended: 'உங்களுக்கான பரிந்துரைகள்',
-        categories: 'வகைகள்',
-        viewAll: 'அனைத்தையும் காண்க',
-        noContent: 'உள்ளடக்கம் இல்லை',
-        loading: 'ஏற்றுகிறது...'
-      }
-    };
-
-    return translations[language] || translations.en;
+  const handleContentPress = (contentId: string) => {
+    navigation.navigate('ContentDetail', { id: contentId });
   };
 
-  const t = getTranslations();
-  const culturalContext = getCulturalContext();
+  const handleCategoryPress = (category: Category) => {
+    navigation.navigate('CategoryBrowse', { category: category.id });
+  };
+
+  const handleSearchPress = () => {
+    navigation.navigate('ContentSearch');
+  };
+
+  const handleDownloadManagerPress = () => {
+    navigation.navigate('DownloadManager');
+  };
+
+  const getInProgressContent = (): EducationContent[] => {
+    return [];
+  };
+
+  const isLoading = recommendationsLoading || progressLoading || culturalLoading;
 
   if (isLoading && !refreshing) {
     return (
-      <View style={styles.centerContainer}>
-        <ActivityIndicator size="large" color="#2196F3" />
-        <Text style={styles.loadingText}>{t.loading}</Text>
-      </View>
+      <SafeAreaView style={styles.container}>
+        <StatusBar style="dark" />
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={COLORS.primary} />
+        </View>
+      </SafeAreaView>
     );
   }
 
   return (
-    <ScrollView
-      style={styles.container}
-      refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-      }
-    >
-      {/* Greeting Section */}
-      <View style={styles.greetingSection}>
-        <Text style={styles.greeting}>{getGreeting()}</Text>
-        <Text style={styles.subtitle}>{t.subtitle}</Text>
-      </View>
+    <SafeAreaView style={styles.container}>
+      <StatusBar style="dark" />
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
+      >
+        <View style={styles.header}>
+          <View style={styles.headerLeft}>
+            <Text style={styles.greeting}>{getCulturalGreeting()}</Text>
+            <Text style={styles.userName}>{user?.fullName}</Text>
+          </View>
+          <View style={styles.headerRight}>
+            <TouchableOpacity
+              style={styles.iconButton}
+              onPress={handleDownloadManagerPress}
+              accessibilityLabel="Download Manager"
+              accessibilityRole="button"
+            >
+              <Icon name="download" size={24} color={COLORS.gray[700]} />
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.searchButton}
+              onPress={handleSearchPress}
+              accessibilityLabel="Search"
+              accessibilityRole="button"
+            >
+              <Icon name="search" size={24} color={COLORS.gray[700]} />
+            </TouchableOpacity>
+          </View>
+        </View>
 
-      {/* Cultural Context Indicator (for Muslim users during prayer times) */}
-      {culturalContext.respectsPrayerTimes && (
-        <View style={styles.culturalNotice}>
-          <Text style={styles.culturalNoticeText}>
-            {language === 'ms'
-              ? 'Pengingat pembelajaran ditetapkan mengikut waktu solat'
-              : 'Learning reminders are set according to prayer times'}
+        {/* Offline Indicator Banner */}
+        <View style={styles.offlineIndicatorContainer}>
+          <OfflineIndicator language={language} />
+        </View>
+
+        <View style={styles.heroSection}>
+          <Text style={styles.heroTitle}>Education Hub</Text>
+          <Text style={styles.heroSubtitle}>
+            Learn about your health, medications, and wellness
           </Text>
         </View>
-      )}
 
-      {/* Recommended Content */}
-      <View style={styles.section}>
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>{t.recommended}</Text>
-          <TouchableOpacity>
-            <Text style={styles.viewAllText}>{t.viewAll}</Text>
-          </TouchableOpacity>
-        </View>
+        {recommendations.length > 0 && (
+          <RecommendationCarousel
+            recommendations={recommendations}
+            onPress={handleContentPress}
+          />
+        )}
 
-        {recommendations.length > 0 ? (
-          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            {recommendations.map(content => (
-              <TouchableOpacity
+        {getInProgressContent().length > 0 && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Continue Learning</Text>
+            {getInProgressContent().map(content => (
+              <ContentCard
                 key={content.id}
-                style={styles.contentCard}
-                onPress={() => console.log('Navigate to content:', content.id)}
-              >
-                <Text style={styles.contentTitle} numberOfLines={2}>
-                  {content.title}
-                </Text>
-                <Text style={styles.contentDescription} numberOfLines={3}>
-                  {content.description}
-                </Text>
-                <View style={styles.contentMeta}>
-                  <Text style={styles.contentDuration}>
-                    {content.duration_minutes} {language === 'ms' ? 'min' : 'min'}
-                  </Text>
-                  <Text style={styles.contentLevel}>
-                    {content.difficulty_level}
-                  </Text>
-                </View>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-        ) : (
-          <View style={styles.emptyState}>
-            <Text style={styles.emptyStateText}>{t.noContent}</Text>
-          </View>
-        )}
-      </View>
-
-      {/* Categories */}
-      <View style={styles.section}>
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>{t.categories}</Text>
-        </View>
-
-        {categories.length > 0 ? (
-          <View style={styles.categoriesGrid}>
-            {categories.map(category => (
-              <TouchableOpacity
-                key={category.id}
-                style={styles.categoryCard}
-                onPress={() => console.log('Navigate to category:', category.id)}
-              >
-                <Text style={styles.categoryIcon}>{category.icon}</Text>
-                <Text style={styles.categoryName} numberOfLines={2}>
-                  {category.name}
-                </Text>
-                <Text style={styles.categoryCount}>
-                  {category.content_count} {language === 'ms' ? 'item' : 'items'}
-                </Text>
-              </TouchableOpacity>
+                content={content}
+                onPress={() => handleContentPress(content.id)}
+                showProgress
+              />
             ))}
           </View>
-        ) : (
-          <View style={styles.emptyState}>
-            <Text style={styles.emptyStateText}>{t.noContent}</Text>
+        )}
+
+        {categories.length > 0 && (
+          <View style={styles.section}>
+            <CategoryGrid categories={categories} onPress={handleCategoryPress} />
           </View>
         )}
-      </View>
 
-      {/* Language indicator (for debugging/development) */}
-      {__DEV__ && (
-        <View style={styles.debugInfo}>
-          <Text style={styles.debugText}>Current Language: {language}</Text>
-          <Text style={styles.debugText}>
-            Prayer Times Respected: {culturalContext.respectsPrayerTimes ? 'Yes' : 'No'}
-          </Text>
-        </View>
-      )}
-    </ScrollView>
+        {trendingContent.length > 0 && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Trending Topics</Text>
+            {trendingContent.map(content => (
+              <ContentCard
+                key={content.id}
+                content={content}
+                onPress={() => handleContentPress(content.id)}
+              />
+            ))}
+          </View>
+        )}
+      </ScrollView>
+    </SafeAreaView>
   );
-};
+}
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F5F5F5'
+    backgroundColor: COLORS.gray[50],
   },
-  centerContainer: {
+  loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#F5F5F5'
   },
-  loadingText: {
-    marginTop: 16,
-    fontSize: 16,
-    color: '#666'
+  scrollContent: {
+    paddingBottom: 24,
   },
-  greetingSection: {
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
     padding: 20,
-    backgroundColor: '#FFFFFF',
-    borderBottomWidth: 1,
-    borderBottomColor: '#E0E0E0'
+    paddingBottom: 16,
+  },
+  headerLeft: {
+    flex: 1,
+  },
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
   },
   greeting: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#212121',
-    marginBottom: 8
+    fontSize: TYPOGRAPHY.fontSizes.base,
+    color: COLORS.gray[600],
+    marginBottom: 4,
   },
-  subtitle: {
-    fontSize: 16,
-    color: '#666'
+  userName: {
+    fontSize: TYPOGRAPHY.fontSizes['2xl'],
+    fontWeight: TYPOGRAPHY.fontWeights.bold,
+    color: COLORS.gray[900],
   },
-  culturalNotice: {
-    backgroundColor: '#E3F2FD',
-    padding: 12,
-    margin: 16,
-    borderRadius: 8,
-    borderLeftWidth: 4,
-    borderLeftColor: '#2196F3'
+  iconButton: {
+    width: 44,
+    height: 44,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: COLORS.white,
+    borderRadius: 22,
+    borderWidth: 1,
+    borderColor: COLORS.gray[300],
   },
-  culturalNoticeText: {
-    fontSize: 14,
-    color: '#1976D2'
+  searchButton: {
+    width: 44,
+    height: 44,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: COLORS.white,
+    borderRadius: 22,
+    borderWidth: 1,
+    borderColor: COLORS.gray[300],
+  },
+  offlineIndicatorContainer: {
+    paddingHorizontal: 20,
+    paddingBottom: 12,
+  },
+  heroSection: {
+    backgroundColor: COLORS.primary,
+    padding: 20,
+    marginHorizontal: 20,
+    borderRadius: 16,
+    marginBottom: 24,
+  },
+  heroTitle: {
+    fontSize: TYPOGRAPHY.fontSizes['3xl'],
+    fontWeight: TYPOGRAPHY.fontWeights.bold,
+    color: COLORS.white,
+    marginBottom: 8,
+  },
+  heroSubtitle: {
+    fontSize: TYPOGRAPHY.fontSizes.base,
+    color: COLORS.white,
+    opacity: 0.9,
+    lineHeight: 24,
   },
   section: {
-    marginTop: 24,
-    paddingHorizontal: 20
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16
+    paddingHorizontal: 20,
+    marginBottom: 24,
   },
   sectionTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#212121'
-  },
-  viewAllText: {
-    fontSize: 14,
-    color: '#2196F3',
-    fontWeight: '600'
-  },
-  contentCard: {
-    width: 280,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    padding: 16,
-    marginRight: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3
-  },
-  contentTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#212121',
-    marginBottom: 8
-  },
-  contentDescription: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 12,
-    lineHeight: 20
-  },
-  contentMeta: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center'
-  },
-  contentDuration: {
-    fontSize: 12,
-    color: '#999'
-  },
-  contentLevel: {
-    fontSize: 12,
-    color: '#2196F3',
-    fontWeight: '600',
-    textTransform: 'capitalize'
-  },
-  categoriesGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between'
-  },
-  categoryCard: {
-    width: '48%',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    padding: 16,
+    fontSize: TYPOGRAPHY.fontSizes.xl,
+    fontWeight: TYPOGRAPHY.fontWeights.semibold,
+    color: COLORS.gray[900],
     marginBottom: 16,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3
   },
-  categoryIcon: {
-    fontSize: 32,
-    marginBottom: 8
-  },
-  categoryName: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#212121',
-    textAlign: 'center',
-    marginBottom: 4
-  },
-  categoryCount: {
-    fontSize: 12,
-    color: '#999'
-  },
-  emptyState: {
-    padding: 40,
-    alignItems: 'center'
-  },
-  emptyStateText: {
-    fontSize: 16,
-    color: '#999',
-    textAlign: 'center'
-  },
-  debugInfo: {
-    margin: 20,
-    padding: 16,
-    backgroundColor: '#FFF3E0',
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#FFB74D'
-  },
-  debugText: {
-    fontSize: 12,
-    color: '#E65100',
-    marginBottom: 4
-  }
 });
-
-export default EducationHomeScreen;

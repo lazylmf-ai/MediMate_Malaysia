@@ -1,50 +1,62 @@
 /**
  * Education Integration Service
- * Coordinates education hub with other MediMate modules
- * Handles medication, family circle, and cultural intelligence integration
+ * Integrates Education Hub with other MediMate modules
+ * Handles cultural intelligence, medication integration, and family circle features
  */
 
-import { LearningReminderService, ReminderScheduleRequest } from './LearningReminderService';
-import { CulturalPreferenceService } from '../cultural/culturalPreferenceService';
+import { CulturalPreferenceService, CulturalPreferences } from '../cultural/culturalPreferenceService';
+import { LearningReminderService } from './LearningReminderService';
 
-export interface EducationContent {
+export interface EducationContentMetadata {
   id: string;
   title: string;
   description: string;
   category: string;
   language: string;
-  content_type: 'article' | 'video' | 'quiz' | 'interactive';
   duration_minutes?: number;
-  difficulty_level: 'beginner' | 'intermediate' | 'advanced';
-  tags: string[];
-  created_at: Date;
-  updated_at: Date;
+  difficulty_level?: 'beginner' | 'intermediate' | 'advanced';
+  tags?: string[];
 }
 
-export interface ContentRecommendation {
-  content: EducationContent;
-  relevance_score: number;
-  reason: string;
-  source: 'medication' | 'adherence' | 'profile' | 'popular';
-}
-
-export interface UserEducationPreferences {
+export interface UserPreferences {
   user_id: string;
-  preferred_language: 'ms' | 'en' | 'zh' | 'ta';
-  content_types: string[];
-  difficulty_preference: 'beginner' | 'intermediate' | 'advanced';
-  daily_reminder_enabled: boolean;
-  reminder_time?: string;
-  topics_of_interest: string[];
+  language: string;
+  cultural_preferences?: CulturalPreferences;
+}
+
+export interface ContentRecommendationContext {
+  user_id: string;
+  medication_ids?: string[];
+  medical_conditions?: string[];
+  language_preference?: string;
+  recent_content_viewed?: string[];
+}
+
+export interface ShareContentRequest {
+  content_id: string;
+  sender_user_id: string;
+  recipient_user_ids: string[];
+  message?: string;
+}
+
+export interface ShareContentResponse {
+  success: boolean;
+  shared_with: string[];
+  failed: string[];
+  notifications_sent: number;
 }
 
 export class EducationIntegrationService {
-  private learningReminderService: LearningReminderService;
-  private culturalPreferenceService: CulturalPreferenceService;
+  private culturalService: CulturalPreferenceService;
+  private reminderService: LearningReminderService;
+  private initialized = false;
 
-  constructor() {
-    this.learningReminderService = new LearningReminderService();
-    this.culturalPreferenceService = new CulturalPreferenceService();
+  constructor(
+    culturalService?: CulturalPreferenceService,
+    reminderService?: LearningReminderService
+  ) {
+    this.culturalService = culturalService || new CulturalPreferenceService();
+    this.reminderService = reminderService || new LearningReminderService();
   }
 
   /**
@@ -52,318 +64,326 @@ export class EducationIntegrationService {
    */
   async initialize(): Promise<void> {
     console.log('[EducationIntegration] Initializing service...');
-    await this.culturalPreferenceService.initialize();
-    console.log('[EducationIntegration] Service initialized successfully');
+
+    try {
+      await Promise.all([
+        this.culturalService.initialize(),
+        this.reminderService.initialize()
+      ]);
+
+      this.initialized = true;
+      console.log('[EducationIntegration] Service initialized successfully');
+    } catch (error) {
+      console.error('[EducationIntegration] Failed to initialize:', error);
+      throw error;
+    }
   }
 
   /**
-   * Called when user adds/updates medications
-   * Triggers recommendation refresh and notifications
+   * Get educational content filtered by user's language preference
    */
-  async onMedicationChange(userId: string, medicationIds: string[]): Promise<void> {
-    try {
-      console.log(`[EducationIntegration] Processing medication change for user ${userId}`);
+  async getContentByLanguage(
+    user_id: string,
+    language?: string
+  ): Promise<{ preferred_language: string; content_available: boolean }> {
+    if (!this.initialized) {
+      throw new Error('EducationIntegrationService not initialized');
+    }
 
-      // In production, this would:
-      // 1. Fetch new educational content related to medications
-      // 2. Update personalized recommendations
-      // 3. Send notification if new relevant content available
+    // Get user's cultural preferences
+    const culturalPrefs = await this.getUserCulturalPreferences(user_id);
+    const preferredLanguage = language || culturalPrefs.primary_language;
 
-      // Get user's language preference
-      const preferences = await this.getUserPreferences(userId);
-      const language = preferences?.preferred_language || 'en';
+    // In production, this would query the content database
+    // For now, return metadata about content availability
+    return {
+      preferred_language: preferredLanguage,
+      content_available: true
+    };
+  }
 
-      // Mock: Check if new educational content available
-      const newContent = await this.getNewContentForMedications(medicationIds, language);
+  /**
+   * Get content recommendations based on medications
+   */
+  async getContentByMedication(
+    user_id: string,
+    medication_id: string
+  ): Promise<EducationContentMetadata[]> {
+    if (!this.initialized) {
+      throw new Error('EducationIntegrationService not initialized');
+    }
 
-      if (newContent.length > 0) {
-        console.log(`[EducationIntegration] Found ${newContent.length} new content items for medications`);
+    // Get user's language preference
+    const culturalPrefs = await this.getUserCulturalPreferences(user_id);
+
+    // In production, this would query the content database
+    // Mock implementation returns empty array
+    console.log(
+      `[EducationIntegration] Fetching content for medication ${medication_id} in ${culturalPrefs.primary_language}`
+    );
+
+    return [];
+  }
+
+  /**
+   * Refresh recommendations when medications change
+   */
+  async onMedicationChange(user_id: string, medication_ids: string[]): Promise<void> {
+    if (!this.initialized) {
+      throw new Error('EducationIntegrationService not initialized');
+    }
+
+    console.log(
+      `[EducationIntegration] Medication change detected for user ${user_id}. Refreshing recommendations...`
+    );
+
+    // Get user's cultural preferences for language
+    const culturalPrefs = await this.getUserCulturalPreferences(user_id);
+
+    // In production, this would:
+    // 1. Query new educational content related to medications
+    // 2. Update user's recommendation cache
+    // 3. Send notification if new content is available
+
+    const newContentCount = medication_ids.length; // Mock count
+
+    if (newContentCount > 0) {
+      console.log(
+        `[EducationIntegration] Found ${newContentCount} new content items. Language: ${culturalPrefs.primary_language}`
+      );
+
+      // In production, send notification via NotificationService
+      console.log(
+        `[EducationIntegration] Notification would be sent: "New Learning Content Available"`
+      );
+    }
+  }
+
+  /**
+   * Share educational content with family members
+   */
+  async shareContent(request: ShareContentRequest): Promise<ShareContentResponse> {
+    if (!this.initialized) {
+      throw new Error('EducationIntegrationService not initialized');
+    }
+
+    const { content_id, sender_user_id, recipient_user_ids, message } = request;
+
+    console.log(
+      `[EducationIntegration] Sharing content ${content_id} from ${sender_user_id} to ${recipient_user_ids.length} recipients`
+    );
+
+    const shared_with: string[] = [];
+    const failed: string[] = [];
+    let notifications_sent = 0;
+
+    // In production, this would:
+    // 1. Validate content exists
+    // 2. Validate recipients are in sender's family circle
+    // 3. Create share records in database
+    // 4. Send notifications to recipients
+
+    for (const recipient_id of recipient_user_ids) {
+      try {
+        // Mock successful share
+        shared_with.push(recipient_id);
+
+        // Get recipient's language preference for notification
+        const recipientPrefs = await this.getUserCulturalPreferences(recipient_id);
 
         // In production, send notification via NotificationService
-        // await this.sendNewContentNotification(userId, newContent);
+        console.log(
+          `[EducationIntegration] Notification to ${recipient_id} (${recipientPrefs.primary_language}): Content shared`
+        );
+
+        notifications_sent++;
+      } catch (error) {
+        console.error(`[EducationIntegration] Failed to share with ${recipient_id}:`, error);
+        failed.push(recipient_id);
       }
-    } catch (error) {
-      console.error('[EducationIntegration] Failed to process medication change:', error);
     }
+
+    return {
+      success: failed.length === 0,
+      shared_with,
+      failed,
+      notifications_sent
+    };
   }
 
   /**
-   * Get educational content by medication ID or generic name
+   * Get family member learning progress
    */
-  async getContentByMedication(medicationId: string, language?: string): Promise<EducationContent[]> {
-    try {
-      // In production, this would query database for content tagged with medication
-      console.log(`[EducationIntegration] Fetching content for medication ${medicationId}`);
-
-      // Mock implementation
-      return [];
-    } catch (error) {
-      console.error('[EducationIntegration] Failed to get content by medication:', error);
-      return [];
+  async getFamilyLearningProgress(user_id: string, family_member_ids: string[]): Promise<{
+    member_id: string;
+    progress: {
+      content_viewed: number;
+      quizzes_passed: number;
+      current_streak: number;
+      total_time_minutes: number;
+    };
+  }[]> {
+    if (!this.initialized) {
+      throw new Error('EducationIntegrationService not initialized');
     }
-  }
 
-  /**
-   * Get new content for specific medications
-   */
-  private async getNewContentForMedications(
-    medicationIds: string[],
-    language: string
-  ): Promise<EducationContent[]> {
-    try {
-      // Mock implementation
-      // In production, query database for content published recently
-      // that's tagged with any of the medication IDs
-      return [];
-    } catch (error) {
-      console.error('[EducationIntegration] Failed to get new content:', error);
-      return [];
-    }
-  }
+    console.log(`[EducationIntegration] Fetching learning progress for ${family_member_ids.length} family members`);
 
-  /**
-   * Setup daily learning reminders respecting cultural preferences
-   */
-  async setupDailyReminders(
-    userId: string,
-    preferredTime: string,
-    stateCode: string
-  ): Promise<void> {
-    try {
-      console.log(`[EducationIntegration] Setting up daily reminders for user ${userId}`);
-
-      // Parse preferred time (e.g., "09:00")
-      const [hours, minutes] = preferredTime.split(':').map(Number);
-      const reminderTime = new Date();
-      reminderTime.setHours(hours, minutes, 0, 0);
-
-      // Schedule reminder with prayer time respect
-      const request: ReminderScheduleRequest = {
-        user_id: userId,
-        preferred_time: reminderTime,
-        respect_prayer_times: true
-      };
-
-      const result = await this.learningReminderService.scheduleLearningReminder(request);
-
-      if (result.adjusted) {
-        console.log(`[EducationIntegration] Reminder adjusted for prayer time: ${result.adjustment_details?.reason}`);
-      }
-    } catch (error) {
-      console.error('[EducationIntegration] Failed to setup daily reminders:', error);
-    }
-  }
-
-  /**
-   * Get personalized content recommendations
-   */
-  async getPersonalizedRecommendations(
-    userId: string,
-    limit: number = 10
-  ): Promise<ContentRecommendation[]> {
-    try {
-      const preferences = await this.getUserPreferences(userId);
-      const language = preferences?.preferred_language || 'en';
-
-      console.log(`[EducationIntegration] Fetching recommendations for user ${userId} in ${language}`);
-
-      // In production, this would:
-      // 1. Analyze user's medications
-      // 2. Check adherence patterns
-      // 3. Review past learning history
-      // 4. Match with available content in preferred language
-      // 5. Score and rank recommendations
-
-      // Mock implementation
-      return [];
-    } catch (error) {
-      console.error('[EducationIntegration] Failed to get recommendations:', error);
-      return [];
-    }
-  }
-
-  /**
-   * Share educational content with family circle members
-   */
-  async shareContentWithFamily(
-    contentId: string,
-    senderId: string,
-    recipientIds: string[]
-  ): Promise<{ success: boolean; shared_count: number }> {
-    try {
-      console.log(`[EducationIntegration] Sharing content ${contentId} with ${recipientIds.length} family members`);
-
-      // In production, this would:
-      // 1. Validate family circle relationships
-      // 2. Create share records in database
-      // 3. Send notifications to recipients
-
-      return {
-        success: true,
-        shared_count: recipientIds.length
-      };
-    } catch (error) {
-      console.error('[EducationIntegration] Failed to share content:', error);
-      return {
-        success: false,
-        shared_count: 0
-      };
-    }
-  }
-
-  /**
-   * Get user's learning progress
-   */
-  async getUserProgress(userId: string): Promise<{
-    content_viewed: number;
-    quizzes_passed: number;
-    current_streak: number;
-    total_learning_minutes: number;
-    achievements: string[];
-  }> {
-    try {
-      console.log(`[EducationIntegration] Fetching learning progress for user ${userId}`);
-
-      // In production, query database for user's learning statistics
-      // Mock implementation
-      return {
+    // In production, this would query the progress tracking service
+    // Mock implementation returns empty progress
+    return family_member_ids.map(member_id => ({
+      member_id,
+      progress: {
         content_viewed: 0,
         quizzes_passed: 0,
         current_streak: 0,
-        total_learning_minutes: 0,
-        achievements: []
-      };
-    } catch (error) {
-      console.error('[EducationIntegration] Failed to get user progress:', error);
-      return {
-        content_viewed: 0,
-        quizzes_passed: 0,
-        current_streak: 0,
-        total_learning_minutes: 0,
-        achievements: []
-      };
-    }
+        total_time_minutes: 0
+      }
+    }));
   }
 
   /**
-   * Get optimal learning times for user
+   * Schedule culturally-aware learning reminder
    */
-  async getOptimalLearningTimes(
-    userId: string,
-    stateCode: string,
+  async scheduleCulturallyAwareReminder(
+    user_id: string,
+    preferred_time: string,
     date?: Date
-  ): Promise<Array<{ start: string; end: string; label: string }>> {
-    try {
-      const targetDate = date || new Date();
-      return await this.learningReminderService.getOptimalLearningTimes(
-        userId,
-        targetDate,
-        stateCode
+  ): Promise<{
+    reminder_id: string;
+    scheduled_time: string;
+    was_adjusted: boolean;
+    adjustment_reason?: string;
+  }> {
+    if (!this.initialized) {
+      throw new Error('EducationIntegrationService not initialized');
+    }
+
+    // Get user's cultural preferences
+    const culturalPrefs = await this.getUserCulturalPreferences(user_id);
+
+    // Get culturally appropriate greeting for notification
+    const greeting = this.getCulturalGreeting(culturalPrefs.primary_language);
+
+    // Schedule reminder with prayer time awareness
+    const response = await this.reminderService.scheduleLearningReminder({
+      user_id,
+      preferred_time,
+      title: greeting,
+      body: 'Continue your health education journey',
+      date
+    });
+
+    return {
+      reminder_id: response.reminder.id,
+      scheduled_time: response.reminder.actual_time,
+      was_adjusted: response.was_adjusted,
+      adjustment_reason: response.adjustment_details?.reason
+    };
+  }
+
+  /**
+   * Get culturally appropriate greeting
+   */
+  private getCulturalGreeting(language: string): string {
+    const greetings: Record<string, string> = {
+      ms: 'Masa untuk Belajar',
+      en: 'Time to Learn',
+      zh: '学习时间',
+      ta: 'கற்கும் நேரம்'
+    };
+
+    return greetings[language] || greetings.en;
+  }
+
+  /**
+   * Get user's cultural preferences
+   */
+  private async getUserCulturalPreferences(user_id: string): Promise<CulturalPreferences> {
+    // In production, this would fetch from database
+    // For now, create a default profile
+    const defaultPrefs = await this.culturalService.createCulturalProfile({
+      user_id,
+      religion: 'Islam',
+      primary_language: 'ms',
+      state_code: 'KUL',
+      region: 'Kuala Lumpur',
+      prayer_time_notifications: true,
+      cultural_calendar_integration: true,
+      halal_requirements: true
+    });
+
+    return defaultPrefs;
+  }
+
+  /**
+   * Apply language preference to content query
+   */
+  async applyLanguageFilter(
+    content_items: EducationContentMetadata[],
+    user_id: string
+  ): Promise<EducationContentMetadata[]> {
+    const culturalPrefs = await this.getUserCulturalPreferences(user_id);
+    const preferredLanguage = culturalPrefs.primary_language;
+
+    // Filter content by language preference
+    const filteredContent = content_items.filter(
+      item => item.language === preferredLanguage
+    );
+
+    // If no content in preferred language, include secondary languages
+    if (filteredContent.length === 0 && culturalPrefs.secondary_languages.length > 0) {
+      return content_items.filter(
+        item => culturalPrefs.secondary_languages.includes(item.language)
       );
-    } catch (error) {
-      console.error('[EducationIntegration] Failed to get optimal learning times:', error);
-      return [];
     }
+
+    return filteredContent;
   }
 
   /**
-   * Get user education preferences with cultural context
+   * Get cultural context for educational content display
    */
-  async getUserPreferences(userId: string): Promise<UserEducationPreferences | null> {
-    try {
-      // In production, fetch from database
-      // For now, return null
-      return null;
-    } catch (error) {
-      console.error('[EducationIntegration] Failed to get user preferences:', error);
-      return null;
+  async getCulturalContext(user_id: string): Promise<{
+    language: string;
+    show_prayer_times: boolean;
+    halal_sensitive: boolean;
+    greeting: string;
+  }> {
+    if (!this.initialized) {
+      throw new Error('EducationIntegrationService not initialized');
     }
+
+    const culturalPrefs = await this.getUserCulturalPreferences(user_id);
+
+    return {
+      language: culturalPrefs.primary_language,
+      show_prayer_times: culturalPrefs.prayer_time_notifications && culturalPrefs.religion === 'Islam',
+      halal_sensitive: culturalPrefs.halal_requirements,
+      greeting: this.getCulturalGreeting(culturalPrefs.primary_language)
+    };
   }
 
   /**
-   * Update user education preferences
+   * Check if service is initialized
    */
-  async updateUserPreferences(
-    userId: string,
-    preferences: Partial<UserEducationPreferences>
-  ): Promise<boolean> {
-    try {
-      console.log(`[EducationIntegration] Updating preferences for user ${userId}`);
-
-      // In production, update database
-      // If reminder time changed, reschedule reminders
-      if (preferences.reminder_time && preferences.daily_reminder_enabled) {
-        // Reschedule daily reminders
-        // await this.setupDailyReminders(userId, preferences.reminder_time, stateCode);
-      }
-
-      return true;
-    } catch (error) {
-      console.error('[EducationIntegration] Failed to update preferences:', error);
-      return false;
-    }
+  isInitialized(): boolean {
+    return this.initialized;
   }
 
   /**
-   * Track content view for analytics
+   * Get service status
    */
-  async trackContentView(
-    userId: string,
-    contentId: string,
-    durationSeconds: number
-  ): Promise<void> {
-    try {
-      console.log(`[EducationIntegration] User ${userId} viewed content ${contentId} for ${durationSeconds}s`);
-
-      // In production, store in analytics database
-      // Update user's learning streak
-      // Check for achievement unlocks
-    } catch (error) {
-      console.error('[EducationIntegration] Failed to track content view:', error);
-    }
-  }
-
-  /**
-   * Get content in user's preferred language
-   */
-  async getContentInPreferredLanguage(
-    contentId: string,
-    userId: string
-  ): Promise<EducationContent | null> {
-    try {
-      const preferences = await this.getUserPreferences(userId);
-      const language = preferences?.preferred_language || 'en';
-
-      console.log(`[EducationIntegration] Fetching content ${contentId} in language ${language}`);
-
-      // In production, query database for content in specified language
-      // If not available, return English version with translation notice
-      return null;
-    } catch (error) {
-      console.error('[EducationIntegration] Failed to get content in preferred language:', error);
-      return null;
-    }
-  }
-
-  /**
-   * Get categories in user's preferred language
-   */
-  async getCategoriesInLanguage(language: 'ms' | 'en' | 'zh' | 'ta'): Promise<Array<{
-    id: string;
-    name: string;
-    description: string;
-    icon: string;
-    content_count: number;
-  }>> {
-    try {
-      console.log(`[EducationIntegration] Fetching categories in ${language}`);
-
-      // In production, query database for categories with translations
-      return [];
-    } catch (error) {
-      console.error('[EducationIntegration] Failed to get categories:', error);
-      return [];
-    }
+  getServiceStatus(): {
+    initialized: boolean;
+    cultural_service: boolean;
+    reminder_service: boolean;
+  } {
+    return {
+      initialized: this.initialized,
+      cultural_service: this.culturalService.isInitialized(),
+      reminder_service: true // LearningReminderService doesn't expose isInitialized
+    };
   }
 }
 

@@ -1,7 +1,7 @@
 /**
  * Learning Reminder Service
- * Manages educational content reminders with cultural intelligence
- * Respects prayer times for Muslim users and adjusts scheduling accordingly
+ * Schedules learning reminders while respecting cultural preferences
+ * Integrates with prayer times to avoid scheduling conflicts
  */
 
 import { PrayerTimeService, PrayerTimes } from '../cultural/prayerTimeService';
@@ -10,179 +10,153 @@ import { CulturalPreferenceService, CulturalPreferences } from '../cultural/cult
 export interface LearningReminder {
   id: string;
   user_id: string;
-  content_id?: string;
-  scheduled_time: Date;
-  original_time?: Date;
+  preferred_time: string; // HH:mm format
+  actual_time: string; // HH:mm format (may differ from preferred if adjusted)
+  title: string;
+  body: string;
+  scheduled_for: Date;
   adjusted_for_prayer: boolean;
-  notification_sent: boolean;
-  metadata?: {
-    prayer_conflict?: string;
-    adjustment_reason?: string;
-  };
+  adjustment_reason?: string;
   created_at: Date;
   updated_at: Date;
 }
 
-export interface ReminderScheduleRequest {
+export interface ScheduleReminderRequest {
   user_id: string;
-  preferred_time: Date;
-  content_id?: string;
-  respect_prayer_times?: boolean;
+  preferred_time: string; // HH:mm format
+  title?: string;
+  body?: string;
+  date?: Date; // Defaults to today
 }
 
-export interface ReminderScheduleResult {
+export interface ScheduleReminderResponse {
   reminder: LearningReminder;
-  adjusted: boolean;
+  was_adjusted: boolean;
   adjustment_details?: {
-    original_time: Date;
-    adjusted_time: Date;
+    original_time: string;
+    adjusted_time: string;
     reason: string;
     conflicting_prayer?: string;
   };
 }
 
 export class LearningReminderService {
-  private prayerTimeService: PrayerTimeService;
-  private culturalPreferenceService: CulturalPreferenceService;
+  private culturalService: CulturalPreferenceService;
+  private prayerService: PrayerTimeService;
   private readonly PRAYER_BUFFER_MINUTES = 30;
-  private readonly POST_PRAYER_DELAY_MINUTES = 15;
+  private reminders: Map<string, LearningReminder> = new Map();
 
-  constructor() {
-    this.prayerTimeService = new PrayerTimeService();
-    this.culturalPreferenceService = new CulturalPreferenceService();
+  constructor(
+    culturalService?: CulturalPreferenceService,
+    prayerService?: PrayerTimeService
+  ) {
+    this.culturalService = culturalService || new CulturalPreferenceService();
+    this.prayerService = prayerService || new PrayerTimeService();
+  }
+
+  /**
+   * Initialize the service
+   */
+  async initialize(): Promise<void> {
+    if (!this.culturalService.isInitialized()) {
+      await this.culturalService.initialize();
+    }
   }
 
   /**
    * Schedule learning reminder respecting cultural preferences
    */
-  async scheduleLearningReminder(request: ReminderScheduleRequest): Promise<ReminderScheduleResult> {
-    const { user_id, preferred_time, content_id, respect_prayer_times = true } = request;
+  async scheduleLearningReminder(request: ScheduleReminderRequest): Promise<ScheduleReminderResponse> {
+    const { user_id, preferred_time, title, body, date } = request;
 
     // Get user's cultural preferences
     const culturalPrefs = await this.getUserCulturalPreferences(user_id);
 
-    // Create base reminder
-    const reminder: LearningReminder = {
-      id: this.generateReminderId(),
-      user_id,
-      content_id,
-      scheduled_time: preferred_time,
-      adjusted_for_prayer: false,
-      notification_sent: false,
-      created_at: new Date(),
-      updated_at: new Date()
-    };
+    // Default reminder content
+    const reminderTitle = title || 'Time to Learn';
+    const reminderBody = body || 'Continue your health education journey';
 
-    // If user is Muslim and prayer time respect is enabled
-    if (culturalPrefs?.religion === 'Islam' && respect_prayer_times && culturalPrefs.prayer_time_notifications) {
-      const adjustmentResult = await this.adjustForPrayerTime(
-        preferred_time,
-        culturalPrefs.state_code
+    // Target date for the reminder
+    const targetDate = date || new Date();
+
+    // Check if user is Muslim and respects prayer times
+    if (culturalPrefs.religion === 'Islam' && culturalPrefs.prayer_time_notifications) {
+      // Get prayer times for the user's state
+      const prayerTimes = await this.prayerService.getPrayerTimes(
+        culturalPrefs.state_code,
+        targetDate
       );
 
-      if (adjustmentResult.adjusted) {
-        reminder.scheduled_time = adjustmentResult.adjusted_time;
-        reminder.original_time = preferred_time;
-        reminder.adjusted_for_prayer = true;
-        reminder.metadata = {
-          prayer_conflict: adjustmentResult.conflicting_prayer,
-          adjustment_reason: adjustmentResult.reason
-        };
+      // Check if preferred time conflicts with prayer time
+      const conflict = this.checkPrayerTimeConflict(preferred_time, prayerTimes.prayer_times);
 
-        console.log(`[LearningReminder] Adjusted reminder from ${this.formatTime(preferred_time)} to ${this.formatTime(adjustmentResult.adjusted_time)} to respect ${adjustmentResult.conflicting_prayer} prayer time`);
+      if (conflict) {
+        // Adjust reminder to after prayer time
+        const adjustedTime = this.adjustForPrayerTime(
+          preferred_time,
+          prayerTimes.prayer_times,
+          conflict.prayer_name
+        );
+
+        const reminder = this.createReminder({
+          user_id,
+          preferred_time,
+          actual_time: adjustedTime,
+          title: reminderTitle,
+          body: reminderBody,
+          scheduled_for: this.combineDateAndTime(targetDate, adjustedTime),
+          adjusted_for_prayer: true,
+          adjustment_reason: `Adjusted to respect ${conflict.prayer_name} prayer time (${conflict.prayer_time})`
+        });
+
+        console.log(
+          `[LearningReminder] Adjusted reminder from ${preferred_time} to ${adjustedTime} to respect ${conflict.prayer_name} prayer time`
+        );
+
+        this.reminders.set(reminder.id, reminder);
 
         return {
           reminder,
-          adjusted: true,
+          was_adjusted: true,
           adjustment_details: {
             original_time: preferred_time,
-            adjusted_time: adjustmentResult.adjusted_time,
-            reason: adjustmentResult.reason,
-            conflicting_prayer: adjustmentResult.conflicting_prayer
+            adjusted_time: adjustedTime,
+            reason: `Reminder adjusted to avoid conflict with ${conflict.prayer_name} prayer time`,
+            conflicting_prayer: conflict.prayer_name
           }
         };
       }
     }
 
-    // No adjustment needed
+    // No conflict, schedule as requested
+    const reminder = this.createReminder({
+      user_id,
+      preferred_time,
+      actual_time: preferred_time,
+      title: reminderTitle,
+      body: reminderBody,
+      scheduled_for: this.combineDateAndTime(targetDate, preferred_time),
+      adjusted_for_prayer: false
+    });
+
+    this.reminders.set(reminder.id, reminder);
+
     return {
       reminder,
-      adjusted: false
+      was_adjusted: false
     };
   }
 
   /**
-   * Check if preferred time conflicts with prayer time
+   * Check if reminder falls within prayer time buffer
    */
-  async checkPrayerTimeConflict(
-    time: Date,
-    stateCode: string
-  ): Promise<{
-    has_conflict: boolean;
-    conflicting_prayer?: string;
-    prayer_time?: string;
-    minutes_until_prayer?: number;
-  }> {
-    try {
-      const prayerTimes = await this.prayerTimeService.getPrayerTimes(stateCode, time);
-      const conflict = this.findPrayerConflict(time, prayerTimes.prayer_times);
-
-      return conflict;
-    } catch (error) {
-      console.error('[LearningReminder] Failed to check prayer time conflict:', error);
-      return { has_conflict: false };
-    }
-  }
-
-  /**
-   * Adjust reminder time if it conflicts with prayer time
-   */
-  private async adjustForPrayerTime(
-    time: Date,
-    stateCode: string
-  ): Promise<{
-    adjusted: boolean;
-    adjusted_time: Date;
-    conflicting_prayer?: string;
-    reason: string;
-  }> {
-    const conflict = await this.checkPrayerTimeConflict(time, stateCode);
-
-    if (!conflict.has_conflict) {
-      return {
-        adjusted: false,
-        adjusted_time: time,
-        reason: 'No prayer time conflict detected'
-      };
-    }
-
-    // Adjust to after prayer time with buffer
-    const prayerTimes = await this.prayerTimeService.getPrayerTimes(stateCode, time);
-    const adjustedTime = this.calculateAdjustedTime(time, prayerTimes.prayer_times, conflict.conflicting_prayer!);
-
-    return {
-      adjusted: true,
-      adjusted_time: adjustedTime,
-      conflicting_prayer: conflict.conflicting_prayer,
-      reason: `Reminder conflicts with ${conflict.conflicting_prayer} prayer time (±${this.PRAYER_BUFFER_MINUTES} min buffer). Adjusted to ${this.POST_PRAYER_DELAY_MINUTES} minutes after prayer.`
-    };
-  }
-
-  /**
-   * Find if time conflicts with any prayer time
-   */
-  private findPrayerConflict(
-    time: Date,
+  checkPrayerTimeConflict(
+    reminderTime: string,
     prayerTimes: PrayerTimes
-  ): {
-    has_conflict: boolean;
-    conflicting_prayer?: string;
-    prayer_time?: string;
-    minutes_until_prayer?: number;
-  } {
-    const timeMinutes = time.getHours() * 60 + time.getMinutes();
+  ): { conflicts: boolean; prayer_name: string; prayer_time: string } | null {
+    const reminderMinutes = this.timeToMinutes(reminderTime);
 
-    const prayers: Array<{ name: string; time: string }> = [
+    const prayers = [
       { name: 'Fajr', time: prayerTimes.fajr },
       { name: 'Dhuhr', time: prayerTimes.dhuhr },
       { name: 'Asr', time: prayerTimes.asr },
@@ -191,195 +165,191 @@ export class LearningReminderService {
     ];
 
     for (const prayer of prayers) {
-      const [prayerHour, prayerMinute] = prayer.time.split(':').map(Number);
-      const prayerMinutes = prayerHour * 60 + prayerMinute;
-      const diffMinutes = Math.abs(timeMinutes - prayerMinutes);
+      const prayerMinutes = this.timeToMinutes(prayer.time);
+      const diffMinutes = Math.abs(reminderMinutes - prayerMinutes);
 
       if (diffMinutes <= this.PRAYER_BUFFER_MINUTES) {
         return {
-          has_conflict: true,
-          conflicting_prayer: prayer.name,
-          prayer_time: prayer.time,
-          minutes_until_prayer: prayerMinutes - timeMinutes
+          conflicts: true,
+          prayer_name: prayer.name,
+          prayer_time: prayer.time
         };
       }
     }
 
-    return { has_conflict: false };
+    return null;
   }
 
   /**
-   * Calculate adjusted time after prayer
+   * Adjust reminder time to after prayer time
    */
-  private calculateAdjustedTime(
-    originalTime: Date,
+  adjustForPrayerTime(
+    preferredTime: string,
     prayerTimes: PrayerTimes,
     conflictingPrayer: string
-  ): Date {
-    const prayerTimeMap: Record<string, string> = {
-      'Fajr': prayerTimes.fajr,
-      'Dhuhr': prayerTimes.dhuhr,
-      'Asr': prayerTimes.asr,
-      'Maghrib': prayerTimes.maghrib,
-      'Isha': prayerTimes.isha
-    };
+  ): string {
+    const preferredMinutes = this.timeToMinutes(preferredTime);
 
-    const prayerTimeStr = prayerTimeMap[conflictingPrayer];
-    if (!prayerTimeStr) {
-      return originalTime;
+    const prayers = [
+      { name: 'Fajr', time: prayerTimes.fajr },
+      { name: 'Dhuhr', time: prayerTimes.dhuhr },
+      { name: 'Asr', time: prayerTimes.asr },
+      { name: 'Maghrib', time: prayerTimes.maghrib },
+      { name: 'Isha', time: prayerTimes.isha }
+    ];
+
+    // Find the conflicting prayer
+    const conflictingPrayerObj = prayers.find(p => p.name === conflictingPrayer);
+    if (!conflictingPrayerObj) {
+      return preferredTime;
     }
 
-    const [prayerHour, prayerMinute] = prayerTimeStr.split(':').map(Number);
+    const prayerMinutes = this.timeToMinutes(conflictingPrayerObj.time);
 
-    // Create new date with same day but adjusted time
-    const adjustedTime = new Date(originalTime);
-    adjustedTime.setHours(prayerHour, prayerMinute, 0, 0);
+    // If reminder is before or during prayer time, schedule after prayer + buffer
+    if (preferredMinutes <= prayerMinutes + this.PRAYER_BUFFER_MINUTES) {
+      const adjustedMinutes = prayerMinutes + this.PRAYER_BUFFER_MINUTES;
+      return this.minutesToTime(adjustedMinutes);
+    }
 
-    // Add post-prayer delay
-    adjustedTime.setMinutes(adjustedTime.getMinutes() + this.POST_PRAYER_DELAY_MINUTES);
-
-    return adjustedTime;
+    // If reminder is after prayer time but within buffer, push it further
+    const adjustedMinutes = prayerMinutes + this.PRAYER_BUFFER_MINUTES;
+    return this.minutesToTime(adjustedMinutes);
   }
 
   /**
-   * Get user's cultural preferences (mock implementation)
-   * In production, this would fetch from database
+   * Get user's reminders
    */
-  private async getUserCulturalPreferences(userId: string): Promise<CulturalPreferences | null> {
-    try {
-      // Mock implementation - in production, fetch from database
-      // For now, return null to indicate no preferences found
-      // The actual implementation would use the culturalPreferenceService
-      return null;
-    } catch (error) {
-      console.error('[LearningReminder] Failed to get cultural preferences:', error);
-      return null;
-    }
-  }
+  async getUserReminders(user_id: string): Promise<LearningReminder[]> {
+    const userReminders: LearningReminder[] = [];
 
-  /**
-   * Batch schedule multiple reminders
-   */
-  async batchScheduleReminders(
-    requests: ReminderScheduleRequest[]
-  ): Promise<ReminderScheduleResult[]> {
-    const results: ReminderScheduleResult[] = [];
-
-    for (const request of requests) {
-      try {
-        const result = await this.scheduleLearningReminder(request);
-        results.push(result);
-      } catch (error) {
-        console.error('[LearningReminder] Failed to schedule reminder:', error);
-        // Continue with other reminders even if one fails
+    for (const reminder of this.reminders.values()) {
+      if (reminder.user_id === user_id) {
+        userReminders.push(reminder);
       }
     }
 
-    return results;
+    return userReminders.sort((a, b) =>
+      a.scheduled_for.getTime() - b.scheduled_for.getTime()
+    );
   }
 
   /**
-   * Get optimal learning times for a user
-   * Returns time slots that avoid prayer times
+   * Get reminder by ID
    */
-  async getOptimalLearningTimes(
-    userId: string,
-    date: Date,
-    stateCode: string
-  ): Promise<Array<{ start: string; end: string; label: string }>> {
-    try {
-      const prayerTimes = await this.prayerTimeService.getPrayerTimes(stateCode, date);
-      const optimalTimes: Array<{ start: string; end: string; label: string }> = [];
-
-      // Morning slot (after Fajr, before Dhuhr)
-      const fajrHour = parseInt(prayerTimes.prayer_times.fajr.split(':')[0]);
-      const dhuhrHour = parseInt(prayerTimes.prayer_times.dhuhr.split(':')[0]);
-
-      if (fajrHour + 1 < dhuhrHour - 1) {
-        optimalTimes.push({
-          start: `${String(fajrHour + 1).padStart(2, '0')}:00`,
-          end: `${String(dhuhrHour - 1).padStart(2, '0')}:00`,
-          label: 'Morning Learning Window'
-        });
-      }
-
-      // Afternoon slot (after Dhuhr, before Asr)
-      const asrHour = parseInt(prayerTimes.prayer_times.asr.split(':')[0]);
-
-      if (dhuhrHour + 1 < asrHour - 1) {
-        optimalTimes.push({
-          start: `${String(dhuhrHour + 1).padStart(2, '0')}:00`,
-          end: `${String(asrHour - 1).padStart(2, '0')}:00`,
-          label: 'Afternoon Learning Window'
-        });
-      }
-
-      // Evening slot (after Maghrib, before Isha)
-      const maghribHour = parseInt(prayerTimes.prayer_times.maghrib.split(':')[0]);
-      const ishaHour = parseInt(prayerTimes.prayer_times.isha.split(':')[0]);
-
-      if (maghribHour + 1 < ishaHour) {
-        optimalTimes.push({
-          start: `${String(maghribHour + 1).padStart(2, '0')}:00`,
-          end: `${String(ishaHour).padStart(2, '0')}:00`,
-          label: 'Evening Learning Window'
-        });
-      }
-
-      return optimalTimes;
-    } catch (error) {
-      console.error('[LearningReminder] Failed to get optimal learning times:', error);
-      return [];
-    }
+  async getReminder(id: string): Promise<LearningReminder | null> {
+    return this.reminders.get(id) || null;
   }
 
   /**
-   * Cancel a scheduled reminder
+   * Cancel reminder
    */
-  async cancelReminder(reminderId: string): Promise<boolean> {
-    try {
-      // In production, this would update database
-      console.log(`[LearningReminder] Cancelled reminder ${reminderId}`);
-      return true;
-    } catch (error) {
-      console.error('[LearningReminder] Failed to cancel reminder:', error);
-      return false;
-    }
+  async cancelReminder(id: string): Promise<boolean> {
+    return this.reminders.delete(id);
   }
 
   /**
-   * Reschedule an existing reminder
+   * Get upcoming reminders for a user
    */
-  async rescheduleReminder(
-    reminderId: string,
-    newTime: Date
-  ): Promise<ReminderScheduleResult | null> {
-    try {
-      // In production, fetch existing reminder from database
-      // For now, create new schedule request
-      console.log(`[LearningReminder] Rescheduling reminder ${reminderId} to ${this.formatTime(newTime)}`);
+  async getUpcomingReminders(user_id: string, limit: number = 5): Promise<LearningReminder[]> {
+    const now = new Date();
+    const userReminders = await this.getUserReminders(user_id);
 
-      // This would need the userId from the existing reminder
-      // Simplified for now
-      return null;
-    } catch (error) {
-      console.error('[LearningReminder] Failed to reschedule reminder:', error);
-      return null;
-    }
+    return userReminders
+      .filter(r => r.scheduled_for > now)
+      .slice(0, limit);
   }
 
-  // Helper methods
+  // Private helper methods
 
-  private generateReminderId(): string {
-    return `reminder_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
-  }
-
-  private formatTime(date: Date): string {
-    return date.toLocaleTimeString('en-US', {
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: false
+  private async getUserCulturalPreferences(user_id: string): Promise<CulturalPreferences> {
+    // In production, this would fetch from database
+    // For now, create a default profile
+    const defaultPrefs = await this.culturalService.createCulturalProfile({
+      user_id,
+      religion: 'Islam',
+      primary_language: 'ms',
+      state_code: 'KUL',
+      region: 'Kuala Lumpur',
+      prayer_time_notifications: true
     });
+
+    return defaultPrefs;
+  }
+
+  private createReminder(data: {
+    user_id: string;
+    preferred_time: string;
+    actual_time: string;
+    title: string;
+    body: string;
+    scheduled_for: Date;
+    adjusted_for_prayer: boolean;
+    adjustment_reason?: string;
+  }): LearningReminder {
+    return {
+      id: this.generateId(),
+      user_id: data.user_id,
+      preferred_time: data.preferred_time,
+      actual_time: data.actual_time,
+      title: data.title,
+      body: data.body,
+      scheduled_for: data.scheduled_for,
+      adjusted_for_prayer: data.adjusted_for_prayer,
+      adjustment_reason: data.adjustment_reason,
+      created_at: new Date(),
+      updated_at: new Date()
+    };
+  }
+
+  private timeToMinutes(time: string): number {
+    const [hours, minutes] = time.split(':').map(Number);
+    return hours * 60 + minutes;
+  }
+
+  private minutesToTime(minutes: number): string {
+    const hours = Math.floor(minutes / 60) % 24;
+    const mins = minutes % 60;
+    return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
+  }
+
+  private combineDateAndTime(date: Date, time: string): Date {
+    const [hours, minutes] = time.split(':').map(Number);
+    const result = new Date(date);
+    result.setHours(hours, minutes, 0, 0);
+    return result;
+  }
+
+  private generateId(): string {
+    return `reminder_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  }
+
+  /**
+   * Get service statistics
+   */
+  getStats(): {
+    total_reminders: number;
+    adjusted_reminders: number;
+    active_reminders: number;
+  } {
+    const now = new Date();
+    let adjusted = 0;
+    let active = 0;
+
+    for (const reminder of this.reminders.values()) {
+      if (reminder.adjusted_for_prayer) {
+        adjusted++;
+      }
+      if (reminder.scheduled_for > now) {
+        active++;
+      }
+    }
+
+    return {
+      total_reminders: this.reminders.size,
+      adjusted_reminders: adjusted,
+      active_reminders: active
+    };
   }
 }
 

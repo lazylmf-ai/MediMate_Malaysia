@@ -12,6 +12,7 @@ import HomeScreen from '@/screens/HomeScreen';
 import MedicationsScreen from '@/screens/MedicationsScreen';
 import FamilyScreen from '@/screens/FamilyScreen';
 import ProfileScreen from '@/screens/ProfileScreen';
+import EducationNavigator from './EducationNavigator';
 import { useAppSelector } from '@/store/hooks';
 import { COLORS } from '@/constants/config';
 import type { MainTabParamList } from '@/types/navigation';
@@ -24,12 +25,13 @@ export default function MainNavigator() {
   // Get culturally appropriate labels
   const getTabLabels = () => {
     const language = profile?.language || 'en';
-    
+
     switch (language) {
       case 'ms':
         return {
           Home: 'Utama',
           Medications: 'Ubat',
+          Education: 'Belajar',
           Family: 'Keluarga',
           Profile: 'Profil',
         };
@@ -37,6 +39,7 @@ export default function MainNavigator() {
         return {
           Home: '首页',
           Medications: '药物',
+          Education: '学习',
           Family: '家庭',
           Profile: '个人资料',
         };
@@ -44,6 +47,7 @@ export default function MainNavigator() {
         return {
           Home: 'முகப்பு',
           Medications: 'மருந்துகள்',
+          Education: 'கற்றல்',
           Family: 'குடும்பம்',
           Profile: 'சுயவிவரம்',
         };
@@ -51,6 +55,7 @@ export default function MainNavigator() {
         return {
           Home: 'Home',
           Medications: 'Medications',
+          Education: 'Learn',
           Family: 'Family',
           Profile: 'Profile',
         };
@@ -116,7 +121,21 @@ export default function MainNavigator() {
           },
         }}
       />
-      
+
+      <Tab.Screen
+        name="Education"
+        component={EducationNavigator}
+        options={{
+          title: labels.Education,
+          headerTitle: labels.Education,
+          headerShown: false,
+          tabBarIcon: ({ focused, color }) => {
+            // TODO: Add proper icons in future tasks
+            return null;
+          },
+        }}
+      />
+
       <Tab.Screen
         name="Family"
         component={FamilyScreen}

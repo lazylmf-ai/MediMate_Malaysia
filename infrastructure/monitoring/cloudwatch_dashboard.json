@@ -1,0 +1,447 @@
+{
+  "dashboardName": "MediMate-EducationHub-Production",
+  "description": "Comprehensive monitoring dashboard for Education Hub with key performance indicators, error tracking, and user engagement metrics",
+  "widgets": [
+    {
+      "type": "metric",
+      "properties": {
+        "title": "API Response Time (p50, p95, p99)",
+        "metrics": [
+          ["AWS/ApplicationELB", "TargetResponseTime", {"stat": "p50", "label": "p50"}],
+          ["...", {"stat": "p95", "label": "p95"}],
+          ["...", {"stat": "p99", "label": "p99"}]
+        ],
+        "view": "timeSeries",
+        "region": "ap-southeast-1",
+        "period": 300,
+        "yAxis": {
+          "left": {
+            "min": 0,
+            "max": 3000,
+            "label": "Milliseconds"
+          }
+        },
+        "annotations": {
+          "horizontal": [
+            {
+              "label": "Warning Threshold",
+              "value": 2000,
+              "color": "#ff9900"
+            },
+            {
+              "label": "Critical Threshold",
+              "value": 3000,
+              "color": "#d13212"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "type": "metric",
+      "properties": {
+        "title": "API Error Rate",
+        "metrics": [
+          [
+            {
+              "expression": "(m2/m1)*100",
+              "label": "Error Rate %",
+              "id": "e1"
+            }
+          ],
+          ["AWS/ApplicationELB", "RequestCount", {"id": "m1", "visible": false}],
+          [".", "HTTPCode_Target_5XX_Count", {"id": "m2", "visible": false}]
+        ],
+        "view": "timeSeries",
+        "region": "ap-southeast-1",
+        "period": 300,
+        "yAxis": {
+          "left": {
+            "min": 0,
+            "max": 5,
+            "label": "Error Rate %"
+          }
+        },
+        "annotations": {
+          "horizontal": [
+            {
+              "label": "Warning (0.5%)",
+              "value": 0.5,
+              "color": "#ff9900"
+            },
+            {
+              "label": "Critical (1%)",
+              "value": 1,
+              "color": "#d13212"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "type": "metric",
+      "properties": {
+        "title": "Content API Performance",
+        "metrics": [
+          ["MediMate/EducationHub", "ContentListDuration", {"stat": "Average"}],
+          [".", "ContentDetailDuration", {"stat": "Average"}],
+          [".", "SearchDuration", {"stat": "Average"}],
+          [".", "RecommendationDuration", {"stat": "Average"}]
+        ],
+        "view": "timeSeries",
+        "region": "ap-southeast-1",
+        "period": 300,
+        "yAxis": {
+          "left": {
+            "min": 0,
+            "label": "Milliseconds"
+          }
+        },
+        "annotations": {
+          "horizontal": [
+            {
+              "label": "Target (1s)",
+              "value": 1000,
+              "color": "#2ca02c"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "type": "metric",
+      "properties": {
+        "title": "Database Query Performance",
+        "metrics": [
+          ["MediMate/EducationHub", "DatabaseQueryDuration", {"stat": "p50"}],
+          ["...", {"stat": "p95"}],
+          ["...", {"stat": "p99"}]
+        ],
+        "view": "timeSeries",
+        "region": "ap-southeast-1",
+        "period": 300,
+        "yAxis": {
+          "left": {
+            "min": 0,
+            "label": "Milliseconds"
+          }
+        }
+      }
+    },
+    {
+      "type": "metric",
+      "properties": {
+        "title": "Active Users (Daily/Weekly/Monthly)",
+        "metrics": [
+          ["MediMate/EducationHub", "DailyActiveUsers", {"stat": "Sum"}],
+          [".", "WeeklyActiveUsers", {"stat": "Sum"}],
+          [".", "MonthlyActiveUsers", {"stat": "Sum"}]
+        ],
+        "view": "timeSeries",
+        "region": "ap-southeast-1",
+        "period": 86400,
+        "yAxis": {
+          "left": {
+            "min": 0,
+            "label": "Users"
+          }
+        }
+      }
+    },
+    {
+      "type": "metric",
+      "properties": {
+        "title": "Content Engagement Metrics",
+        "metrics": [
+          ["MediMate/EducationHub", "ContentViews", {"stat": "Sum"}],
+          [".", "ContentCompletions", {"stat": "Sum"}],
+          [".", "QuizAttempts", {"stat": "Sum"}],
+          [".", "QuizCompletions", {"stat": "Sum"}]
+        ],
+        "view": "timeSeries",
+        "region": "ap-southeast-1",
+        "period": 3600,
+        "yAxis": {
+          "left": {
+            "min": 0,
+            "label": "Count"
+          }
+        }
+      }
+    },
+    {
+      "type": "metric",
+      "properties": {
+        "title": "Video Playback Metrics",
+        "metrics": [
+          ["MediMate/EducationHub", "VideoPlaybackStarts", {"stat": "Sum"}],
+          [".", "VideoPlaybackCompletions", {"stat": "Sum"}],
+          [".", "VideoPlaybackErrors", {"stat": "Sum"}],
+          [
+            {
+              "expression": "(m3/m1)*100",
+              "label": "Error Rate %",
+              "id": "e1"
+            }
+          ]
+        ],
+        "view": "timeSeries",
+        "region": "ap-southeast-1",
+        "period": 3600,
+        "annotations": {
+          "horizontal": [
+            {
+              "label": "Warning (5%)",
+              "value": 5,
+              "color": "#ff9900"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "type": "metric",
+      "properties": {
+        "title": "CDN Performance",
+        "metrics": [
+          ["AWS/CloudFront", "Requests", {"stat": "Sum"}],
+          [".", "BytesDownloaded", {"stat": "Sum"}],
+          [
+            {
+              "expression": "(m1/(m1+m2))*100",
+              "label": "Cache Hit Rate %",
+              "id": "e1"
+            }
+          ],
+          ["AWS/CloudFront", "CacheHitRate", {"id": "m1", "visible": false}],
+          [".", "CacheMissRate", {"id": "m2", "visible": false}]
+        ],
+        "view": "timeSeries",
+        "region": "ap-southeast-1",
+        "period": 300,
+        "annotations": {
+          "horizontal": [
+            {
+              "label": "Target Cache Hit Rate (90%)",
+              "value": 90,
+              "color": "#2ca02c"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "type": "metric",
+      "properties": {
+        "title": "Memory and CPU Utilization",
+        "metrics": [
+          ["AWS/ECS", "MemoryUtilization", {"stat": "Average"}],
+          [".", "CPUUtilization", {"stat": "Average"}]
+        ],
+        "view": "timeSeries",
+        "region": "ap-southeast-1",
+        "period": 300,
+        "yAxis": {
+          "left": {
+            "min": 0,
+            "max": 100,
+            "label": "Percentage"
+          }
+        },
+        "annotations": {
+          "horizontal": [
+            {
+              "label": "Warning (80%)",
+              "value": 80,
+              "color": "#ff9900"
+            },
+            {
+              "label": "Critical (90%)",
+              "value": 90,
+              "color": "#d13212"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "type": "metric",
+      "properties": {
+        "title": "Error Types Distribution",
+        "metrics": [
+          ["MediMate/EducationHub", "ValidationErrors", {"stat": "Sum"}],
+          [".", "AuthenticationErrors", {"stat": "Sum"}],
+          [".", "DatabaseErrors", {"stat": "Sum"}],
+          [".", "ExternalAPIErrors", {"stat": "Sum"}],
+          [".", "UnknownErrors", {"stat": "Sum"}]
+        ],
+        "view": "timeSeries",
+        "region": "ap-southeast-1",
+        "period": 300,
+        "yAxis": {
+          "left": {
+            "min": 0,
+            "label": "Error Count"
+          }
+        }
+      }
+    },
+    {
+      "type": "metric",
+      "properties": {
+        "title": "Mobile App Crash Rate",
+        "metrics": [
+          [
+            {
+              "expression": "(m2/m1)*1000",
+              "label": "Crashes per 1000 Sessions",
+              "id": "e1"
+            }
+          ],
+          ["MediMate/EducationHub", "MobileSessions", {"id": "m1", "visible": false}],
+          [".", "MobileCrashes", {"id": "m2", "visible": false}]
+        ],
+        "view": "timeSeries",
+        "region": "ap-southeast-1",
+        "period": 3600,
+        "yAxis": {
+          "left": {
+            "min": 0,
+            "label": "Crashes per 1000 Sessions"
+          }
+        },
+        "annotations": {
+          "horizontal": [
+            {
+              "label": "Warning (5)",
+              "value": 5,
+              "color": "#ff9900"
+            },
+            {
+              "label": "Critical (10)",
+              "value": 10,
+              "color": "#d13212"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "type": "metric",
+      "properties": {
+        "title": "Offline Usage Metrics",
+        "metrics": [
+          ["MediMate/EducationHub", "OfflineDownloads", {"stat": "Sum"}],
+          [".", "OfflinePlaybacks", {"stat": "Sum"}],
+          [".", "SyncOperations", {"stat": "Sum"}],
+          [".", "SyncConflicts", {"stat": "Sum"}]
+        ],
+        "view": "timeSeries",
+        "region": "ap-southeast-1",
+        "period": 3600,
+        "yAxis": {
+          "left": {
+            "min": 0,
+            "label": "Count"
+          }
+        }
+      }
+    },
+    {
+      "type": "metric",
+      "properties": {
+        "title": "Language Distribution",
+        "metrics": [
+          ["MediMate/EducationHub", "LanguageMS", {"stat": "Sum", "label": "Malay"}],
+          [".", "LanguageEN", {"stat": "Sum", "label": "English"}],
+          [".", "LanguageZH", {"stat": "Sum", "label": "Chinese"}],
+          [".", "LanguageTA", {"stat": "Sum", "label": "Tamil"}]
+        ],
+        "view": "pie",
+        "region": "ap-southeast-1",
+        "period": 86400
+      }
+    },
+    {
+      "type": "metric",
+      "properties": {
+        "title": "Search Performance and Usage",
+        "metrics": [
+          ["MediMate/EducationHub", "SearchQueries", {"stat": "Sum"}],
+          [".", "SearchDuration", {"stat": "Average"}],
+          [".", "SearchResultsReturned", {"stat": "Average"}],
+          [".", "SearchClickThroughRate", {"stat": "Average"}]
+        ],
+        "view": "timeSeries",
+        "region": "ap-southeast-1",
+        "period": 3600
+      }
+    },
+    {
+      "type": "metric",
+      "properties": {
+        "title": "Recommendation Engine Performance",
+        "metrics": [
+          ["MediMate/EducationHub", "RecommendationRequests", {"stat": "Sum"}],
+          [".", "RecommendationDuration", {"stat": "Average"}],
+          [".", "RecommendationClickRate", {"stat": "Average"}],
+          [".", "RecommendationRelevanceScore", {"stat": "Average"}]
+        ],
+        "view": "timeSeries",
+        "region": "ap-southeast-1",
+        "period": 3600
+      }
+    },
+    {
+      "type": "log",
+      "properties": {
+        "title": "Recent Error Logs",
+        "query": "SOURCE '/aws/ecs/medimate-education-hub' | fields @timestamp, @message | filter @message like /ERROR/ | sort @timestamp desc | limit 20",
+        "region": "ap-southeast-1",
+        "period": 300
+      }
+    },
+    {
+      "type": "log",
+      "properties": {
+        "title": "API Latency by Endpoint",
+        "query": "SOURCE '/aws/ecs/medimate-education-hub' | fields @timestamp, endpoint, duration | stats avg(duration) as avg_duration, p50(duration) as p50, p95(duration) as p95, p99(duration) as p99 by endpoint | sort avg_duration desc",
+        "region": "ap-southeast-1",
+        "period": 300
+      }
+    },
+    {
+      "type": "metric",
+      "properties": {
+        "title": "Authentication System Health",
+        "metrics": [
+          ["MediMate/EducationHub", "AuthenticationAttempts", {"stat": "Sum"}],
+          [".", "AuthenticationSuccesses", {"stat": "Sum"}],
+          [".", "AuthenticationFailures", {"stat": "Sum"}],
+          [
+            {
+              "expression": "(m3/m1)*100",
+              "label": "Failure Rate %",
+              "id": "e1"
+            }
+          ]
+        ],
+        "view": "timeSeries",
+        "region": "ap-southeast-1",
+        "period": 300,
+        "annotations": {
+          "horizontal": [
+            {
+              "label": "Warning (10%)",
+              "value": 10,
+              "color": "#ff9900"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "periodOverride": "auto",
+  "start": "-PT3H",
+  "end": "PT0H"
+}

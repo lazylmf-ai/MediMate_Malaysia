@@ -69,6 +69,17 @@ export const DEEP_LINK_CONFIG: LinkingOptions<RootStackParamList>['config'] = {
             NotificationSettings: 'notifications',
           },
         },
+        Education: {
+          path: '/education',
+          screens: {
+            EducationHome: '',
+            ContentDetail: 'content/:id',
+            ContentSearch: 'search',
+            CategoryBrowse: 'category/:category',
+            QuizScreen: 'quiz/:quizId',
+            LearningProgress: 'progress',
+          },
+        },
       },
     },
   },
@@ -388,5 +399,63 @@ export class DeepLinkAnalytics {
       isEmergency: link.type === 'emergency',
       timestamp: new Date().toISOString(),
     });
+  }
+
+  static trackEducationNavigation(link: EducationDeepLink): void {
+    console.log('Education navigation:', {
+      type: link.type,
+      action: link.action,
+      hasSharing: !!link.data.sharedBy,
+      timestamp: new Date().toISOString(),
+    });
+  }
+}
+
+/**
+ * Education Deep Link Handlers
+ */
+export interface EducationDeepLink {
+  type: 'content' | 'quiz' | 'achievement' | 'shared_content' | 'intervention';
+  data: {
+    contentId?: string;
+    quizId?: string;
+    category?: string;
+    achievementId?: string;
+    sharedBy?: string; // Family member ID who shared
+    interventionType?: 'adherence' | 'medication_change';
+    medicationId?: string;
+    language?: 'ms' | 'en' | 'zh' | 'ta';
+    timestamp?: number;
+  };
+  action: 'view' | 'take_quiz' | 'share' | 'bookmark';
+}
+
+export class EducationDeepLinkGenerator {
+  private static baseUrl = __DEV__
+    ? 'medimate://'
+    : 'https://app.medimate.my/';
+
+  static generateContentLink(contentId: string, language?: string): string {
+    let path = `/education/content/${contentId}`;
+    if (language) {
+      path += `?lang=${language}`;
+    }
+    return `${this.baseUrl}${path}`;
+  }
+
+  static generateQuizLink(quizId: string): string {
+    return `${this.baseUrl}/education/quiz/${quizId}`;
+  }
+
+  static generateCategoryLink(category: string): string {
+    return `${this.baseUrl}/education/category/${category}`;
+  }
+
+  static generateSharedContentLink(contentId: string, sharedBy: string): string {
+    return `${this.baseUrl}/education/content/${contentId}?shared_by=${sharedBy}`;
+  }
+
+  static generateInterventionLink(contentId: string, type: 'adherence' | 'medication_change'): string {
+    return `${this.baseUrl}/education/content/${contentId}?intervention=${type}`;
   }
 }

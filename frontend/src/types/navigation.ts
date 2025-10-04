@@ -22,11 +22,21 @@ export type MainTabParamList = {
   Home: undefined;
   Medications: undefined;
   Reminders: undefined;
+  Education: undefined;
   Family: undefined;
   Profile: undefined;
 };
 
-// Profile Stack Navigator  
+// Education Stack Navigator
+export type EducationStackParamList = {
+  EducationHome: undefined;
+  ContentDetail: { id: string };
+  ContentSearch: undefined;
+  CategoryBrowse: { category: string };
+  DownloadManager: undefined;
+};
+
+// Profile Stack Navigator
 export type ProfileStackParamList = {
   ProfileMain: undefined;
   CulturalSettings: undefined;
@@ -45,13 +55,14 @@ export type RootStackParamList = {
 // Navigation Props
 export type AuthNavigationProp = StackNavigationProp<AuthStackParamList>;
 export type MainTabNavigationProp = BottomTabNavigationProp<MainTabParamList>;
+export type EducationStackNavigationProp = StackNavigationProp<EducationStackParamList>;
 export type ProfileStackNavigationProp = StackNavigationProp<ProfileStackParamList>;
 
 export type RootNavigationProp = CompositeNavigationProp<
   StackNavigationProp<RootStackParamList>,
   CompositeNavigationProp<
     MainTabNavigationProp,
-    CompositeNavigationProp<AuthNavigationProp, ProfileStackNavigationProp>
+    CompositeNavigationProp<AuthNavigationProp, CompositeNavigationProp<EducationStackNavigationProp, ProfileStackNavigationProp>>
   >
 >;
 
@@ -64,6 +75,11 @@ export type AuthScreenProps<T extends keyof AuthStackParamList> = {
 export type MainTabScreenProps<T extends keyof MainTabParamList> = {
   navigation: MainTabNavigationProp;
   route: RouteProp<MainTabParamList, T>;
+};
+
+export type EducationStackScreenProps<T extends keyof EducationStackParamList> = {
+  navigation: EducationStackNavigationProp;
+  route: RouteProp<EducationStackParamList, T>;
 };
 
 export type ProfileStackScreenProps<T extends keyof ProfileStackParamList> = {
