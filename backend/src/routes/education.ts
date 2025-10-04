@@ -162,6 +162,7 @@ router.get('/recommendations', RecommendationController.getCachedRecommendations
 router.get('/recommendations/medication/:medicationId', RecommendationController.getContentForMedication);
 router.get('/recommendations/condition/:conditionCode', RecommendationController.getContentForCondition);
 router.post('/recommendations/adherence-intervention', adherenceInterventionValidation, RecommendationController.getAdherenceInterventionContent);
+router.get('/recommendations/adherence-intervention/banner', RecommendationController.getAdherenceInterventionBanner);
 
 // ============================================================================
 // QUIZ ROUTES

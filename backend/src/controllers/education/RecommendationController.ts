@@ -5,9 +5,11 @@
 
 import { Request, Response, NextFunction } from 'express';
 import { RecommendationService, UserContext } from '../../services/education/RecommendationService';
+import { AdherenceInterventionService } from '../../services/education/AdherenceInterventionService';
 
 export class RecommendationController {
   private static recommendationService = RecommendationService.getInstance();
+  private static interventionService = AdherenceInterventionService.getInstance();
 
   /**
    * Generate personalized recommendations
@@ -167,6 +169,30 @@ export class RecommendationController {
       });
     } catch (error: any) {
       console.error('Failed to get adherence intervention content:', error.message);
+      next(error);
+    }
+  }
+
+  /**
+   * Get adherence intervention banner for Education Hub
+   * GET /api/education/recommendations/adherence-intervention/banner
+   */
+  static async getAdherenceInterventionBanner(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        res.status(401).json({ error: 'Authentication required' });
+        return;
+      }
+
+      const banner = await RecommendationController.interventionService.getInterventionBanner(userId);
+
+      res.json({
+        success: true,
+        data: banner,
+      });
+    } catch (error: any) {
+      console.error('Failed to get adherence intervention banner:', error.message);
       next(error);
     }
   }

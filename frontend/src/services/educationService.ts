@@ -59,6 +59,7 @@ const EDUCATION_ENDPOINTS = {
   RECOMMENDATIONS_MEDICATION: (medicationId: string) => `${CONFIG.apiUrl}/education/recommendations/medication/${medicationId}`,
   RECOMMENDATIONS_CONDITION: (conditionCode: string) => `${CONFIG.apiUrl}/education/recommendations/condition/${conditionCode}`,
   ADHERENCE_INTERVENTION: `${CONFIG.apiUrl}/education/recommendations/adherence-intervention`,
+  ADHERENCE_INTERVENTION_BANNER: `${CONFIG.apiUrl}/education/recommendations/adherence-intervention/banner`,
 
   // Progress endpoints
   PROGRESS_VIEW: `${CONFIG.apiUrl}/education/progress/view`,
@@ -660,6 +661,29 @@ class EducationService {
   async getMediaUrl(key: string, expiresIn = 3600): Promise<ApiResponse<{ url: string; expiresIn: number }>> {
     const url = `${EDUCATION_ENDPOINTS.MEDIA_URL(key)}?expiresIn=${expiresIn}`;
     return this.makeRequest<{ url: string; expiresIn: number }>(url);
+  }
+
+  // Adherence Intervention Methods
+
+  /**
+   * Get adherence intervention banner for Education Hub
+   * Returns banner data if user's adherence is below 60%
+   */
+  async getAdherenceInterventionBanner(): Promise<InterventionBanner | null> {
+    try {
+      const response = await this.makeRequest<InterventionBanner | null>(
+        EDUCATION_ENDPOINTS.ADHERENCE_INTERVENTION_BANNER
+      );
+
+      if (response.success && response.data) {
+        return response.data;
+      }
+
+      return null;
+    } catch (error) {
+      console.error('Failed to get adherence intervention banner:', error);
+      return null;
+    }
   }
 }
 
