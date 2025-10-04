@@ -39,7 +39,9 @@
       "Bash(git commit:*)",
       "Bash(gh issue edit:*)",
       "Bash(gh issue comment:*)",
-      "Bash(test:*)"
+      "Bash(test:*)",
+      "Read(//Users/lazylmf/MediMate/epic-education_hub/backend/**)",
+      "Read(//Users/lazylmf/MediMate/epic-education_hub/**)"
     ]
   },
   "statusLine": {
