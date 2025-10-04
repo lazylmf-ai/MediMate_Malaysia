@@ -1,0 +1,348 @@
+{
+  "id": "video_diabetes_001",
+  "contentId": "sample_diabetes_001",
+  "type": "video",
+  "title": {
+    "en": "Understanding Type 2 Diabetes: A Visual Guide",
+    "ms": "Memahami Diabetes Jenis 2: Panduan Visual",
+    "zh": "理解2型糖尿病：可视化指南",
+    "ta": "வகை 2 நீரிழிவை புரிந்துகொள்வது: காட்சி வழிகாட்டி"
+  },
+  "description": {
+    "en": "A comprehensive video guide explaining type 2 diabetes management, healthy eating, exercise, and medication adherence for seniors.",
+    "ms": "Panduan video komprehensif yang menerangkan pengurusan diabetes jenis 2, pemakanan sihat, senaman, dan pematuhan ubat untuk warga emas.",
+    "zh": "一个全面的视频指南，解释2型糖尿病管理、健康饮食、运动和药物依从性，专为老年人设计。",
+    "ta": "வயதானவர்களுக்கான வகை 2 நீரிழிவு நிர்வாகம், ஆரோக்கியமான உணவு, உடற்பயிற்சி மற்றும் மருந்து பின்பற்றுதல் ஆகியவற்றை விளக்கும் ஒரு விரிவான வீடியோ வழிகாட்டி."
+  },
+  "duration": 420,
+  "durationFormatted": "7:00",
+  "format": "MP4",
+  "resolution": "1920x1080",
+  "frameRate": 30,
+  "codec": {
+    "video": "H.264",
+    "audio": "AAC"
+  },
+  "bitrate": {
+    "video": 5000,
+    "audio": 192
+  },
+  "fileSize": 157286400,
+  "fileSizeFormatted": "150 MB",
+  "category": "chronic_disease",
+  "tags": ["diabetes", "type-2-diabetes", "health-education", "seniors", "medication-adherence"],
+  "difficulty": "beginner",
+  "relatedConditions": ["E11"],
+  "relatedMedications": ["metformin", "gliclazide", "insulin"],
+  "videoFiles": {
+    "primary": {
+      "url": "https://cdn.medimate.com/videos/diabetes_001/main_video.mp4",
+      "s3Key": "education/videos/diabetes_001/main_video.mp4",
+      "checksum": "a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6"
+    },
+    "thumbnail": {
+      "url": "https://cdn.medimate.com/videos/diabetes_001/thumbnail.jpg",
+      "s3Key": "education/videos/diabetes_001/thumbnail.jpg",
+      "resolution": "1280x720"
+    },
+    "poster": {
+      "url": "https://cdn.medimate.com/videos/diabetes_001/poster.jpg",
+      "s3Key": "education/videos/diabetes_001/poster.jpg",
+      "resolution": "1920x1080"
+    }
+  },
+  "audioTracks": [
+    {
+      "id": "audio_en",
+      "language": "en",
+      "label": "English",
+      "type": "voiceover",
+      "url": "https://cdn.medimate.com/videos/diabetes_001/audio_en.aac",
+      "s3Key": "education/videos/diabetes_001/audio_en.aac",
+      "voiceArtist": {
+        "name": "Emily Thompson",
+        "gender": "female",
+        "ageRange": "40-50",
+        "voiceType": "warm, clear, moderate pace"
+      },
+      "duration": 420,
+      "default": true
+    },
+    {
+      "id": "audio_ms",
+      "language": "ms",
+      "label": "Bahasa Melayu",
+      "type": "voiceover",
+      "url": "https://cdn.medimate.com/videos/diabetes_001/audio_ms.aac",
+      "s3Key": "education/videos/diabetes_001/audio_ms.aac",
+      "voiceArtist": {
+        "name": "Siti Nurhaliza Ahmad",
+        "gender": "female",
+        "ageRange": "35-45",
+        "voiceType": "friendly, reassuring, clear articulation"
+      },
+      "duration": 425
+    },
+    {
+      "id": "audio_zh",
+      "language": "zh",
+      "label": "中文 (Mandarin)",
+      "type": "voiceover",
+      "url": "https://cdn.medimate.com/videos/diabetes_001/audio_zh.aac",
+      "s3Key": "education/videos/diabetes_001/audio_zh.aac",
+      "voiceArtist": {
+        "name": "Li Wei",
+        "gender": "female",
+        "ageRange": "40-50",
+        "voiceType": "calm, professional, moderate pace"
+      },
+      "duration": 410
+    },
+    {
+      "id": "audio_ta",
+      "language": "ta",
+      "label": "தமிழ் (Tamil)",
+      "type": "voiceover",
+      "url": "https://cdn.medimate.com/videos/diabetes_001/audio_ta.aac",
+      "s3Key": "education/videos/diabetes_001/audio_ta.aac",
+      "voiceArtist": {
+        "name": "Priya Subramanian",
+        "gender": "female",
+        "ageRange": "35-45",
+        "voiceType": "warm, clear, easy to understand"
+      },
+      "duration": 430
+    }
+  ],
+  "subtitleTracks": [
+    {
+      "id": "subtitle_en",
+      "language": "en",
+      "label": "English",
+      "format": "VTT",
+      "url": "https://cdn.medimate.com/videos/diabetes_001/subtitles_en.vtt",
+      "s3Key": "education/videos/diabetes_001/subtitles_en.vtt",
+      "default": true,
+      "styling": {
+        "fontSize": "36pt",
+        "fontFamily": "Arial, sans-serif",
+        "fontColor": "#FFFFFF",
+        "backgroundColor": "#000000",
+        "backgroundOpacity": 0.8,
+        "position": "bottom-center"
+      }
+    },
+    {
+      "id": "subtitle_ms",
+      "language": "ms",
+      "label": "Bahasa Melayu",
+      "format": "VTT",
+      "url": "https://cdn.medimate.com/videos/diabetes_001/subtitles_ms.vtt",
+      "s3Key": "education/videos/diabetes_001/subtitles_ms.vtt",
+      "styling": {
+        "fontSize": "36pt",
+        "fontFamily": "Arial, sans-serif",
+        "fontColor": "#FFFFFF",
+        "backgroundColor": "#000000",
+        "backgroundOpacity": 0.8,
+        "position": "bottom-center"
+      }
+    },
+    {
+      "id": "subtitle_zh",
+      "language": "zh",
+      "label": "中文",
+      "format": "VTT",
+      "url": "https://cdn.medimate.com/videos/diabetes_001/subtitles_zh.vtt",
+      "s3Key": "education/videos/diabetes_001/subtitles_zh.vtt",
+      "styling": {
+        "fontSize": "36pt",
+        "fontFamily": "Microsoft YaHei, SimHei, sans-serif",
+        "fontColor": "#FFFFFF",
+        "backgroundColor": "#000000",
+        "backgroundOpacity": 0.8,
+        "position": "bottom-center"
+      }
+    },
+    {
+      "id": "subtitle_ta",
+      "language": "ta",
+      "label": "தமிழ்",
+      "format": "VTT",
+      "url": "https://cdn.medimate.com/videos/diabetes_001/subtitles_ta.vtt",
+      "s3Key": "education/videos/diabetes_001/subtitles_ta.vtt",
+      "styling": {
+        "fontSize": "36pt",
+        "fontFamily": "Lohit Tamil, sans-serif",
+        "fontColor": "#FFFFFF",
+        "backgroundColor": "#000000",
+        "backgroundOpacity": 0.8,
+        "position": "bottom-center"
+      }
+    }
+  ],
+  "chapters": [
+    {
+      "id": "chapter_1",
+      "title": {
+        "en": "Introduction to Type 2 Diabetes",
+        "ms": "Pengenalan kepada Diabetes Jenis 2",
+        "zh": "2型糖尿病简介",
+        "ta": "வகை 2 நீரிழிவு அறிமுகம்"
+      },
+      "startTime": 0,
+      "endTime": 60,
+      "thumbnail": "https://cdn.medimate.com/videos/diabetes_001/chapters/ch1_thumb.jpg"
+    },
+    {
+      "id": "chapter_2",
+      "title": {
+        "en": "Understanding Blood Sugar Levels",
+        "ms": "Memahami Paras Gula Darah",
+        "zh": "了解血糖水平",
+        "ta": "இரத்த சர்க்கரை அளவுகளை புரிந்துகொள்வது"
+      },
+      "startTime": 60,
+      "endTime": 120,
+      "thumbnail": "https://cdn.medimate.com/videos/diabetes_001/chapters/ch2_thumb.jpg"
+    },
+    {
+      "id": "chapter_3",
+      "title": {
+        "en": "Healthy Eating for Diabetes",
+        "ms": "Pemakanan Sihat untuk Diabetes",
+        "zh": "糖尿病的健康饮食",
+        "ta": "நீரிழிவுக்கான ஆரோக்கியமான உணவு"
+      },
+      "startTime": 120,
+      "endTime": 240,
+      "thumbnail": "https://cdn.medimate.com/videos/diabetes_001/chapters/ch3_thumb.jpg"
+    },
+    {
+      "id": "chapter_4",
+      "title": {
+        "en": "Exercise and Physical Activity",
+        "ms": "Senaman dan Aktiviti Fizikal",
+        "zh": "运动和体育活动",
+        "ta": "உடற்பயிற்சி மற்றும் உடல் செயல்பாடு"
+      },
+      "startTime": 240,
+      "endTime": 300,
+      "thumbnail": "https://cdn.medimate.com/videos/diabetes_001/chapters/ch4_thumb.jpg"
+    },
+    {
+      "id": "chapter_5",
+      "title": {
+        "en": "Taking Your Medications",
+        "ms": "Mengambil Ubat Anda",
+        "zh": "服用您的药物",
+        "ta": "உங்கள் மருந்துகளை எடுத்தல்"
+      },
+      "startTime": 300,
+      "endTime": 360,
+      "thumbnail": "https://cdn.medimate.com/videos/diabetes_001/chapters/ch5_thumb.jpg"
+    },
+    {
+      "id": "chapter_6",
+      "title": {
+        "en": "Preventing Complications",
+        "ms": "Mencegah Komplikasi",
+        "zh": "预防并发症",
+        "ta": "சிக்கல்களை தடுத்தல்"
+      },
+      "startTime": 360,
+      "endTime": 420,
+      "thumbnail": "https://cdn.medimate.com/videos/diabetes_001/chapters/ch6_thumb.jpg"
+    }
+  ],
+  "accessibility": {
+    "closedCaptions": true,
+    "audioDescriptions": false,
+    "signLanguage": false,
+    "transcriptAvailable": true,
+    "transcriptUrl": "https://cdn.medimate.com/videos/diabetes_001/transcript.pdf",
+    "wcagCompliance": "AA"
+  },
+  "productionDetails": {
+    "scriptWriter": {
+      "name": "Dr. Sarah Chen",
+      "credentials": "MBBS, MMed (Family Medicine)"
+    },
+    "videoProducer": {
+      "name": "MediVisual Productions Sdn Bhd",
+      "contactEmail": "info@medivisual.com"
+    },
+    "medicalReviewer": {
+      "name": "Dr. Kumar Rajendran",
+      "credentials": "MBBS, MD (Endocrinology)",
+      "licenseNumber": "MMC-12345"
+    },
+    "productionDate": "2025-09-15T00:00:00Z",
+    "lastReviewedDate": "2025-10-01T00:00:00Z"
+  },
+  "viewingGuidelines": {
+    "targetAudience": "Adults 60+ years with type 2 diabetes or pre-diabetes",
+    "languageLevel": "8th grade reading level equivalent",
+    "recommendedViewingEnvironment": "Quiet space with good lighting, preferably with family member or caregiver",
+    "optimalDevices": ["tablet", "smart TV", "computer"],
+    "minimumRequirements": {
+      "internetSpeed": "2 Mbps",
+      "screenSize": "7 inches minimum",
+      "audioRequired": true
+    }
+  },
+  "engagement": {
+    "averageViewDuration": 380,
+    "completionRate": 0.85,
+    "averageRating": 4.7,
+    "totalViews": 12450,
+    "likes": 11200,
+    "shares": 340
+  },
+  "relatedContent": [
+    {
+      "type": "article",
+      "id": "sample_diabetes_001",
+      "title": {
+        "en": "Managing Type 2 Diabetes: A Complete Guide"
+      }
+    },
+    {
+      "type": "quiz",
+      "id": "quiz_diabetes_001",
+      "title": {
+        "en": "Type 2 Diabetes Knowledge Quiz"
+      }
+    },
+    {
+      "type": "article",
+      "id": "metformin_guide",
+      "title": {
+        "en": "Metformin: Your Complete Medication Guide"
+      }
+    }
+  ],
+  "metadata": {
+    "version": 1,
+    "publishedDate": "2025-10-01T00:00:00Z",
+    "lastUpdatedDate": "2025-10-01T00:00:00Z",
+    "contentStatus": "published",
+    "qualityScore": 95,
+    "medicalAccuracyVerified": true,
+    "culturallyAppropriate": true,
+    "ageAppropriate": true
+  },
+  "cdn": {
+    "provider": "AWS CloudFront",
+    "distributionId": "E1234ABCD5678",
+    "region": "ap-southeast-1",
+    "cachePolicy": "CachingOptimized",
+    "compressionEnabled": true
+  },
+  "analytics": {
+    "trackingEnabled": true,
+    "events": ["play", "pause", "complete", "chapter_change", "subtitle_toggle", "audio_change", "seek"],
+    "heatmapEnabled": true,
+    "userSegmentation": ["language", "age_group", "device_type", "viewing_time"]
+  }
+}

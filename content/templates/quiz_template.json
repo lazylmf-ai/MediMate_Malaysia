@@ -1,0 +1,51 @@
+{
+    "contentId": "{unique_content_identifier}",
+    "title": {
+        "en": "Quiz Title in English",
+        "ms": "Quiz Title in Malay",
+        "zh": "Quiz Title in Chinese",
+        "ta": "Quiz Title in Tamil"
+    },
+    "passingScore": 70,
+    "timeLimit": 15,
+    "questions": [
+        {
+            "id": "q1",
+            "type": "multiple_choice",
+            "difficulty": "easy",
+            "text": {
+                "en": "Question text in English",
+                "ms": "Question text in Malay",
+                "zh": "Question text in Chinese",
+                "ta": "Question text in Tamil"
+            },
+            "options": [
+                {
+                    "id": "a",
+                    "text": {
+                        "en": "Option A in English",
+                        "ms": "Option A in Malay",
+                        "zh": "Option A in Chinese",
+                        "ta": "Option A in Tamil"
+                    }
+                },
+                {
+                    "id": "b",
+                    "text": {
+                        "en": "Option B in English",
+                        "ms": "Option B in Malay",
+                        "zh": "Option B in Chinese",
+                        "ta": "Option B in Tamil"
+                    }
+                }
+            ],
+            "correctAnswer": "a",
+            "explanation": {
+                "en": "Explanation for the correct answer in English",
+                "ms": "Explanation for the correct answer in Malay",
+                "zh": "Explanation for the correct answer in Chinese",
+                "ta": "Explanation for the correct answer in Tamil"
+            }
+        }
+    ]
+}

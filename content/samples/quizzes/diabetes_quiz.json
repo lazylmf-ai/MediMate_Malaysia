@@ -1,0 +1,576 @@
+{
+  "id": "quiz_diabetes_001",
+  "contentId": "sample_diabetes_001",
+  "title": {
+    "en": "Type 2 Diabetes Knowledge Quiz",
+    "ms": "Kuiz Pengetahuan Diabetes Jenis 2",
+    "zh": "2型糖尿病知识测验",
+    "ta": "வகை 2 நீரிழிவு அறிவு வினாடி வினா"
+  },
+  "description": {
+    "en": "Test your understanding of type 2 diabetes management and healthy living.",
+    "ms": "Uji pemahaman anda tentang pengurusan diabetes jenis 2 dan hidup sihat.",
+    "zh": "测试您对2型糖尿病管理和健康生活的理解。",
+    "ta": "வகை 2 நீரிழிவு நிர்வாகம் மற்றும் ஆரோக்கியமான வாழ்க்கை பற்றிய உங்கள் புரிதலை சோதிக்கவும்."
+  },
+  "passingScore": 70,
+  "timeLimit": 15,
+  "questions": [
+    {
+      "id": "q1",
+      "type": "multiple_choice",
+      "difficulty": "easy",
+      "text": {
+        "en": "What is the main problem in type 2 diabetes?",
+        "ms": "Apakah masalah utama dalam diabetes jenis 2?",
+        "zh": "2型糖尿病的主要问题是什么？",
+        "ta": "வகை 2 நீரிழிவில் முக்கிய பிரச்சனை என்ன?"
+      },
+      "options": [
+        {
+          "id": "a",
+          "text": {
+            "en": "The body cannot use insulin properly",
+            "ms": "Badan tidak dapat menggunakan insulin dengan betul",
+            "zh": "身体不能正确使用胰岛素",
+            "ta": "உடல் இன்சுலினை சரியாக பயன்படுத்த முடியாது"
+          }
+        },
+        {
+          "id": "b",
+          "text": {
+            "en": "The body produces too much sugar",
+            "ms": "Badan menghasilkan terlalu banyak gula",
+            "zh": "身体产生过多的糖",
+            "ta": "உடல் அதிக சர்க்கரையை உற்பத்தி செய்கிறது"
+          }
+        },
+        {
+          "id": "c",
+          "text": {
+            "en": "The kidneys stop working",
+            "ms": "Buah pinggang berhenti berfungsi",
+            "zh": "肾脏停止工作",
+            "ta": "சிறுநீரகங்கள் வேலை செய்வதை நிறுத்துகின்றன"
+          }
+        },
+        {
+          "id": "d",
+          "text": {
+            "en": "The liver stores too much glucose",
+            "ms": "Hati menyimpan terlalu banyak glukosa",
+            "zh": "肝脏储存过多葡萄糖",
+            "ta": "கல்லீரல் அதிக குளுக்கோஸை சேமிக்கிறது"
+          }
+        }
+      ],
+      "correctAnswer": "a",
+      "explanation": {
+        "en": "In type 2 diabetes, the body cannot use insulin properly (insulin resistance) or doesn't produce enough insulin. This causes glucose to build up in the blood instead of being used for energy.",
+        "ms": "Dalam diabetes jenis 2, badan tidak dapat menggunakan insulin dengan betul (rintangan insulin) atau tidak menghasilkan insulin yang mencukupi. Ini menyebabkan glukosa terkumpul dalam darah bukannya digunakan untuk tenaga.",
+        "zh": "在2型糖尿病中，身体不能正确使用胰岛素（胰岛素抵抗）或不能产生足够的胰岛素。这导致葡萄糖在血液中积累，而不是用于能量。",
+        "ta": "வகை 2 நீரிழிவில், உடல் இன்சுலினை சரியாக பயன்படுத்த முடியாது (இன்சுலின் எதிர்ப்பு) அல்லது போதுமான இன்சுலினை உற்பத்தி செய்யாது. இது குளுக்கோஸை ஆற்றலுக்கு பயன்படுத்தப்படுவதற்கு பதிலாக இரத்தத்தில் குவிக்க வழிவகுக்கிறது."
+      }
+    },
+    {
+      "id": "q2",
+      "type": "multiple_choice",
+      "difficulty": "easy",
+      "text": {
+        "en": "What is the recommended blood sugar level before meals?",
+        "ms": "Apakah paras gula darah yang disyorkan sebelum makan?",
+        "zh": "餐前推荐的血糖水平是多少？",
+        "ta": "உணவுக்கு முன் பரிந்துரைக்கப்படும் இரத்த சர்க்கரை அளவு என்ன?"
+      },
+      "options": [
+        {
+          "id": "a",
+          "text": {
+            "en": "2.0 - 3.0 mmol/L",
+            "ms": "2.0 - 3.0 mmol/L",
+            "zh": "2.0 - 3.0 mmol/L",
+            "ta": "2.0 - 3.0 mmol/L"
+          }
+        },
+        {
+          "id": "b",
+          "text": {
+            "en": "4.0 - 7.0 mmol/L",
+            "ms": "4.0 - 7.0 mmol/L",
+            "zh": "4.0 - 7.0 mmol/L",
+            "ta": "4.0 - 7.0 mmol/L"
+          }
+        },
+        {
+          "id": "c",
+          "text": {
+            "en": "10.0 - 12.0 mmol/L",
+            "ms": "10.0 - 12.0 mmol/L",
+            "zh": "10.0 - 12.0 mmol/L",
+            "ta": "10.0 - 12.0 mmol/L"
+          }
+        },
+        {
+          "id": "d",
+          "text": {
+            "en": "15.0 - 20.0 mmol/L",
+            "ms": "15.0 - 20.0 mmol/L",
+            "zh": "15.0 - 20.0 mmol/L",
+            "ta": "15.0 - 20.0 mmol/L"
+          }
+        }
+      ],
+      "correctAnswer": "b",
+      "explanation": {
+        "en": "The target blood sugar level before meals should be between 4.0 and 7.0 mmol/L. This range indicates good diabetes control.",
+        "ms": "Paras gula darah sasaran sebelum makan sepatutnya antara 4.0 dan 7.0 mmol/L. Julat ini menunjukkan kawalan diabetes yang baik.",
+        "zh": "餐前目标血糖水平应在4.0至7.0 mmol/L之间。这个范围表明糖尿病控制良好。",
+        "ta": "உணவுக்கு முன் இலக்கு இரத்த சர்க்கரை அளவு 4.0 மற்றும் 7.0 mmol/L இடையே இருக்க வேண்டும். இந்த வரம்பு நல்ல நீரிழிவு கட்டுப்பாட்டைக் குறிக்கிறது."
+      }
+    },
+    {
+      "id": "q3",
+      "type": "multiple_choice",
+      "difficulty": "medium",
+      "text": {
+        "en": "How many minutes of moderate exercise per week is recommended for people with diabetes?",
+        "ms": "Berapa minit senaman sederhana seminggu yang disyorkan untuk orang dengan diabetes?",
+        "zh": "建议糖尿病患者每周进行多少分钟的中等强度运动？",
+        "ta": "நீரிழிவு உள்ளவர்களுக்கு வாரத்திற்கு எத்தனை நிமிடங்கள் மிதமான உடற்பயிற்சி பரிந்துரைக்கப்படுகிறது?"
+      },
+      "options": [
+        {
+          "id": "a",
+          "text": {
+            "en": "30 minutes",
+            "ms": "30 minit",
+            "zh": "30分钟",
+            "ta": "30 நிமிடங்கள்"
+          }
+        },
+        {
+          "id": "b",
+          "text": {
+            "en": "60 minutes",
+            "ms": "60 minit",
+            "zh": "60分钟",
+            "ta": "60 நிமிடங்கள்"
+          }
+        },
+        {
+          "id": "c",
+          "text": {
+            "en": "150 minutes",
+            "ms": "150 minit",
+            "zh": "150分钟",
+            "ta": "150 நிமிடங்கள்"
+          }
+        },
+        {
+          "id": "d",
+          "text": {
+            "en": "300 minutes",
+            "ms": "300 minit",
+            "zh": "300分钟",
+            "ta": "300 நிமிடங்கள்"
+          }
+        }
+      ],
+      "correctAnswer": "c",
+      "explanation": {
+        "en": "The recommendation is 150 minutes of moderate activity per week, which equals 30 minutes for 5 days a week. Exercise helps lower blood sugar and improves insulin sensitivity.",
+        "ms": "Cadangan adalah 150 minit aktiviti sederhana seminggu, yang sama dengan 30 minit selama 5 hari seminggu. Senaman membantu menurunkan gula darah dan meningkatkan sensitiviti insulin.",
+        "zh": "建议是每周进行150分钟的中等强度活动，相当于每周5天，每天30分钟。运动有助于降低血糖并改善胰岛素敏感性。",
+        "ta": "பரிந்துரை வாரத்திற்கு 150 நிமிடங்கள் மிதமான செயல்பாடு, இது வாரத்தில் 5 நாட்களுக்கு 30 நிமிடங்களுக்கு சமம். உடற்பயிற்சி இரத்த சர்க்கரையை குறைக்க மற்றும் இன்சுலின் உணர்திறனை மேம்படுத்த உதவுகிறது."
+      }
+    },
+    {
+      "id": "q4",
+      "type": "multiple_choice",
+      "difficulty": "easy",
+      "text": {
+        "en": "Which of these is usually the first medication prescribed for type 2 diabetes?",
+        "ms": "Yang mana antara ini biasanya ubat pertama yang ditetapkan untuk diabetes jenis 2?",
+        "zh": "以下哪种通常是2型糖尿病的首选药物？",
+        "ta": "இவற்றில் எது பொதுவாக வகை 2 நீரிழிவுக்கு முதலில் பரிந்துரைக்கப்படும் மருந்து?"
+      },
+      "options": [
+        {
+          "id": "a",
+          "text": {
+            "en": "Insulin",
+            "ms": "Insulin",
+            "zh": "胰岛素",
+            "ta": "இன்சுலின்"
+          }
+        },
+        {
+          "id": "b",
+          "text": {
+            "en": "Metformin",
+            "ms": "Metformin",
+            "zh": "二甲双胍",
+            "ta": "மெட்ஃபார்மின்"
+          }
+        },
+        {
+          "id": "c",
+          "text": {
+            "en": "Aspirin",
+            "ms": "Aspirin",
+            "zh": "阿司匹林",
+            "ta": "ஆஸ்பிரின்"
+          }
+        },
+        {
+          "id": "d",
+          "text": {
+            "en": "Paracetamol",
+            "ms": "Paracetamol",
+            "zh": "扑热息痛",
+            "ta": "பாராசிட்டமால்"
+          }
+        }
+      ],
+      "correctAnswer": "b",
+      "explanation": {
+        "en": "Metformin is usually the first medication prescribed for type 2 diabetes. It helps lower blood sugar by reducing glucose production in the liver and improving insulin sensitivity.",
+        "ms": "Metformin biasanya ubat pertama yang ditetapkan untuk diabetes jenis 2. Ia membantu menurunkan gula darah dengan mengurangkan pengeluaran glukosa dalam hati dan meningkatkan sensitiviti insulin.",
+        "zh": "二甲双胍通常是2型糖尿病的首选药物。它通过减少肝脏中的葡萄糖产生和改善胰岛素敏感性来帮助降低血糖。",
+        "ta": "மெட்ஃபார்மின் பொதுவாக வகை 2 நீரிழிவுக்கு முதலில் பரிந்துரைக்கப்படும் மருந்து. இது கல்லீரலில் குளுக்கோஸ் உற்பத்தியை குறைப்பதன் மூலமும் இன்சுலின் உணர்திறனை மேம்படுத்துவதன் மூலமும் இரத்த சர்க்கரையை குறைக்க உதவுகிறது."
+      }
+    },
+    {
+      "id": "q5",
+      "type": "multiple_choice",
+      "difficulty": "medium",
+      "text": {
+        "en": "What should fill half of your plate at each meal?",
+        "ms": "Apa yang patut mengisi separuh pinggan anda pada setiap hidangan?",
+        "zh": "每餐盘子的一半应该装什么？",
+        "ta": "ஒவ்வொரு உணவிலும் உங்கள் தட்டின் பாதியை என்ன நிரப்ப வேண்டும்?"
+      },
+      "options": [
+        {
+          "id": "a",
+          "text": {
+            "en": "Rice or noodles",
+            "ms": "Nasi atau mee",
+            "zh": "米饭或面条",
+            "ta": "அரிசி அல்லது நூடுல்ஸ்"
+          }
+        },
+        {
+          "id": "b",
+          "text": {
+            "en": "Vegetables",
+            "ms": "Sayur-sayuran",
+            "zh": "蔬菜",
+            "ta": "காய்கறிகள்"
+          }
+        },
+        {
+          "id": "c",
+          "text": {
+            "en": "Meat or fish",
+            "ms": "Daging atau ikan",
+            "zh": "肉或鱼",
+            "ta": "இறைச்சி அல்லது மீன்"
+          }
+        },
+        {
+          "id": "d",
+          "text": {
+            "en": "Fruits",
+            "ms": "Buah-buahan",
+            "zh": "水果",
+            "ta": "பழங்கள்"
+          }
+        }
+      ],
+      "correctAnswer": "b",
+      "explanation": {
+        "en": "Half of your plate should be filled with vegetables. They are low in calories and carbohydrates but high in fiber, vitamins, and minerals. This helps control blood sugar while providing essential nutrients.",
+        "ms": "Separuh pinggan anda sepatutnya diisi dengan sayur-sayuran. Ia rendah kalori dan karbohidrat tetapi tinggi serat, vitamin, dan mineral. Ini membantu mengawal gula darah sambil menyediakan nutrien penting.",
+        "zh": "您盘子的一半应该装满蔬菜。它们热量和碳水化合物含量低，但富含纤维、维生素和矿物质。这有助于控制血糖，同时提供必需的营养素。",
+        "ta": "உங்கள் தட்டின் பாதி காய்கறிகளால் நிரப்பப்பட வேண்டும். அவை கலோரிகள் மற்றும் கார்போஹைட்ரேட்களில் குறைவாக உள்ளன ஆனால் நார்ச்சத்து, வைட்டமின்கள் மற்றும் தாதுக்களில் அதிகம். இது அத்தியாவசிய ஊட்டச்சத்துக்களை வழங்கும் போது இரத்த சர்க்கரையை கட்டுப்படுத்த உதவுகிறது."
+      }
+    },
+    {
+      "id": "q6",
+      "type": "true_false",
+      "difficulty": "easy",
+      "text": {
+        "en": "People with diabetes should skip meals to lower their blood sugar.",
+        "ms": "Orang dengan diabetes patut langkau makanan untuk menurunkan gula darah mereka.",
+        "zh": "糖尿病患者应该跳过餐食来降低血糖。",
+        "ta": "நீரிழிவு உள்ளவர்கள் தங்கள் இரத்த சர்க்கரையை குறைக்க உணவைத் தவிர்க்க வேண்டும்."
+      },
+      "options": [
+        {
+          "id": "a",
+          "text": {
+            "en": "True",
+            "ms": "Benar",
+            "zh": "对",
+            "ta": "உண்மை"
+          }
+        },
+        {
+          "id": "b",
+          "text": {
+            "en": "False",
+            "ms": "Salah",
+            "zh": "错",
+            "ta": "தவறு"
+          }
+        }
+      ],
+      "correctAnswer": "b",
+      "explanation": {
+        "en": "FALSE. Skipping meals is dangerous for people with diabetes. It can cause blood sugar to drop too low (hypoglycemia) or lead to overeating later. Eating regular meals at consistent times helps maintain stable blood sugar levels.",
+        "ms": "SALAH. Melangkau makanan adalah berbahaya untuk orang dengan diabetes. Ia boleh menyebabkan gula darah turun terlalu rendah (hipoglisemia) atau membawa kepada makan berlebihan kemudian. Makan secara teratur pada waktu yang konsisten membantu mengekalkan paras gula darah yang stabil.",
+        "zh": "错误。跳过餐食对糖尿病患者是危险的。它可能导致血糖下降过低（低血糖）或导致后来的暴饮暴食。在固定时间定时进餐有助于维持稳定的血糖水平。",
+        "ta": "தவறு. உணவைத் தவிர்ப்பது நீரிழிவு உள்ளவர்களுக்கு ஆபத்தானது. இது இரத்த சர்க்கரை மிகவும் குறையலாம் (ஹைப்போகிளைசீமியா) அல்லது பின்னர் அதிகமாக சாப்பிட வழிவகுக்கலாம். சீரான நேரங்களில் வழக்கமான உணவுகளை சாப்பிடுவது நிலையான இரத்த சர்க்கரை அளவுகளை பராமரிக்க உதவுகிறது."
+      }
+    },
+    {
+      "id": "q7",
+      "type": "multiple_choice",
+      "difficulty": "medium",
+      "text": {
+        "en": "How often should people with diabetes have their eyes checked?",
+        "ms": "Berapa kerapkah orang dengan diabetes patut memeriksa mata mereka?",
+        "zh": "糖尿病患者应该多久检查一次眼睛？",
+        "ta": "நீரிழிவு உள்ளவர்கள் எவ்வளவு அடிக்கடி தங்கள் கண்களை பரிசோதிக்க வேண்டும்?"
+      },
+      "options": [
+        {
+          "id": "a",
+          "text": {
+            "en": "Every month",
+            "ms": "Setiap bulan",
+            "zh": "每月",
+            "ta": "ஒவ்வொரு மாதமும்"
+          }
+        },
+        {
+          "id": "b",
+          "text": {
+            "en": "Every 6 months",
+            "ms": "Setiap 6 bulan",
+            "zh": "每6个月",
+            "ta": "ஒவ்வொரு 6 மாதங்களுக்கும்"
+          }
+        },
+        {
+          "id": "c",
+          "text": {
+            "en": "Once a year",
+            "ms": "Sekali setahun",
+            "zh": "每年一次",
+            "ta": "வருடத்திற்கு ஒரு முறை"
+          }
+        },
+        {
+          "id": "d",
+          "text": {
+            "en": "Only if vision problems occur",
+            "ms": "Hanya jika masalah penglihatan berlaku",
+            "zh": "仅当出现视力问题时",
+            "ta": "பார்வை பிரச்சனைகள் ஏற்பட்டால் மட்டும்"
+          }
+        }
+      ],
+      "correctAnswer": "c",
+      "explanation": {
+        "en": "People with diabetes should have a comprehensive eye exam at least once a year to check for diabetic retinopathy and other eye complications. High blood sugar can damage the blood vessels in the retina, leading to vision problems.",
+        "ms": "Orang dengan diabetes sepatutnya menjalani pemeriksaan mata komprehensif sekurang-kurangnya sekali setahun untuk memeriksa retinopati diabetik dan komplikasi mata lain. Gula darah tinggi boleh merosakkan saluran darah di retina, menyebabkan masalah penglihatan.",
+        "zh": "糖尿病患者应该至少每年进行一次全面的眼科检查，以检查糖尿病视网膜病变和其他眼部并发症。高血糖会损害视网膜中的血管，导致视力问题。",
+        "ta": "நீரிழிவு உள்ளவர்கள் நீரிழிவு ரெட்டினோபதி மற்றும் பிற கண் சிக்கல்களை சரிபார்க்க ஆண்டுக்கு குறைந்தது ஒரு முறை முழுமையான கண் பரிசோதனை செய்ய வேண்டும். அதிக இரத்த சர்க்கரை ரெட்டினாவில் உள்ள இரத்த நாளங்களை சேதப்படுத்தலாம், இது பார்வை பிரச்சனைகளுக்கு வழிவகுக்கிறது."
+      }
+    },
+    {
+      "id": "q8",
+      "type": "multiple_choice",
+      "difficulty": "hard",
+      "text": {
+        "en": "What does HbA1c measure?",
+        "ms": "Apakah yang diukur oleh HbA1c?",
+        "zh": "HbA1c测量什么？",
+        "ta": "HbA1c என்ன அளவிடுகிறது?"
+      },
+      "options": [
+        {
+          "id": "a",
+          "text": {
+            "en": "Blood sugar at the moment of testing",
+            "ms": "Gula darah pada masa ujian",
+            "zh": "测试时的血糖",
+            "ta": "சோதனை நேரத்தில் இரத்த சர்க்கரை"
+          }
+        },
+        {
+          "id": "b",
+          "text": {
+            "en": "Average blood sugar over the past 2-3 months",
+            "ms": "Purata gula darah sepanjang 2-3 bulan yang lalu",
+            "zh": "过去2-3个月的平均血糖",
+            "ta": "கடந்த 2-3 மாதங்களின் சராசரி இரத்த சர்க்கரை"
+          }
+        },
+        {
+          "id": "c",
+          "text": {
+            "en": "Insulin levels in the blood",
+            "ms": "Paras insulin dalam darah",
+            "zh": "血液中的胰岛素水平",
+            "ta": "இரத்தத்தில் இன்சுலின் அளவுகள்"
+          }
+        },
+        {
+          "id": "d",
+          "text": {
+            "en": "Kidney function",
+            "ms": "Fungsi buah pinggang",
+            "zh": "肾功能",
+            "ta": "சிறுநீரக செயல்பாடு"
+          }
+        }
+      ],
+      "correctAnswer": "b",
+      "explanation": {
+        "en": "HbA1c (Hemoglobin A1c) measures your average blood sugar level over the past 2-3 months. It shows how well your diabetes has been controlled over time. The target is usually less than 7%.",
+        "ms": "HbA1c (Hemoglobin A1c) mengukur paras gula darah purata anda sepanjang 2-3 bulan yang lalu. Ia menunjukkan sejauh mana diabetes anda telah dikawal dari masa ke masa. Sasaran biasanya kurang daripada 7%.",
+        "zh": "HbA1c（糖化血红蛋白）测量您过去2-3个月的平均血糖水平。它显示您的糖尿病随时间控制得如何。目标通常低于7%。",
+        "ta": "HbA1c (ஹீமோகுளோபின் A1c) கடந்த 2-3 மாதங்களில் உங்கள் சராசரி இரத்த சர்க்கரை அளவை அளவிடுகிறது. இது காலப்போக்கில் உங்கள் நீரிழிவு எவ்வளவு நன்றாக கட்டுப்படுத்தப்பட்டுள்ளது என்பதைக் காட்டுகிறது. இலக்கு பொதுவாக 7% க்கும் குறைவாக இருக்கும்."
+      }
+    },
+    {
+      "id": "q9",
+      "type": "multiple_choice",
+      "difficulty": "medium",
+      "text": {
+        "en": "Which type of rice is better for people with diabetes?",
+        "ms": "Jenis beras yang mana lebih baik untuk orang dengan diabetes?",
+        "zh": "哪种类型的米饭对糖尿病患者更好？",
+        "ta": "நீரிழிவு உள்ளவர்களுக்கு எந்த வகை அரிசி நல்லது?"
+      },
+      "options": [
+        {
+          "id": "a",
+          "text": {
+            "en": "White rice",
+            "ms": "Beras putih",
+            "zh": "白米",
+            "ta": "வெள்ளை அரிசி"
+          }
+        },
+        {
+          "id": "b",
+          "text": {
+            "en": "Brown rice",
+            "ms": "Beras perang",
+            "zh": "糙米",
+            "ta": "பழுப்பு அரிசி"
+          }
+        },
+        {
+          "id": "c",
+          "text": {
+            "en": "Glutinous rice",
+            "ms": "Beras pulut",
+            "zh": "糯米",
+            "ta": "ஒட்டும் அரிசி"
+          }
+        },
+        {
+          "id": "d",
+          "text": {
+            "en": "All rice types are equally good",
+            "ms": "Semua jenis beras sama baik",
+            "zh": "所有类型的米饭都一样好",
+            "ta": "அனைத்து அரிசி வகைகளும் சமமாக நல்லது"
+          }
+        }
+      ],
+      "correctAnswer": "b",
+      "explanation": {
+        "en": "Brown rice is better for people with diabetes because it contains more fiber and nutrients than white rice. The fiber helps slow down the absorption of sugar into the bloodstream, preventing blood sugar spikes.",
+        "ms": "Beras perang lebih baik untuk orang dengan diabetes kerana ia mengandungi lebih banyak serat dan nutrien daripada beras putih. Serat membantu melambatkan penyerapan gula ke dalam aliran darah, mencegah lonjakan gula darah.",
+        "zh": "糙米对糖尿病患者更好，因为它比白米含有更多纤维和营养素。纤维有助于减缓糖吸收到血液中，防止血糖飙升。",
+        "ta": "பழுப்பு அரிசி நீரிழிவு உள்ளவர்களுக்கு நல்லது ஏனெனில் இது வெள்ளை அரிசியை விட அதிக நார்ச்சத்து மற்றும் ஊட்டச்சத்துக்களைக் கொண்டுள்ளது. நார்ச்சத்து இரத்த ஓட்டத்தில் சர்க்கரை உறிஞ்சுதலை மெதுவாக்க உதவுகிறது, இரத்த சர்க்கரை அதிகரிப்பதை தடுக்கிறது."
+      }
+    },
+    {
+      "id": "q10",
+      "type": "multiple_choice",
+      "difficulty": "hard",
+      "text": {
+        "en": "When should you call for emergency medical help?",
+        "ms": "Bilakah anda patut menghubungi bantuan perubatan kecemasan?",
+        "zh": "什么时候应该呼叫紧急医疗帮助？",
+        "ta": "நீங்கள் எப்போது அவசர மருத்துவ உதவியை அழைக்க வேண்டும்?"
+      },
+      "options": [
+        {
+          "id": "a",
+          "text": {
+            "en": "Blood sugar is 8.0 mmol/L",
+            "ms": "Gula darah adalah 8.0 mmol/L",
+            "zh": "血糖为8.0 mmol/L",
+            "ta": "இரத்த சர்க்கரை 8.0 mmol/L ஆக உள்ளது"
+          }
+        },
+        {
+          "id": "b",
+          "text": {
+            "en": "You feel slightly tired",
+            "ms": "Anda berasa sedikit letih",
+            "zh": "你感到有点累",
+            "ta": "நீங்கள் சற்று சோர்வாக உணர்கிறீர்கள்"
+          }
+        },
+        {
+          "id": "c",
+          "text": {
+            "en": "Loss of consciousness or severe chest pain",
+            "ms": "Hilang kesedaran atau sakit dada yang teruk",
+            "zh": "失去意识或严重胸痛",
+            "ta": "நினைவு இழப்பு அல்லது கடுமையான மார்பு வலி"
+          }
+        },
+        {
+          "id": "d",
+          "text": {
+            "en": "You forgot to take one dose of medication",
+            "ms": "Anda terlupa mengambil satu dos ubat",
+            "zh": "你忘记服用一剂药物",
+            "ta": "நீங்கள் ஒரு மருந்து அளவை எடுக்க மறந்துவிட்டீர்கள்"
+          }
+        }
+      ],
+      "correctAnswer": "c",
+      "explanation": {
+        "en": "Loss of consciousness, severe chest pain, severe confusion, or difficulty breathing are emergency situations requiring immediate medical attention. Call an ambulance immediately. These could be signs of serious complications like heart attack or severe hypoglycemia.",
+        "ms": "Hilang kesedaran, sakit dada yang teruk, kekeliruan yang teruk, atau kesukaran bernafas adalah situasi kecemasan yang memerlukan perhatian perubatan segera. Hubungi ambulans segera. Ini boleh menjadi tanda-tanda komplikasi serius seperti serangan jantung atau hipoglisemia teruk.",
+        "zh": "失去意识、严重胸痛、严重混乱或呼吸困难是需要立即医疗护理的紧急情况。立即拨打救护车。这些可能是严重并发症的迹象，如心脏病发作或严重低血糖。",
+        "ta": "நினைவு இழப்பு, கடுமையான மார்பு வலி, கடுமையான குழப்பம், அல்லது சுவாசிப்பதில் சிரமம் ஆகியவை உடனடி மருத்துவ கவனிப்பு தேவைப்படும் அவசர சூழ்நிலைகள். உடனடியாக ஆம்புலன்ஸை அழைக்கவும். இவை இதய பக்கவாதம் அல்லது கடுமையான ஹைப்போகிளைசீமியா போன்ற தீவிர சிக்கல்களின் அறிகுறிகளாக இருக்கலாம்."
+      }
+    }
+  ],
+  "metadata": {
+    "version": 1,
+    "createdDate": "2025-10-04T00:00:00Z",
+    "lastUpdatedDate": "2025-10-04T00:00:00Z",
+    "author": {
+      "name": "Dr. Sarah Chen",
+      "credentials": "MBBS, MMed (Family Medicine)"
+    },
+    "reviewedBy": {
+      "name": "Dr. Kumar Rajendran",
+      "credentials": "MBBS, MD (Endocrinology)",
+      "licenseNumber": "MMC-12345"
+    }
+  }
+}
